@@ -1,0 +1,18 @@
+.container { width: min(640px, 100%); margin: 30px auto 0; text-align: left; }
+.form { margin: 0; }
+.label { display: block; margin: 0 0 10px 2px; color: var(--text-secondary); font-size: 11px; font-weight: 500; }
+.inputRow { display: flex; align-items: center; gap: 13px; padding: 7px 7px 7px 19px; background: var(--surface-1); border: 1px solid var(--border-strong); border-radius: 10px; box-shadow: 0 6px 26px #0002; transition: border-color .2s, box-shadow .2s; }
+.inputRow:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-subtle); }
+.linkIcon { flex-shrink: 0; color: var(--text-muted); }
+.inputRow input { flex: 1; min-width: 0; width: 100%; height: 44px; padding: 0; border: 0; outline: 0; background: transparent; color: var(--text-strong); font-size: 13px; }
+.inputRow input:focus-visible { outline: none; }
+.inputRow input::placeholder { color: var(--text-muted); }
+.inputRow button { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 25px; min-height: 44px; padding: 0 18px; border: 1px solid #ffffff10; border-radius: 6px; background: var(--brand); color: #fff; font-size: 12px; font-weight: 500; transition: background .2s; white-space: nowrap; }
+.inputRow button:hover { background: var(--brand-hover); }
+.inputRow button span { font-size: 17px; }
+.invalid { border-color: var(--danger-500); }
+.error { margin: 12px 2px 0; color: var(--danger-400); font-size: 12px; line-height: 1.5; }
+.feedback { margin-top: 16px; padding: 16px 18px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); }
+.feedback p { margin: 0; font-size: 12px; line-height: 1.7; color: var(--text-secondary); }
+@media (max-width: 640px) { .container { margin-top: 28px; } .inputRow { flex-wrap: wrap; gap: 10px; padding: 11px; border-radius: 9px; } .linkIcon { margin-left: 3px; width: 18px; height: 18px; } .inputRow input { height: 37px; font-size: 12px; } .inputRow button { width: 100%; justify-content: space-between; min-height: 44px; padding-inline: 15px; } }
+@media (prefers-reduced-motion: reduce) { .inputRow, .inputRow button { transition: none; } }

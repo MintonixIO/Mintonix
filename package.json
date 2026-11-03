@@ -1,0 +1,16 @@
+{
+  "name": "mintonix",
+  "private": true,
+  "packageManager": "pnpm@12.9.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @mintonix/web dev",
+    "build": "pnpm --filter @mintonix/web build",
+    "start": "pnpm --filter @mintonix/web start",
+    "lint": "pnpm --filter @mintonix/web lint",
+    "typecheck": "pnpm --filter @mintonix/web typecheck",
+    "test": "pnpm --filter @mintonix/web test"
+  }
+}

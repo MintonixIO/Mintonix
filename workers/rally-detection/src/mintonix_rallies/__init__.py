@@ -1,0 +1,1 @@
+"""Mintonix rally detection worker."""

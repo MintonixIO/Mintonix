@@ -1,0 +1,26 @@
+.header { position: sticky; top: 18px; z-index: 100; display: flex; align-items: center; justify-content: space-between; gap: 24px; width: calc(100% - 96px); max-width: 1120px; min-height: 68px; margin: 24px auto 0; padding: 12px 22px; border: 1px solid #ffffff14; border-radius: 16px; background: #111216d9; backdrop-filter: blur(24px); box-shadow: 0 10px 32px #0002, inset 0 1px #ffffff04; }
+.navigation { display: flex; align-items: center; gap: 26px; }
+.blogLink { color: var(--text-secondary); font-size: 12px; transition: color .2s; }
+.blogLink:hover { color: var(--text-strong); }
+.previewBadge { display: inline-flex; align-items: center; gap: 7px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 5px; color: var(--text-secondary); font: 9px var(--font-mono); letter-spacing: 1.1px; white-space: nowrap; }
+.previewBadge i { width: 5px; height: 5px; border-radius: 50%; background: var(--brand); }
+.footer { width: calc(100% - 96px); max-width: 1360px; margin: 16px auto 0; border-top: 1px solid var(--border); }
+.footerTop { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 60px; padding: 48px 20px 42px; }
+.footerIdentity > p { margin: 24px 0 12px; font-family: var(--font-display); font-size: 34px; line-height: 1.16; letter-spacing: -1.3px; }
+.footerIdentity > p > span { color: var(--text-muted); }
+.footerDescription { color: var(--text-secondary); font-size: 11px; line-height: 1.8; }
+.socials { display: flex; align-items: center; gap: 9px; margin-top: 20px; }
+.socials button { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--text-secondary); cursor: default; }
+.footerLinks { display: flex; flex-direction: column; align-items: flex-start; gap: 17px; padding-top: 8px; }
+.footerLinks h2 { margin: 0 0 8px; color: var(--text-muted); font: 9px var(--font-mono); font-weight: 400; letter-spacing: 1.4px; }
+.footerLinks > a { display: inline-flex; align-items: center; gap: 14px; color: var(--text-secondary); font-size: 12px; transition: color .2s; }
+.footerLinks > a:hover { color: var(--text-strong); }
+.footerLinks > a > span { color: var(--text-muted); font-size: 13px; }
+.footerBottom { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 22px 20px 28px; border-top: 1px solid var(--border-subtle); color: var(--text-muted); font-size: 10px; line-height: 1.7; }
+.footerBottom > a { display: inline-flex; align-items: center; gap: 16px; color: var(--text-secondary); white-space: nowrap; }
+.footerBottom > a:hover { color: var(--text-strong); }
+.footerBottom > a > span { color: var(--brand); font-size: 14px; }
+@media (max-width: 900px) { .header { width: calc(100% - 64px); min-height: 64px; padding-inline: 19px; } .footer { width: calc(100% - 48px); } .footerTop { gap: 26px; padding-inline: 12px; grid-template-columns: 1.5fr .9fr 1fr; } .footerBottom { padding-inline: 12px; } .footerLinks > a { font-size: 11px; gap: 7px; } .footerIdentity > p { font-size: 28px; } }
+@media (max-width: 640px) { .header { width: calc(100% - 36px); top: 12px; min-height: 62px; margin-top: 14px; padding: 12px 14px; border-radius: 13px; gap: 12px; } .header :global(.brand) { gap: 8px; } .header :global(.brand img) { width: 21px; } .header :global(.brand span) { font-size: 20px; } .navigation { gap: 18px; } .blogLink { font-size: 11px; } .previewBadge { padding: 7px 8px; gap: 6px; font-size: 7.5px; letter-spacing: .7px; } .previewBadge i { width: 4px; height: 4px; } .footer { width: calc(100% - 36px); margin-top: 7px; } .footerTop { grid-template-columns: 1fr 1fr; gap: 32px 20px; padding: 36px 12px; } .footerIdentity { grid-column: 1 / -1; } .footerIdentity > p { margin-top: 19px; font-size: 32px; } .footerLinks { gap: 14px; padding-top: 0; } .footerLinks h2 { font-size: 8px; letter-spacing: 1px; } .footerLinks > a { font-size: 11px; line-height: 1.6; } .footerBottom { flex-wrap: wrap; gap: 13px; padding: 20px 12px 24px; font-size: 9px; } .footerBottom .independent { order: 3; width: 100%; } }
+@media (max-width: 360px) { .navigation { gap: 13px; } .header :global(.brand span) { font-size: 18px; } }
+@media (prefers-reduced-motion: reduce) { .blogLink, .footerLinks > a { transition: none; } }

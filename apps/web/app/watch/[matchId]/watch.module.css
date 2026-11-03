@@ -1,0 +1,8 @@
+.page { padding: 45px 0 65px; }
+.backLink { color: var(--text-secondary); font-size: 12px; }
+.backLink:hover { color: var(--brand); }
+.heading { margin: 35px 0 28px; }
+.heading p { margin: 0 0 12px; color: var(--brand); font: 10px var(--font-mono); letter-spacing: 1px; text-transform: uppercase; }
+.heading h1 { margin: 0 0 13px; font-family: var(--font-display); font-size: clamp(25px, 3vw, 40px); font-weight: 500; letter-spacing: -1px; }
+.heading > span { color: var(--text-secondary); font-size: 13px; line-height: 1.7; }
+@media (max-width: 640px) { .page { padding-top: 26px; } .heading { margin-top: 28px; } }

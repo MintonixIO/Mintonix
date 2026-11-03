@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mintonix-rallies"
+version = "0.1.0"
+description = "Headless broadcast rally detection worker"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "numpy==1.26.4",
+  "opencv-python-headless==4.11.0.86",
+  "tqdm==4.67.1",
+  "jsonschema==4.23.0",
+]
+
+[project.optional-dependencies]
+# The research detector uses PaddleOCR on CPU, even on a Vast GPU instance.
+ocr = ["paddleocr==3.7.0", "paddlepaddle==3.2.0"]
+
+[project.scripts]
+mintonix-rallies = "mintonix_rallies.worker:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+mintonix_rallies = ["manifest.schema.json"]
