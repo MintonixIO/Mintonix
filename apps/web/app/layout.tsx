@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import "./globals.css";
 
@@ -14,8 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body id="top">
         <a className="skip-link" href="#main">Skip to content</a>
-        <SiteHeader />
-        <div className="site-shell">{children}</div>
+        {children}
         <SiteFooter />
       </body>
     </html>

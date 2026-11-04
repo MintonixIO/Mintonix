@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default function BlogPostPage({ params }: Props) {
   return (
     <main id="main" className={styles.articlePage}>
-      <Link className={styles.backLink} href="/blog"><span aria-hidden="true">←</span> All technical notes</Link>
+      <Link className={styles.backLink} href="/blog"><span aria-hidden="true">←</span> All notes</Link>
       <Suspense fallback={<ArticleSkeleton />}>
         <ArticleContent params={params} />
       </Suspense>
@@ -39,7 +39,7 @@ async function ArticleContent({ params }: Props) {
         <p className={styles.eyebrow}>{post.category}</p>
         <h1>{post.title}</h1>
         <p className={styles.articleDescription}>{post.description}</p>
-        <div className={styles.postMeta}><span>Mintonix Engineering</span><span>·</span><time dateTime={post.date}>{formatPostDate(post.date)}</time><span>·</span><span>{post.readingMinutes} min read</span></div>
+        <p className={styles.postMeta}>Mintonix Engineering, <time dateTime={post.date}>{formatPostDate(post.date)}</time>, {post.readingMinutes} min read</p>
       </header>
       <div className={styles.prose}><Markdown skipHtml>{post.body}</Markdown></div>
     </article>

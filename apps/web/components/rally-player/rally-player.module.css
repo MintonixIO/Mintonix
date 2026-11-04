@@ -1,93 +1,115 @@
-.viewer { scroll-margin-top: 24px; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface-1); box-shadow: 0 24px 70px -35px #000; }
-.viewerTop { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 58px; padding: 15px 22px; border-bottom: 1px solid var(--border); }
-.viewerHeading { display: flex; align-items: center; gap: 12px; }
-.viewerHeading h2 { margin: 0; font-size: 13px; font-weight: 500; }
-.smallMark { color: var(--brand); font-size: 19px; line-height: 1; }
-.headingDivider { width: 1px; height: 14px; background: var(--border-strong); }
-.sampleLabel { color: var(--text-secondary); font-size: 11px; }
-.previewLabel { color: var(--text-muted); font: 9px var(--font-mono); letter-spacing: 1px; }
-.workspace { display: grid; grid-template-columns: minmax(0, 1fr) 290px; }
+/* The video is the page. Everything else is a supporting control. */
+.viewer { scroll-margin-top: 24px; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface-1); box-shadow: var(--shadow-xl); }
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr) 300px; }
+.visuallyHidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---- Video ---- */
 .playerColumn { min-width: 0; border-right: 1px solid var(--border); }
-.poster { position: relative; aspect-ratio: 16 / 8.65; overflow: hidden; isolation: isolate; background: #0d1415; }
-.poster.videoPoster { aspect-ratio: 16 / 9; }
-.video { display: block; width: 100%; height: 100%; object-fit: contain; background: #000; }
+.poster { position: relative; aspect-ratio: 16 / 9; max-height: max(360px, calc(100svh - 250px)); width: 100%; overflow: hidden; background: #000; }
+.video { display: block; width: 100%; height: 100%; object-fit: contain; background: #000; cursor: pointer; }
 .playOverlay { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
-.playOverlay button { pointer-events: auto; cursor: pointer; }
-.posterBottom { pointer-events: none; }
-.mediaError { margin: 0; padding: 12px 20px; color: var(--text-primary); font-size: 12px; }
-.gapToggle { display: inline-flex; align-items: center; gap: 7px; margin-right: auto; color: var(--text-secondary); font-size: 10px; cursor: pointer; }
-.gapToggle input { accent-color: var(--brand); }
-.playerColumn:fullscreen { display: flex; flex-direction: column; justify-content: center; width: 100%; background: #000; }
-.playerColumn:fullscreen .poster { max-height: calc(100vh - 140px); }
-.poster::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, #05080a70, transparent 35%, #05080a88), radial-gradient(ellipse at center, transparent 20%, #070b0db8); }
-.court { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
-.posterTop { position: absolute; top: 22px; left: 24px; right: 24px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-.scoreboard { width: 152px; padding: 8px 12px; background: #0b1014bd; border: 1px solid #ffffff14; border-radius: 5px; backdrop-filter: blur(8px); }
-.scoreboard > div { display: grid; grid-template-columns: 3px 1fr 20px; align-items: center; gap: 9px; padding: 5px 0; }
-.scoreboard > div > span:nth-child(2) { color: #cad0d1; font-size: 9px; text-transform: uppercase; letter-spacing: 1.2px; }
-.scoreboard strong { font: 14px var(--font-mono); text-align: right; color: #f4f6f7; }
-.playerA, .playerB { height: 12px; background: var(--player-a); border-radius: 2px; }
-.playerB { background: #c9d2b6; }
-.gameBadge { display: flex; gap: 9px; margin-top: 5px; font: 9px var(--font-mono); letter-spacing: 1.1px; color: #c0cbc8; }
-.gameBadge span { color: #6e7a77; }
-.posterCenter { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: 15px; background: radial-gradient(ellipse at center, #0812146b, transparent 62%); }
-.previewPlay { display: grid; place-items: center; width: 54px; height: 54px; padding-left: 3px; border: 1px solid #ffffff3d; border-radius: 50%; color: #ffffffb3; background: #172c2c73; backdrop-filter: blur(8px); }
-.previewPlay svg { width: 19px; height: 19px; }
-.posterCenter p { margin: 17px 0 7px; color: #e3eae7; font-family: var(--font-display); font-size: clamp(17px, 2vw, 25px); letter-spacing: -.6px; }
-.posterCenter > span { color: #b5c1bc; font-size: 11px; }
-.posterBottom { position: absolute; bottom: 21px; left: 24px; right: 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.posterBottom > span:first-child { color: #9eada8; font: 8px var(--font-mono); letter-spacing: 1px; }
-.rallyPill { flex-shrink: 0; padding: 7px 9px; color: #ccd9d4; background: #08100e70; border: 1px solid #ffffff26; border-radius: 4px; font: 8px var(--font-mono); letter-spacing: 1.3px; }
-.controls { padding: 16px 23px 18px; background: #111216; border-top: 1px solid #ffffff08; }
-.transport { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 22px; }
-.transportLeft, .transportRight { display: flex; align-items: center; gap: 15px; }
-.playButton { display: grid; place-items: center; width: 25px; height: 28px; background: none; border: 0; color: var(--text-primary); padding: 0; }
+.overlayPlay { pointer-events: auto; display: grid; place-items: center; width: 68px; height: 68px; padding-left: 4px; border: 1px solid var(--frost-border-strong); border-radius: 50%; color: var(--text-strong); background: var(--frost-bg); backdrop-filter: blur(var(--blur-md)); box-shadow: var(--shadow-lg); transition: background var(--dur-base), transform var(--dur-base) var(--ease-out); }
+.overlayPlay:hover { background: var(--frost-bg-scrolled); transform: scale(1.05); }
+.overlayPlay svg { width: 24px; height: 24px; }
+
+.scoreChip { position: absolute; left: 18px; bottom: 18px; display: inline-flex; align-items: center; gap: 12px; padding: 7px 12px; border: 1px solid var(--frost-border-strong); border-radius: var(--radius-md); background: var(--frost-bg-scrolled); backdrop-filter: blur(var(--blur-md)); pointer-events: none; }
+.chipRally { color: var(--text-secondary); font-size: var(--text-xs); }
+.chipScore { display: inline-flex; align-items: center; gap: 8px; padding-left: 12px; border-left: 1px solid var(--frost-border-strong); color: var(--text-faint); font: var(--fw-medium) var(--text-md) var(--font-mono); font-variant-numeric: tabular-nums; }
+.chipScore b { font-weight: inherit; }
+.scoreA { color: var(--player-a); }
+.scoreB { color: var(--player-b); }
+.mediaError { margin: 0; padding: 12px 20px; border-top: 1px solid var(--border); background: var(--danger-bg); color: var(--danger-400); font-size: var(--text-sm); }
+
+/* ---- Controls ---- */
+.controls { padding: 14px 18px 12px; background: var(--surface-1); border-top: 1px solid var(--border-subtle); }
+.timeline { position: relative; height: 32px; }
+.segments { position: absolute; left: 0; right: 0; top: 6px; height: 20px; background: var(--surface-2); border-radius: var(--radius-xs); }
+.segment, .activeSegment { position: absolute; height: 100%; border-right: 2px solid var(--surface-1); border-radius: 2px; background: var(--brand-ring); transition: background var(--dur-fast); }
+.timeline:hover .segment { background: rgba(54, 147, 255, 0.48); }
+.activeSegment { background: var(--brand); }
+.playhead { position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--text-strong); box-shadow: var(--shadow-sm); transform: translateX(-1px); z-index: 1; }
+.playhead::before { content: ""; position: absolute; left: -4px; top: -2px; width: 10px; height: 6px; background: var(--text-strong); border-radius: 2px 2px 1px 1px; }
+.timeline input { position: absolute; inset: 0; display: block; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; }
+.timeline:focus-within { outline: 2px solid var(--brand); outline-offset: 4px; border-radius: var(--radius-xs); }
+
+.transport { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; }
+.transportLeft, .transportRight { display: flex; align-items: center; gap: 4px; }
+.playButton { display: grid; place-items: center; width: 40px; height: 40px; margin-right: 6px; padding: 0; border: 0; border-radius: 50%; background: var(--text-strong); color: var(--ink-900); transition: background var(--dur-fast); }
+.playButton:not(:disabled):hover { background: var(--white); }
 .playButton:disabled { opacity: .35; }
-.iconButton { display: grid; place-items: center; width: 22px; height: 28px; padding: 0; background: none; border: 0; color: var(--text-secondary); }
-.iconButton:not(:disabled):hover { color: var(--text-strong); }
-.iconButton:disabled { opacity: .25; }
-.timeReadout { display: inline-flex; gap: 8px; font: 10px var(--font-mono); color: var(--text-muted); white-space: nowrap; }
+.iconButton { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: var(--radius-md); background: none; color: var(--text-secondary); transition: background var(--dur-fast), color var(--dur-fast); }
+.iconButton:not(:disabled):hover { background: var(--surface-2); color: var(--text-strong); }
+.iconButton:disabled { opacity: .3; }
+.playButton:focus-visible, .iconButton:focus-visible { outline-offset: 2px; }
+.timeReadout { display: inline-flex; gap: 6px; margin-left: 10px; color: var(--text-muted); font: var(--text-sm) var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .timeReadout > span:first-child { color: var(--text-primary); }
 .timeDivider { color: var(--text-faint); }
-.timelineHead { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-bottom: 10px; }
-.timelineHint { color: var(--text-muted); font-size: 9px; }
-.timeline { position: relative; height: 29px; }
-.segments { position: absolute; left: 0; right: 0; top: 5px; height: 18px; background: #1a1c22; border-radius: 3px; }
-.segment, .activeSegment { position: absolute; height: 100%; border-right: 2px solid #111216; border-radius: 2px; background: #3693ff66; }
-.activeSegment { background: var(--brand); }
-.playhead { position: absolute; top: -5px; bottom: -5px; width: 2px; background: #f3f4f6; box-shadow: 0 0 10px #0006; transform: translateX(-1px); z-index: 1; }
-.playhead::before { content: ""; position: absolute; left: -3px; top: -1px; width: 8px; height: 5px; background: #f3f4f6; border-radius: 2px 2px 1px 1px; }
-.timeline input { position: absolute; inset: 0; display: block; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; }
-.timeline:focus-within { outline: 2px solid var(--brand); outline-offset: 6px; border-radius: 3px; }
-.timelineLabels { display: flex; justify-content: space-between; gap: 10px; margin-top: 6px; color: var(--text-muted); font: 8px var(--font-mono); }
-.rallyPanel { min-width: 0; display: flex; flex-direction: column; background: #131418; }
-.panelHeader { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 24px 22px 21px; }
-.panelHeader h3 { margin: 0 0 8px; color: var(--text-primary); font-size: 14px; font-weight: 500; letter-spacing: -.2px; }
-.panelHeader p { margin: 0; font-size: 10px; color: var(--text-secondary); }
-.rallyCount { padding: 5px 6px; border: 1px solid var(--border); border-radius: 4px; color: var(--text-secondary); font: 10px var(--font-mono); }
-.listHeader { display: flex; justify-content: space-between; gap: 10px; padding: 0 22px 13px; color: var(--text-muted); font: 8px var(--font-mono); letter-spacing: .7px; }
-.listHeader span:first-child { color: var(--text-secondary); }
-.rallyList { flex: 1; min-height: 0; max-height: 408px; margin: 0; padding: 0 10px 10px; list-style: none; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
-.rallyRow { display: grid; grid-template-columns: 33px 1fr 33px 14px; align-items: center; gap: 10px; width: 100%; padding: 13px 12px; border: 1px solid transparent; border-radius: 5px; color: var(--text-secondary); background: transparent; text-align: left; transition: background 150ms; }
-.rallyRow:hover { background: var(--surface-2); }
+
+.gapToggle { position: relative; display: inline-flex; white-space: nowrap; align-items: center; gap: 9px; min-height: 40px; padding: 0 10px; color: var(--text-secondary); font-size: var(--text-sm); cursor: pointer; }
+.gapToggle input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.switch { position: relative; width: 30px; height: 18px; border-radius: var(--radius-pill); background: var(--surface-3); transition: background var(--dur-base); }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--text-secondary); transition: transform var(--dur-base) var(--ease-out), background var(--dur-base); }
+.gapToggle input:checked + .switch { background: var(--brand); }
+.gapToggle input:checked + .switch::after { transform: translateX(12px); background: var(--white); }
+.gapToggle input:focus-visible + .switch { outline: 2px solid var(--brand); outline-offset: 3px; }
+
+.playerColumn:fullscreen { display: flex; flex-direction: column; justify-content: center; width: 100%; background: #000; border: 0; }
+.playerColumn:fullscreen .poster { flex: 1; max-height: none; aspect-ratio: auto; }
+
+/* ---- Rally list ---- */
+/* contain: size lets the video column alone set the row height; the list scrolls inside it. */
+.rallyPanel { contain: size; min-width: 0; display: flex; flex-direction: column; background: var(--bg-base); }
+.panelHeader { padding: 18px 20px 12px; border-bottom: 1px solid var(--border-subtle); }
+.panelHeader h2 { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--text-strong); font-family: var(--font-display); font-size: var(--text-lg); font-weight: var(--fw-medium); letter-spacing: var(--tracking-tight); }
+.rallyCount { padding: 1px 8px; border-radius: var(--radius-pill); background: var(--surface-2); color: var(--text-secondary); font: var(--text-xs) var(--font-mono); letter-spacing: 0; }
+.panelHeader p { margin: 4px 0 0; color: var(--text-muted); font-size: var(--text-xs); }
+.listScroll { position: relative; flex: 1 1 0; min-height: 0; overflow-y: auto; padding: 4px 8px 12px; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.gameHeading { position: sticky; top: -4px; z-index: 1; margin: 0; padding: 12px 12px 6px; background: var(--bg-base); color: var(--text-muted); font-size: var(--text-xs); font-weight: var(--fw-medium); }
+.rallyList { margin: 0; padding: 0; list-style: none; }
+.rallyRow { display: grid; grid-template-columns: 28px 1fr 36px; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid transparent; border-radius: var(--radius-md); color: var(--text-secondary); background: transparent; text-align: left; transition: background var(--dur-fast); }
+.rallyRow:not(:disabled):hover { background: var(--surface-2); }
 .rallyRow:focus-visible { outline-offset: -2px; }
-.selectedRow { background: #3693ff10; border-color: #3693ff24; color: var(--text-strong); }
-.selectedRow:hover { background: #3693ff17; }
-.rallyNumber { display: flex; align-items: center; color: var(--text-muted); font: 9px var(--font-mono); }
-.rallyScore { display: flex; justify-content: center; align-items: center; gap: 13px; font: 14px var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
-.rallyScore > span { color: var(--text-faint); font-size: 11px; }
-.rallyDuration { text-align: right; font: 9px var(--font-mono); color: var(--text-muted); }
-.rallyArrow { color: var(--text-faint); text-align: right; font-size: 13px; }
-.selectedRow .rallyArrow, .selectedRow .rallyNumber { color: var(--brand); }
-.equalizer { display: flex; align-items: center; gap: 2px; height: 13px; }
-.equalizer i { display: block; width: 2px; height: 6px; background: var(--brand); border-radius: 1px; }
-.equalizer i:nth-child(2) { height: 12px; }
-.equalizer i:nth-child(3) { height: 9px; }
-.previewNotice { display: flex; align-items: center; gap: 10px; padding: 13px 22px; border-top: 1px solid var(--border); background: #101115; }
-.noticeIcon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 13px; height: 13px; border: 1px solid var(--text-faint); border-radius: 50%; font: 9px var(--font-mono); color: var(--text-secondary); }
-.previewNotice p { margin: 0; color: var(--text-muted); font-size: 10px; line-height: 1.7; }
-.previewNotice strong { color: var(--text-secondary); font-weight: 400; }
-@media (min-width: 1500px) { .workspace { grid-template-columns: minmax(0, 1fr) 320px; } .rallyList { max-height: 465px; } }
-@media (max-width: 1100px) { .workspace { grid-template-columns: minmax(0, 1fr) 255px; } .panelHeader { padding-inline: 17px; } .listHeader { padding-inline: 17px; font-size: 7px; } .controls { padding-inline: 18px; } .transportLeft, .transportRight { gap: 9px; } .mediaOnly { display: none; } .poster { aspect-ratio: 16 / 10; } .rallyList { max-height: 360px; } .posterTop { top: 16px; left: 18px; right: 18px; } .posterBottom { left: 18px; right: 18px; bottom: 16px; } .posterBottom > span:first-child { font-size: 6px; } }
-@media (max-width: 800px) { .workspace { grid-template-columns: 1fr; } .playerColumn { border-right: 0; } .poster { aspect-ratio: 16 / 9; } .posterCenter p { font-size: 25px; } .rallyPanel { border-top: 1px solid var(--border); } .panelHeader { padding: 20px 22px; } .listHeader { padding: 0 22px 13px; font-size: 8px; } .rallyList { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; max-height: 234px; padding: 0 12px 12px; } .rallyRow { grid-template-columns: 25px 1fr 28px 12px; gap: 5px; padding-block: 12px; } .transportLeft, .transportRight { gap: 15px; } .mediaOnly { display: grid; } .posterBottom > span:first-child { font-size: 8px; } .previewNotice { padding: 13px 18px; } }
-@media (max-width: 480px) { .viewerTop { padding: 14px 16px; min-height: 52px; } .viewerHeading { gap: 8px; } .viewerHeading h2 { font-size: 12px; } .headingDivider, .sampleLabel { display: none; } .previewLabel { font-size: 8px; } .poster { aspect-ratio: 16 / 11; } .posterTop { top: 14px; left: 14px; right: 14px; } .scoreboard { width: 122px; padding: 5px 9px; } .scoreboard > div { gap: 7px; padding: 4px 0; } .scoreboard > div > span:nth-child(2) { font-size: 8px; } .scoreboard strong { font-size: 12px; } .gameBadge { font-size: 7px; gap: 5px; } .posterCenter { padding-top: 36px; } .previewPlay { width: 42px; height: 42px; } .posterCenter p { font-size: 19px; margin-top: 12px; } .posterCenter > span { font-size: 9px; } .posterBottom { bottom: 12px; left: 14px; right: 14px; gap: 6px; } .posterBottom > span:first-child { max-width: 160px; font-size: 6px; letter-spacing: .6px; } .rallyPill { padding: 5px 6px; font-size: 7px; letter-spacing: .8px; } .controls { padding: 13px 15px 16px; } .transport { margin-bottom: 20px; gap: 5px; } .transportLeft, .transportRight { gap: 10px; } .mediaOnly { display: none; } .timeReadout { gap: 4px; font-size: 9px; } .timelineHint { font-size: 8px; } .panelHeader { padding: 20px 16px 18px; } .listHeader { padding-inline: 16px; } .rallyList { gap: 2px 6px; padding-inline: 6px; } .rallyRow { grid-template-columns: 20px 1fr 22px 10px; gap: 3px; padding-inline: 8px; } .rallyScore { font-size: 13px; gap: 9px; } .rallyDuration { font-size: 8px; } .previewNotice { align-items: flex-start; padding: 12px 15px; } .noticeIcon { margin-top: 2px; } .previewNotice p { font-size: 9px; } }
+.rallyRow[data-selected] { background: var(--brand-subtle); border-color: var(--brand-ring); color: var(--text-strong); }
+.rallyNumber { display: flex; align-items: center; color: var(--text-muted); font: var(--text-xs) var(--font-mono); font-variant-numeric: tabular-nums; }
+.rallyRow[data-selected] .rallyNumber { color: var(--brand); }
+.rallyScore { display: flex; justify-content: center; align-items: center; gap: 10px; font: var(--fw-medium) var(--text-base) var(--font-mono); font-variant-numeric: tabular-nums; }
+.rallyRow[data-selected] .rallyScore { font-size: var(--text-lg); }
+.scoreDash { color: var(--text-faint); font-size: var(--text-xs); font-family: var(--font-sans); font-weight: var(--fw-regular); }
+.rallyDuration { text-align: right; color: var(--text-muted); font: var(--text-xs) var(--font-mono); }
+.equalizer { display: flex; align-items: flex-end; gap: 2px; height: 12px; }
+.equalizer i { display: block; width: 2px; height: 6px; background: var(--live); border-radius: 1px; animation: eq 900ms var(--ease-in-out) infinite alternate; }
+.equalizer i:nth-child(2) { height: 12px; animation-delay: -300ms; }
+.equalizer i:nth-child(3) { height: 9px; animation-delay: -600ms; }
+@keyframes eq { from { transform: scaleY(.45); } to { transform: scaleY(1); } }
+
+/* Live cyan marks only what is playing right now. */
+.viewer[data-playing] .activeSegment { background: var(--live); box-shadow: var(--glow-cyan); }
+.viewer[data-playing] .scoreChip { border-color: var(--live-ring); box-shadow: var(--ring-live); }
+.viewer[data-playing] .chipRally { color: var(--live); }
+.viewer[data-playing] .rallyRow[data-selected] { border-color: var(--live-ring); background: var(--live-soft); }
+
+.previewNotice { margin: 0; padding: 12px 20px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: var(--text-xs); line-height: var(--leading-normal); }
+
+@media (min-width: 1500px) { .workspace { grid-template-columns: minmax(0, 1fr) 330px; } }
+@media (max-width: 1100px) { .workspace { grid-template-columns: minmax(0, 1fr) 260px; } .timeReadout { margin-left: 4px; } }
+@media (max-width: 800px) {
+  .workspace { grid-template-columns: 1fr; }
+  .playerColumn { border-right: 0; }
+  .poster { max-height: none; }
+  .rallyPanel { contain: none; border-top: 1px solid var(--border); }
+  .listScroll { flex: none; max-height: 320px; }
+}
+@media (max-width: 480px) {
+  .controls { padding: 12px 10px 10px; }
+  .transportLeft { gap: 0; }
+  .playButton { margin-right: 2px; }
+  .timeReadout { font-size: var(--text-xs); }
+  .gapToggle { padding: 0 4px; font-size: var(--text-xs); gap: 6px; }
+  .scoreChip { left: 10px; bottom: 10px; padding: 5px 9px; gap: 9px; }
+  .chipScore { padding-left: 9px; font-size: var(--text-sm); }
+  .overlayPlay { width: 54px; height: 54px; }
+  .panelHeader { padding-inline: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .equalizer i { animation: none; } .overlayPlay:hover { transform: none; } }
+.rallyRow[data-selected] .rallyScore > span:first-child { color: var(--player-a); }
+.rallyRow[data-selected] .rallyScore > span:last-child { color: var(--player-b); }

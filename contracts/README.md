@@ -1,6 +1,6 @@
 # Rally manifest v1
 
-`rally-manifest.schema.json` is the persisted data contract for the viewer and Python detector. `examples/demo-match.json` is illustrative data only, with fictional players and synthetic intervals.
+`rally-manifest.schema.json` is the persisted data contract for the viewer and Python detector. Synthetic data for timeline and validation tests lives directly in `apps/web/components/rally-player/timeline.test.ts`.
 
 All timestamps use seconds in the **original video**, including fractional seconds. Intervals are half-open: `startSeconds` is included; `endSeconds` is excluded. Rally IDs are stable within a match. `scoreBefore`, when present, is the two players' score before that rally, in `players` order. Game numbers start at 1.
 

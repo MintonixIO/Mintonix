@@ -8,23 +8,23 @@ export function SiteFooter() {
       <div className={styles.footerTop}>
         <div className={styles.footerIdentity}>
           <Brand />
-          <p>Less downtime.<br /><span>More badminton.</span></p>
+          <p>Transforming Your<br /><span>Badminton Experience</span></p>
           <span className={styles.footerDescription}>A closer look at the game, one rally at a time.</span>
           <div className={styles.socials} role="group" aria-label="Social profiles, coming soon">
             {(["X", "Threads", "YouTube", "Instagram"] as const).map((platform) => (
-              <button key={platform} type="button" disabled aria-label={`${platform} (placeholder)`} title={`${platform} — profile coming soon`}><SocialIcon platform={platform} /></button>
+              <button key={platform} type="button" disabled aria-label={`${platform} (coming soon)`} title={`${platform} profile coming soon`}><SocialIcon platform={platform} /></button>
             ))}
           </div>
         </div>
-        <nav className={styles.footerLinks} aria-label="Tools">
-          <h2>TOOLS</h2>
-          <Link href="/#generate">Rally extraction <span aria-hidden="true">↗</span></Link>
+        <nav className={styles.footerLinks} aria-labelledby="footer-tools">
+          <h2 id="footer-tools">Tools</h2>
+          <Link href="/#generate">Rally viewer</Link>
         </nav>
-        <nav className={styles.footerLinks} aria-label="Engineering links">
-          <h2>BEHIND THE GAME</h2>
-          <Link href="/blog">Blogs <span aria-hidden="true">↗</span></Link>
-          <Link href="/blog/original-video-timestamps">Playback design <span aria-hidden="true">↗</span></Link>
-          <Link href="/blog/finding-live-play">Detection notes <span aria-hidden="true">↗</span></Link>
+        <nav className={styles.footerLinks} aria-labelledby="footer-notes">
+          <h2 id="footer-notes">Behind the game</h2>
+          <Link href="/blog">Blog</Link>
+          <Link href="/blog/original-video-timestamps">Playback design</Link>
+          <Link href="/blog/finding-live-play">Detection notes</Link>
         </nav>
       </div>
       <div className={styles.footerBottom}>

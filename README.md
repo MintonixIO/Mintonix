@@ -29,7 +29,7 @@ pnpm start
 | --- | --- | --- |
 | `apps/web` | Next.js website and custom rally viewer | Local match playback and detector output integration |
 | `workers/rally-detection` | Batch worker with automatic court fitting and research rally detection | Implemented; requires broadcast evaluation |
-| `contracts` | Versioned rally manifest schema and illustrative fixture | Implemented |
+| `contracts` | Versioned rally manifest schema | Implemented |
 | `docs` | Scope, architecture, brand, and deployment guidance | Implemented |
 
 The homepage provides a match-link form and explains the viewer components. The form validates URL syntax locally but does not submit a processing job. Local detector output can be viewed at `/watch/[matchId]` with `MINTONIX_LOCAL_MATCHES_DIR` configured in `apps/web/.env.local`; see `docs/development.md`. The current local sample is `dl1s0`, assembled from 11 research clips. There is no upload, account, or cloud integration in the website yet.

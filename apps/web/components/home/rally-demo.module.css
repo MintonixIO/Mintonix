@@ -1,0 +1,51 @@
+/* A miniature of the watch page: video, score list, and a timeline that skips the gaps. */
+.demo { margin: 0; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--grad-panel), var(--surface-1); box-shadow: var(--shadow-xl), var(--frost-highlight); }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 116px; gap: 10px; }
+
+.video { position: relative; overflow: hidden; aspect-ratio: 16 / 10; border-radius: var(--radius-md); background: radial-gradient(120% 90% at 50% 100%, var(--ink-750), var(--bg-sunken) 70%); }
+.court { position: absolute; inset: 4% 0 2%; width: 100%; height: 94%; color: var(--ink-300); }
+.shuttle { fill: none; stroke: var(--ink-200); stroke-width: 1.2; stroke-dasharray: 2 4; stroke-linecap: round; }
+.playerA { fill: var(--player-a); filter: drop-shadow(0 0 6px rgba(54, 147, 255, .6)); }
+.playerB { fill: var(--player-b); filter: drop-shadow(0 0 6px rgba(139, 156, 255, .55)); }
+.tag { position: absolute; top: 8px; right: 10px; color: var(--text-faint); font-size: var(--text-2xs); }
+.chip { position: absolute; left: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 10px; padding: 5px 10px; border: 1px solid var(--live-ring); border-radius: var(--radius-sm); background: var(--frost-bg-scrolled); box-shadow: var(--ring-live); }
+.chipRally { color: var(--live); font-size: var(--text-xs); }
+.chipScore { display: inline-flex; align-items: center; gap: 6px; padding-left: 10px; border-left: 1px solid var(--frost-border-strong); font: var(--fw-medium) var(--text-base) var(--font-mono); font-variant-numeric: tabular-nums; }
+.chipScore b { font-weight: inherit; }
+.chipScore i { color: var(--text-faint); font-style: normal; font-size: var(--text-xs); }
+.scoreA { color: var(--player-a); }
+.scoreB { color: var(--player-b); }
+
+.list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 6px; list-style: none; border-radius: var(--radius-md); background: var(--bg-base); }
+.list li { display: flex; flex: 1; align-items: center; justify-content: space-between; gap: 8px; padding: 0 9px; border: 1px solid transparent; border-radius: var(--radius-sm); color: var(--text-muted); transition: background var(--dur-base), border-color var(--dur-base), color var(--dur-base); }
+.list li[data-selected] { border-color: var(--live-ring); background: var(--live-soft); color: var(--text-strong); }
+.rowNumber { font: var(--text-2xs) var(--font-mono); }
+.list li[data-selected] .rowNumber { color: var(--live); }
+.rowScore { display: inline-flex; align-items: center; gap: 5px; font: var(--fw-medium) var(--text-sm) var(--font-mono); font-variant-numeric: tabular-nums; }
+.rowScore i { color: var(--text-faint); font-style: normal; font-size: var(--text-2xs); }
+.list li[data-selected] .rowScore > span:first-child { color: var(--player-a); }
+.list li[data-selected] .rowScore > span:last-child { color: var(--player-b); }
+
+.compaction { grid-column: 1 / -1; padding: 26px 2px 8px; }
+.timeline { position: relative; height: 14px; border-radius: var(--radius-xs); background: var(--surface-2); }
+.timeline > i { position: absolute; top: 0; height: 100%; border-radius: 2px; background: var(--brand-ring); transition: background var(--dur-base); }
+.timeline > i[data-active] { background: var(--live); box-shadow: var(--glow-cyan); }
+.playhead { position: absolute; z-index: 1; top: -5px; bottom: -5px; width: 2px; background: var(--text-strong); transform: translateX(-1px); }
+.playhead::before { content: ""; position: absolute; left: -4px; top: -2px; width: 10px; height: 6px; border-radius: 2px; background: var(--text-strong); }
+/* The hop over dead time: a dashed arc drawn above the skipped gap. */
+.jumpArc { position: absolute; bottom: 100%; height: 14px; margin-bottom: 2px; border: 1.5px dashed var(--live); border-bottom: 0; border-radius: 50% 50% 0 0 / 100% 100% 0 0; animation: hop 900ms var(--ease-out) forwards; }
+@keyframes hop { 0% { opacity: 0; clip-path: inset(0 100% 0 0); } 35% { opacity: 1; clip-path: inset(0 0 0 0); } 100% { opacity: 0; clip-path: inset(0 0 0 0); } }
+
+
+@media (max-width: 520px) {
+  .stage { grid-template-columns: minmax(0, 1fr) 92px; gap: 8px; }
+  .list li { padding: 0 6px; }
+  .chip { left: 6px; bottom: 6px; gap: 6px; padding: 3px 7px; }
+  .chipRally { font-size: var(--text-2xs); }
+  .chipScore { padding-left: 6px; font-size: var(--text-xs); }
+  .tag { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jumpArc { animation: none; opacity: 0; }
+  .list li, .timeline > i { transition: none; }
+}

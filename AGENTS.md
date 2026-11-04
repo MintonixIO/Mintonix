@@ -8,7 +8,7 @@ The first product is a BWF match viewer that plays rallies while skipping dead t
 
 - `apps/web` owns the website and player. Keep related feature code together in `components/rally-player`.
 - `workers/rally-detection` owns the headless batch detector for Vast.ai. It automatically fits court coordinates and emits the v1 manifest; storage, provisioning, and public job dispatch are not connected. Run its Python tests and compile its native court fitter when changing worker logic.
-- `contracts/rally-manifest.schema.json` owns the cross-runtime data shape. Update the example, frontend validation, and tests with contract changes.
+- `contracts/rally-manifest.schema.json` owns the cross-runtime data shape. Update frontend validation and tests with contract changes. Keep synthetic fixtures local to their tests.
 - Do not create shared packages, worker stages, or service scaffolds without an actual consumer or deployment requirement.
 - Use one root pnpm workspace and lockfile. Python dependencies belong to the worker when its implementation begins.
 - Keep videos, model weights, generated outputs, and credentials outside Git.

@@ -25,7 +25,7 @@ The hero form validates HTTP/HTTPS URL syntax locally. It does not verify that a
 
 ## Preview data
 
-`contracts/examples/demo-match.json` is synthetic and used in contract/domain tests. Local watch pages use actual detector output instead.
+Synthetic manifest data lives directly in `apps/web/components/rally-player/timeline.test.ts` for contract/domain tests. Local watch pages use actual detector output instead.
 
 ## Local match viewer
 
@@ -63,7 +63,6 @@ CI installs with the frozen lockfile, then checks lint, TypeScript, domain tests
 
 - Connect the canonical Git repository.
 - Select `apps/web` as the Root Directory and Next.js as the framework.
-- Allow access to source files outside the Root Directory because the app imports the root `contracts` fixture.
 - Use the repository's pnpm lockfile. The app build command is `pnpm build` when run from `apps/web`.
 - Leave environment variables empty for the scaffold.
 - Contract changes affect the website even though they are outside the JavaScript workspace. Do not enable an ignore rule that skips `contracts/**` changes. Automatic workspace-only deployment skipping may treat them as global changes; this is acceptable initially.

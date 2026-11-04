@@ -16,18 +16,15 @@ export default function BlogPage() {
         <h1>Building Mintonix</h1>
         <p>Finding rally boundaries, handling broadcast replays, and getting the player to jump to the right point.</p>
       </header>
-      <div className={styles.listHeading}><span>TECHNICAL NOTES</span><span>{String(posts.length).padStart(2, "0")} ARTICLES</span></div>
       <div className={styles.postList}>
-        {posts.map((post, index) => (
+        {posts.map((post) => (
           <Link className={styles.postCard} href={`/blog/${post.slug}`} key={post.slug}>
-            <span className={styles.postNumber}>{String(index + 1).padStart(2, "0")} /</span>
             <div className={styles.postSummary}>
               <span className={styles.category}>{post.category}</span>
               <h2>{post.title}</h2>
               <p>{post.description}</p>
-              <div className={styles.postMeta}><time dateTime={post.date}>{formatPostDate(post.date)}</time><span>·</span><span>{post.readingMinutes} min read</span></div>
+              <p className={styles.postMeta}><time dateTime={post.date}>{formatPostDate(post.date)}</time>, {post.readingMinutes} min read</p>
             </div>
-            <span className={styles.postArrow} aria-hidden="true">↗</span>
           </Link>
         ))}
       </div>

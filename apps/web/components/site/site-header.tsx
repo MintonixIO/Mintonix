@@ -7,8 +7,8 @@ export function SiteHeader() {
     <header className={styles.header}>
       <Brand />
       <nav className={styles.navigation} aria-label="Main navigation">
-        <Link href="/blog" className={styles.blogLink}>Blogs</Link>
-        <span className={styles.previewBadge}><i aria-hidden="true" /> EARLY PREVIEW</span>
+        <Link href="/blog" className={styles.blogLink}>Blog</Link>
+        <span className={styles.previewBadge}><i aria-hidden="true" /> Early preview</span>
       </nav>
     </header>
   );
