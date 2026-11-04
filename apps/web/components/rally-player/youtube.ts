@@ -9,8 +9,20 @@ export type YouTubePlayer = {
   getCurrentTime(): number;
   getDuration(): number;
   getPlayerState(): number;
+  mute(): void;
+  unMute(): void;
+  isMuted(): boolean;
   destroy(): void;
 };
+
+export type PendingSeek = { time: number; startedAt: number };
+
+/** Ignore stale timestamps and keyframe pre-roll until the requested rally arrives. */
+export function isSeekPending(seek: PendingSeek, sourceTime: number, now: number) {
+  const elapsed = Math.max(0, now - seek.startedAt);
+  if (elapsed >= 10_000) return false;
+  return sourceTime < seek.time - 0.001 || sourceTime > seek.time + Math.max(1, elapsed / 1000 + 1);
+}
 
 type PlayerOptions = {
   videoId: string;
