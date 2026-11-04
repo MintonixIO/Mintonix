@@ -3,7 +3,7 @@
 One headless, single-job batch worker for local runs or a Vast.ai instance.
 It automatically finds court coordinates, detects court-view intervals, uses
 scoreboard OCR to assemble rally candidates, subtracts camera-switch intervals,
-and writes the existing v1 manifest in original-video seconds. No supplied court
+and writes a v2 manifest in seconds on the source YouTube video's timeline. No supplied court
 file or interactive annotation step is accepted.
 
 ## Run locally
@@ -34,11 +34,15 @@ Job JSON (also see `example.job.json`):
   "matchId": "my-match",
   "title": "Player A vs Player B",
   "players": ["Player A", "Player B"],
-  "video": "match.mp4"
+  "video": "match.mp4",
+  "youtubeVideoId": "9WVwZSzixh0"
 }
 ```
 
-`video` is a local path, absolute or relative to the job JSON. Player names
+`video` is a local path, absolute or relative to the job JSON. It must be a
+complete copy of the YouTube upload named by `youtubeVideoId`, not a trimmed or
+concatenated cut, because the viewer embeds that YouTube video and seeks to the
+manifest's timestamps. The manifest records it as `source`. Player names
 must follow scoreboard top/bottom row order. Scores are omitted by default;
 add `"includeScores": true` only when evaluating OCR labels. Detection still
 uses OCR internally, so an unsupported/unreadable scoreboard can fail the job
@@ -88,7 +92,7 @@ pipeline, or working-directory assumptions.
 Research frame endpoints are inclusive. Conversion uses
 `[start_frame / fps, (end_frame + 1) / fps)` after subtracting camera switches.
 One research rally may become multiple playback intervals with the same
-optional score; IDs distinguish them without changing the v1 contract.
+optional score; IDs distinguish them without changing the v2 contract.
 Entirely excluded candidates are dropped. Zero playable intervals fail
 validation instead of generating fake data.
 

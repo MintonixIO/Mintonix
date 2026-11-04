@@ -24,7 +24,7 @@ async function Match({ params }: { params: Promise<{ matchId: string }> }) {
         </h1>
         <span className={styles.matchId}>{matchId}</span>
       </header>
-      <RallyPlayer key={matchId} manifest={match.manifest} videoSrc={`/watch/${matchId}/video`} />
+      <RallyPlayer key={matchId} manifest={match.manifest} />
     </>
   );
 }

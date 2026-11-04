@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from pathlib import Path
+import re
 import sys
 import tempfile
 
@@ -13,15 +14,17 @@ from .detect import detect
 def read_job(path):
     path = Path(path).resolve(strict=True)
     job = json.loads(path.read_text())
-    required = {"matchId", "title", "players", "video"}
+    required = {"matchId", "title", "players", "video", "youtubeVideoId"}
     if not isinstance(job, dict) or not required <= job.keys() or job.keys() - required - {"includeScores"}:
-        raise ValueError("Job requires matchId, title, players, video; only includeScores is optional")
+        raise ValueError("Job requires matchId, title, players, video, youtubeVideoId; only includeScores is optional")
     for key in required - {"players"}:
         if not isinstance(job[key], str) or not job[key].strip():
             raise ValueError(f"{key} must be a nonempty string")
     if (not isinstance(job["players"], list) or len(job["players"]) != 2
             or any(not isinstance(p, str) or not p.strip() for p in job["players"])):
         raise ValueError("players must contain two nonempty names in scoreboard top/bottom order")
+    if not re.fullmatch(r"[A-Za-z0-9_-]{11}", job["youtubeVideoId"]):
+        raise ValueError("youtubeVideoId must be an 11-character YouTube video ID")
     if type(job.get("includeScores", False)) is not bool:
         raise ValueError("includeScores must be a boolean")
     job["video"] = (path.parent / job["video"]).resolve(strict=True)
@@ -63,7 +66,8 @@ def main(argv=None):
             raise ValueError("Output must not overwrite a job input")
         manifest = detect(
             video=job["video"], match_id=job["matchId"], title=job["title"],
-            players=job["players"], include_scores=job.get("includeScores", False),
+            players=job["players"], youtube_video_id=job["youtubeVideoId"],
+            include_scores=job.get("includeScores", False),
         )
         write_manifest(args.output, manifest)
     except Exception as exc:

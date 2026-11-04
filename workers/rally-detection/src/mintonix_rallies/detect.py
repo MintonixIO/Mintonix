@@ -26,7 +26,8 @@ def probe_video(path):
     return fps, duration, width, height
 
 
-def detect(*, video, match_id, title, players, include_scores=False, ocr=None):
+def detect(*, video, match_id, title, players, youtube_video_id, include_scores=False, ocr=None):
+    """Analyse a local copy of the complete YouTube upload; timestamps stay on its timeline."""
     from . import research
 
     video = str(Path(video).resolve(strict=True))
@@ -43,5 +44,5 @@ def detect(*, video, match_id, title, players, include_scores=False, ocr=None):
     rallies = research.refine_court_frames(video, court_frames, ocr)
     return build_manifest(
         match_id=match_id, title=title, players=players, duration=duration, fps=fps,
-        rallies=rallies, include_scores=include_scores,
+        youtube_video_id=youtube_video_id, rallies=rallies, include_scores=include_scores,
     )

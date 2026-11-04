@@ -19,6 +19,7 @@ export function SiteFooter() {
         <nav className={styles.footerLinks} aria-labelledby="footer-tools">
           <h2 id="footer-tools">Tools</h2>
           <Link href="/#generate">Rally viewer</Link>
+          <Link href="/library">Library</Link>
         </nav>
         <nav className={styles.footerLinks} aria-labelledby="footer-notes">
           <h2 id="footer-notes">Behind the game</h2>

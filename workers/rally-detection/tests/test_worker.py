@@ -15,7 +15,8 @@ class WorkerTests(unittest.TestCase):
         self.root = Path(self.tmp.name)
         (self.root / "video.mp4").write_bytes(b"placeholder")
         self.job = self.root / "job.json"
-        self.data = {"matchId": "match", "title": "A vs B", "players": ["A", "B"], "video": "video.mp4"}
+        self.data = {"matchId": "match", "title": "A vs B", "players": ["A", "B"], "video": "video.mp4",
+                     "youtubeVideoId": "9WVwZSzixh0"}
         self.job.write_text(json.dumps(self.data))
 
     def test_resolves_relative_video_and_needs_no_court_file(self):
@@ -23,7 +24,8 @@ class WorkerTests(unittest.TestCase):
 
     def test_rejects_invalid_jobs_including_supplied_court(self):
         for changes in ({"court": "court.txt"}, {"includeScores": "false"}, {"players": ["A"]},
-                        {"title": " "}, {"video": "absent.mp4"}, {"unknown": True}):
+                        {"title": " "}, {"video": "absent.mp4"}, {"unknown": True},
+                        {"youtubeVideoId": "https://youtu.be/x"}, {"youtubeVideoId": 11}):
             self.job.write_text(json.dumps(dict(self.data, **changes)))
             with self.subTest(changes=changes), self.assertRaises((ValueError, FileNotFoundError)):
                 read_job(self.job)
@@ -34,6 +36,7 @@ class WorkerTests(unittest.TestCase):
             self.assertEqual(main(["--job", str(self.job), "--output", str(output)]), 0)
         self.assertEqual(json.loads(output.read_text()), manifest())
         self.assertNotIn("court", detector.call_args.kwargs)
+        self.assertEqual(detector.call_args.kwargs["youtube_video_id"], "9WVwZSzixh0")
 
     def test_failure_preserves_previous_result_and_writes_no_partial(self):
         output = self.root / "manifest.json"

@@ -15,7 +15,7 @@ def _schema_validator():
 
 def validate_manifest(manifest):
     _schema_validator().validate(manifest)
-    duration = manifest["sourceDurationSeconds"]
+    duration = manifest["source"]["durationSeconds"]
     if not math.isfinite(duration):
         raise ValueError("Source duration must be finite")
     previous_end, previous_game = 0, 1
@@ -56,7 +56,7 @@ def playable_frames(rally):
         yield start, end
 
 
-def build_manifest(*, match_id, title, players, duration, fps, rallies, include_scores=False):
+def build_manifest(*, match_id, title, players, duration, fps, youtube_video_id, rallies, include_scores=False):
     if not math.isfinite(fps) or fps <= 0:
         raise ValueError("Frame rate must be finite and positive")
     intervals = []
@@ -76,10 +76,10 @@ def build_manifest(*, match_id, title, players, duration, fps, rallies, include_
                 item["scoreBefore"] = [rally["p1"], rally["p0"]]
             intervals.append(item)
     return validate_manifest({
-        "version": 1,
+        "version": 2,
         "matchId": match_id,
         "title": title,
         "players": list(players),
-        "sourceDurationSeconds": duration,
+        "source": {"provider": "youtube", "videoId": youtube_video_id, "durationSeconds": duration},
         "rallies": intervals,
     })

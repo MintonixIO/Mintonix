@@ -13,12 +13,10 @@ export default function Home() {
           <h1 id="page-title">Your BWF match.<br /><span>Just the rallies.</span></h1>
           <p className={styles.heroDescription}>Start with a match link. Get closer to the play with a view built around rallies, scores, and the moments you want to revisit.</p>
           <MatchLinkForm />
-          {process.env.MINTONIX_LOCAL_MATCHES_DIR && (
-            <p className={styles.localMatch}>
-              <Link href="/watch/dl1s0"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5-13-7.5Z" /></svg>Watch the dl1s0 match</Link>
-              <span>Detected from 11 research clips</span>
-            </p>
-          )}
+          <p className={styles.localMatch}>
+            <Link href="/library"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5-13-7.5Z" /></svg>Library</Link>
+            <span>Browse pre-analyzed matches</span>
+          </p>
         </div>
 
         <RallyDemo />

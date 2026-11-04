@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createTimeline, gameplayAtSourceTime, normalizeMediaTime, parseRallyManifest, rallyPlaybackPosition, sourceAtGameplayTime } from "./timeline.ts";
+import { createTimeline, formatTime, gameplayAtSourceTime, normalizeMediaTime, parseRallyManifest, rallyPlaybackPosition, sourceAtGameplayTime } from "./timeline.ts";
 
 // Synthetic data stays local to the tests; contracts contains the canonical schema.
 const fixture: Record<string, unknown> & { rallies: Record<string, unknown>[] } = {
-  version: 1,
+  version: 2,
   matchId: "illustrative-match",
   title: "Player A vs Player B",
   players: ["Player A", "Player B"],
-  sourceDurationSeconds: 910,
+  source: { provider: "youtube", videoId: "AAAAAAAAAAA", durationSeconds: 910 },
   rallies: [
     { id: "rally-01", game: 1, startSeconds: 34, endSeconds: 48, scoreBefore: [0, 0] },
     { id: "rally-02", game: 1, startSeconds: 72, endSeconds: 89, scoreBefore: [1, 0] },
@@ -101,8 +101,13 @@ test("invalid intervals, duplicate IDs, and invalid scores are rejected", () => 
     (input: typeof fixture) => { input.rallies[0].scoreBefore = [0.5, 1]; },
     (input: typeof fixture) => { input.rallies[0].endSeconds = 10000; },
     (input: typeof fixture) => { input.rallies[0].game = 0; },
-    (input: typeof fixture) => { input.sourceDurationSeconds = Number.NaN; },
-    (input: typeof fixture) => { input.version = 2; },
+    (input: typeof fixture) => { input.source = { provider: "youtube", videoId: "AAAAAAAAAAA", durationSeconds: Number.NaN }; },
+    (input: typeof fixture) => { input.source = { provider: "vimeo", videoId: "AAAAAAAAAAA", durationSeconds: 910 }; },
+    (input: typeof fixture) => { input.source = { provider: "youtube", videoId: "https://youtu.be/AAAAAAAAAAA", durationSeconds: 910 }; },
+    (input: typeof fixture) => { input.source = { provider: "youtube", videoId: "AAAAAAAAAAA", durationSeconds: 910, url: "x" }; },
+    (input: typeof fixture) => { delete input.source; },
+    (input: typeof fixture) => { input.sourceDurationSeconds = 910; delete input.source; },
+    (input: typeof fixture) => { input.version = 1; },
     (input: typeof fixture) => { input.players = ["Player A"]; },
     (input: typeof fixture) => { input.rallies = []; },
     (input: typeof fixture) => { input.unexpected = true; },
@@ -119,4 +124,11 @@ test("game numbers cannot move backward", () => {
   const input = structuredClone(fixture);
   input.rallies[0].game = 2;
   assert.throws(() => parseRallyManifest(input));
+});
+
+test("times format like the YouTube player, with hours only for long broadcasts", () => {
+  assert.equal(formatTime(0), "0:00");
+  assert.equal(formatTime(437.5), "7:17");
+  assert.equal(formatTime(3599), "59:59");
+  assert.equal(formatTime(5120.021), "1:25:20");
 });

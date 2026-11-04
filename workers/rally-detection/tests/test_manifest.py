@@ -12,7 +12,7 @@ from mintonix_rallies.manifest import build_manifest, playable_frames, validate_
 def manifest():
     return build_manifest(
         match_id="match", title="A vs B", players=["A", "B"], duration=10, fps=25,
-        rallies=[{"game": 1, "start_frame": 25, "end_frame": 49}],
+        youtube_video_id="9WVwZSzixh0", rallies=[{"game": 1, "start_frame": 25, "end_frame": 49}],
     )
 
 
@@ -23,6 +23,9 @@ class ManifestTests(unittest.TestCase):
             json.loads((worker / "src/mintonix_rallies/manifest.schema.json").read_text()),
             json.loads((worker.parents[1] / "contracts/rally-manifest.schema.json").read_text()),
         )
+
+    def test_manifest_names_the_youtube_source(self):
+        self.assertEqual(manifest()["source"], {"provider": "youtube", "videoId": "9WVwZSzixh0", "durationSeconds": 10})
 
     def test_inclusive_frames_become_half_open_original_seconds(self):
         rally = manifest()["rallies"][0]
@@ -41,11 +44,13 @@ class ManifestTests(unittest.TestCase):
     def test_fully_excluded_spans_produce_no_fake_rallies(self):
         with self.assertRaises(ValidationError):
             build_manifest(match_id="m", title="m", players=["A", "B"], fps=30, duration=10,
+                           youtube_video_id="9WVwZSzixh0",
                            rallies=[{"game": 1, "start_frame": 0, "end_frame": 29,
                                      "camera_switches": [{"start_frame": 0, "end_frame": 29}]}])
 
     def test_stable_ids_and_optional_score_order(self):
         args = dict(match_id="m", title="m", players=["top", "bottom"], fps=25, duration=5,
+                    youtube_video_id="9WVwZSzixh0",
                     rallies=[{"game": 2, "start_frame": 0, "end_frame": 99, "p1": 4, "p0": 8,
                               "camera_switches": [{"start_frame": 25, "end_frame": 49}]}])
         first = build_manifest(**args)
@@ -57,8 +62,17 @@ class ManifestTests(unittest.TestCase):
         cases = []
         for value in (math.nan, math.inf, 0, -1):
             bad = manifest()
-            bad["sourceDurationSeconds"] = value
+            bad["source"]["durationSeconds"] = value
             cases.append(bad)
+        for source in ({"provider": "vimeo", "videoId": "9WVwZSzixh0", "durationSeconds": 10},
+                       {"provider": "youtube", "videoId": "too-short", "durationSeconds": 10},
+                       {"provider": "youtube", "videoId": "9WVwZSzixh0"}):
+            bad = manifest()
+            bad["source"] = source
+            cases.append(bad)
+        bad = manifest()
+        bad["version"] = 1
+        cases.append(bad)
         for key, value in (("startSeconds", math.nan), ("endSeconds", math.inf),
                            ("endSeconds", 1), ("endSeconds", 11), ("game", 4)):
             bad = manifest()

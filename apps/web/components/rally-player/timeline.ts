@@ -1,4 +1,4 @@
-/** Original-video timestamps are canonical; gameplay time concatenates rallies. */
+/** Source-video timestamps are canonical; gameplay time concatenates rallies. */
 export type Rally = {
   id: string;
   game: number;
@@ -7,14 +7,23 @@ export type Rally = {
   scoreBefore?: readonly [number, number];
 };
 
+/** The published video every timestamp refers to. Playback embeds it; media is never re-hosted. */
+export type VideoSource = {
+  provider: "youtube";
+  videoId: string;
+  durationSeconds: number;
+};
+
 export type RallyManifest = {
-  version: 1;
+  version: 2;
   matchId: string;
   title: string;
   players: readonly [string, string];
-  sourceDurationSeconds: number;
+  source: VideoSource;
   rallies: readonly Rally[];
 };
+
+const youtubeVideoId = /^[A-Za-z0-9_-]{11}$/;
 
 export type TimelineRally = Rally & {
   gameplayStartSeconds: number;
@@ -42,15 +51,22 @@ function rejectUnknownKeys(value: Record<string, unknown>, allowed: string[]) {
 /** Enforces the JSON schema shape plus temporal invariants JSON Schema cannot express. */
 export function parseRallyManifest(input: unknown): RallyManifest {
   if (!isRecord(input)) throw new Error("Manifest must be an object");
-  rejectUnknownKeys(input, ["version", "matchId", "title", "players", "sourceDurationSeconds", "rallies"]);
-  if (input.version !== 1) throw new Error("Unsupported manifest version");
+  rejectUnknownKeys(input, ["version", "matchId", "title", "players", "source", "rallies"]);
+  if (input.version !== 2) throw new Error("Unsupported manifest version");
   if (!nonemptyString(input.matchId) || !nonemptyString(input.title)) {
     throw new Error("Manifest needs a match ID and title");
   }
   if (!Array.isArray(input.players) || input.players.length !== 2 || !input.players.every(nonemptyString)) {
     throw new Error("Manifest needs two player names");
   }
-  if (!finiteNumber(input.sourceDurationSeconds) || input.sourceDurationSeconds <= 0) {
+  if (!isRecord(input.source)) throw new Error("Manifest needs a source video");
+  rejectUnknownKeys(input.source, ["provider", "videoId", "durationSeconds"]);
+  if (input.source.provider !== "youtube") throw new Error("Unsupported video provider");
+  if (typeof input.source.videoId !== "string" || !youtubeVideoId.test(input.source.videoId)) {
+    throw new Error("Source needs an 11-character YouTube video ID");
+  }
+  const duration = input.source.durationSeconds;
+  if (!finiteNumber(duration) || duration <= 0) {
     throw new Error("Source duration must be a positive finite number");
   }
   if (!Array.isArray(input.rallies) || input.rallies.length === 0) {
@@ -70,7 +86,7 @@ export function parseRallyManifest(input: unknown): RallyManifest {
     }
     if (!finiteNumber(row.startSeconds) || !finiteNumber(row.endSeconds)
       || row.startSeconds < previousEnd || row.endSeconds <= row.startSeconds
-      || row.endSeconds > input.sourceDurationSeconds) {
+      || row.endSeconds > duration) {
       throw new Error("Rallies must be chronological, non-overlapping intervals within the source");
     }
     let scoreBefore: Rally["scoreBefore"];
@@ -87,9 +103,9 @@ export function parseRallyManifest(input: unknown): RallyManifest {
     previousGame = row.game;
   }
   return {
-    version: 1, matchId: input.matchId, title: input.title,
+    version: 2, matchId: input.matchId, title: input.title,
     players: [input.players[0], input.players[1]],
-    sourceDurationSeconds: input.sourceDurationSeconds, rallies,
+    source: { provider: "youtube", videoId: input.source.videoId, durationSeconds: duration }, rallies,
   };
 }
 
@@ -127,7 +143,10 @@ export function gameplayAtSourceTime(timeline: readonly TimelineRally[], positio
 
 export function formatTime(seconds: number): string {
   const total = Math.max(0, Math.floor(seconds));
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor(total / 60) % 60;
+  const rest = String(total % 60).padStart(2, "0");
+  return hours > 0 ? `${hours}:${String(minutes).padStart(2, "0")}:${rest}` : `${minutes}:${rest}`;
 }
 
 /** While playing, move through source gaps and stop at the last rally end. */

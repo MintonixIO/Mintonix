@@ -12,13 +12,13 @@ The original video's timestamps remain authoritative. Do not assume the broadcas
 2. **Rally detection on Vast.ai:** consumes a match and returns chronological rally intervals in the source video's time coordinates.
 3. **Backblaze B2:** stores the source media and published JSON manifest. Large files and model weights do not belong in Git.
 
-The website, local video viewer, manifest contract, and single-job batch detector are implemented. Local watch pages validate detector output and serve source video with byte-range seeking; the homepage links to `dl1s0` when local matches are configured. The detector combines automatic C++ court fitting with the research court/score pipeline; its output still requires broadcast evaluation and review. Worker provisioning, cloud storage, job orchestration, and server credentials are not configured yet. Persistent job state and reliable dispatch will be needed before a public processing flow is added; B2 is object storage, not a job database.
+The website, local video viewer, manifest contract, and single-job batch detector are implemented. Local watch pages validate detector output and embed the manifest's YouTube source; Mintonix never re-hosts broadcast video. The library lists configured local matches. The detector combines automatic C++ court fitting with the research court/score pipeline; its output still requires broadcast evaluation and review. Worker provisioning, cloud storage, job orchestration, and server credentials are not configured yet. Persistent job state and reliable dispatch will be needed before a public processing flow is added; B2 is object storage, not a job database.
 
 ## Playback model
 
 A rally is a half-open interval `[startSeconds, endSeconds)` in the original source. The gameplay timeline is the concatenation of these intervals. The visible player uses the original-video timeline with rally intervals highlighted. During playback, the default Skip gaps setting advances from each rally end to the next start and pauses after the last interval. Disable it to inspect the full source. Paused timeline scrubbing retains the chosen source timestamp. The concatenated gameplay timeline remains an internal mapping rather than a separate visible timeline.
 
-Use the original video plus a manifest first. This supports correcting boundaries without re-encoding footage. Seamless playback may later require a generated gameplay-only rendition if source seeking causes visible pauses.
+Use the published source video plus a manifest. This supports correcting boundaries without re-encoding footage, and the embed keeps playback on the rights holder's upload. A generated gameplay-only rendition is not an option for broadcast footage we do not own; seeking pauses inside the YouTube embed are an accepted cost.
 
 Score labels identify the score **before** the rally and are optional. Detecting rallies does not guarantee accurate score OCR. A manifest without score labels must remain playable and navigable by rally number.
 

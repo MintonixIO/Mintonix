@@ -1,84 +1,161 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { BroadcastCourt, courtPoint, courtScale } from "@/components/ui/court";
+import { useEffect, useRef, useState } from "react";
+import match from "@/public/hero/dl1s0/index.json";
+import type { PreparedRally, RallyMotion, RallyScene } from "./rally-scene";
 import styles from "./rally-demo.module.css";
 
-/** Illustrative rallies on a 0–100 broadcast timeline. Not detected data. */
-const rallies = [
-  { start: 4, end: 11, score: [0, 0] },
-  { start: 19, end: 27, score: [1, 0] },
-  { start: 35, end: 40, score: [1, 1] },
-  { start: 49, end: 60, score: [2, 1] },
-  { start: 68, end: 74, score: [2, 2] },
-  { start: 83, end: 94, score: [3, 2] },
-] as const;
+/*
+ * A miniature of the watch page driven by a real reconstructed match excerpt:
+ * scores and rally spans come from the detected manifest, and the 3D court
+ * replays each rally's reconstructed poses and shuttle flight.
+ * Regenerate with RESEARCH/scripts/export_hero.py.
+ */
+const MOTION_URL = (index: number) => `/hero/dl1s0/r${index}.json`;
+const { rallies, duration, fps } = match;
+const JUMP_MS = 700;
+const LOOP_MS = 1600;
 
-const TICK_MS = 40;
-const STEP = 0.14;
-const JUMP_PAUSE_TICKS = 10;
-const LOOP_PAUSE_TICKS = 45;
-
-type DemoState = { time: number; jump: { from: number; to: number; id: number } | null };
-
-const near = courtPoint(22, 24);
-const far = courtPoint(41, 110);
-const apex = courtPoint(31, 67, 36);
+const percent = (seconds: number) => `${(seconds / duration) * 100}%`;
 
 export function RallyDemo() {
-  const [{ time, jump }, setState] = useState<DemoState>({ time: rallies[3].start + 4, jump: null });
-  const index = rallies.findIndex((rally) => time >= rally.start && time < rally.end);
-  const current = rallies[Math.max(index, 0)];
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const playheadRef = useRef<HTMLSpanElement>(null);
+  const resetRef = useRef<() => void>(() => {});
+  const [current, setCurrent] = useState(0);
+  const [jump, setJump] = useState<{ from: number; to: number; id: number } | null>(null);
+  const [touched, setTouched] = useState(false);
+  const rally = rallies[current];
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let hold = 0;
-    const timer = window.setInterval(() => {
-      if (hold > 0) { hold -= 1; return; }
-      setState((state) => {
-        const at = rallies.findIndex((rally) => state.time >= rally.start && state.time < rally.end);
-        if (at === -1) return { time: rallies[0].start, jump: null };
-        const next = state.time + STEP;
-        if (next < rallies[at].end) return { ...state, time: next };
-        const following = rallies[at + 1];
-        hold = following ? JUMP_PAUSE_TICKS : LOOP_PAUSE_TICKS;
-        if (!following) return { time: rallies[0].start, jump: null };
-        return { time: following.start, jump: { from: rallies[at].end, to: following.start, id: at } };
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    let disposed = false;
+    let scene: RallyScene | null = null;
+    let raf = 0;
+    let onScreen = true;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const loaded = new Map<number, Promise<PreparedRally>>();
+    const ready = new Map<number, PreparedRally>();
+    const state = { index: 0, frame: 0, holdUntil: 0, last: 0 };
+
+    let prepare: ((motion: RallyMotion, frames: number) => PreparedRally) | null = null;
+    const load = (index: number) => {
+      if (!loaded.has(index)) {
+        loaded.set(index, fetch(MOTION_URL(index)).then((r) => r.json() as Promise<RallyMotion>).then((motion) => {
+          const prepared = prepare!(motion, rallies[index].frames);
+          ready.set(index, prepared);
+          return prepared;
+        }));
+      }
+      return loaded.get(index)!;
+    };
+
+    const placePlayhead = () => {
+      const seconds = rallies[state.index].start + state.frame / fps;
+      if (playheadRef.current) playheadRef.current.style.left = percent(Math.min(seconds, rallies[state.index].end));
+    };
+
+    const tick = (now: number) => {
+      raf = 0;
+      if (disposed || !scene) return;
+      const dt = state.last ? Math.min(now - state.last, 100) : 0;
+      state.last = now;
+      const prepared = ready.get(state.index) ?? null;
+      if (!reduced && prepared && now >= state.holdUntil) {
+        state.frame += (dt / 1000) * fps;
+        if (state.frame >= prepared.frames) {
+          // Rally over: hop the dead time to the next rally, as the watch page does.
+          const from = state.index;
+          const to = (from + 1) % rallies.length;
+          state.index = to;
+          state.frame = 0;
+          state.holdUntil = now + (to === 0 ? LOOP_MS : JUMP_MS);
+          setCurrent(to);
+          setJump(to === 0 ? null : { from: rallies[from].end, to: rallies[to].start, id: from });
+          load(to);
+          load((to + 1) % rallies.length);
+        }
+      }
+      placePlayhead();
+      const moving = scene.update(ready.get(state.index) ?? null, state.frame);
+      if (onScreen && (!reduced || moving)) raf = requestAnimationFrame(tick);
+    };
+    const start = () => { if (!raf && !disposed) { state.last = 0; raf = requestAnimationFrame(tick); } };
+
+    (async () => {
+      const { RallyScene: Scene, prepareRally } = await import("./rally-scene");
+      if (disposed) return;
+      prepare = prepareRally;
+      const style = getComputedStyle(canvas);
+      const color = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback;
+      scene = new Scene(canvas, {
+        a: color("--player-a", "#3693ff"),
+        b: color("--player-b", "#8b9cff"),
+        court: color("--ink-200", "#969aa5"),
+        shuttle: color("--text-strong", "#f3f4f6"),
       });
-    }, TICK_MS);
-    return () => window.clearInterval(timer);
+      scene.onInteract = () => { setTouched(true); start(); };
+      resetRef.current = () => { scene?.resetView(); setTouched(false); start(); };
+      scene.resize(canvas.clientWidth, canvas.clientHeight);
+      if (reduced) {
+        // A still frame from the middle of the first rally; dragging still works.
+        state.frame = Math.floor(rallies[0].frames / 2);
+      }
+      await load(0);
+      load(1);
+      start();
+    })();
+
+    const resize = new ResizeObserver(() => { scene?.resize(canvas.clientWidth, canvas.clientHeight); start(); });
+    resize.observe(canvas);
+    const visible = new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; if (onScreen) start(); });
+    visible.observe(canvas);
+    // Reduced motion: frames are only drawn while the view is being dragged.
+    const wake = () => start();
+    canvas.addEventListener("pointermove", wake);
+
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(raf);
+      resize.disconnect();
+      visible.disconnect();
+      canvas.removeEventListener("pointermove", wake);
+      scene?.dispose();
+    };
   }, []);
 
   return (
-    <figure className={styles.demo} aria-label="Illustration of the rally viewer: playback jumps from rally to rally, skipping the dead time between them, while the score list follows along">
-      <div className={styles.stage} aria-hidden="true">
+    <figure className={styles.demo} aria-label="Preview of the rally viewer: a 3D reconstruction of each rally from a recorded match excerpt plays in turn, skipping the dead time between rallies, while the real score list and rally timeline follow along. Drag the court to rotate it.">
+      <div className={styles.stage}>
         <div className={styles.video}>
-          <BroadcastCourt className={styles.court}>
-            <path className={styles.shuttle} d={`M${near[0]} ${near[1] - 10}Q${apex[0]} ${apex[1]} ${far[0]} ${far[1] - 6}`} />
-            <circle className={styles.playerA} cx={near[0]} cy={near[1]} r={7 * courtScale(24)} />
-            <circle className={styles.playerB} cx={far[0]} cy={far[1]} r={7 * courtScale(110)} />
-          </BroadcastCourt>
-          <span className={styles.tag}>Illustration</span>
-          <span className={styles.chip}>
-            <span className={styles.chipRally}>Rally {Math.max(index, 0) + 1}</span>
-            <span className={styles.chipScore}><b className={styles.scoreA}>{current.score[0]}</b><i>–</i><b className={styles.scoreB}>{current.score[1]}</b></span>
+          <canvas ref={canvasRef} className={styles.canvas} aria-label="3D court, drag to rotate" />
+          <span className={styles.tag}>
+            3D preview
+            {touched
+              ? <button type="button" className={styles.reset} onClick={() => resetRef.current()}>Reset view</button>
+              : <span className={styles.hint}>Drag to rotate</span>}
+          </span>
+          <span className={styles.chip} aria-live="polite">
+            <span className={styles.chipRally}>Rally {current + 1}</span>
+            <span className={styles.chipScore}><b className={styles.scoreA}>{rally.score[0]}</b><i>–</i><b className={styles.scoreB}>{rally.score[1]}</b></span>
           </span>
         </div>
 
-        <ol className={styles.list}>
-          {rallies.map((rally, rallyIndex) => (
-            <li key={rally.start} data-selected={rallyIndex === index || undefined}>
-              <span className={styles.rowNumber}>{rallyIndex + 1}</span>
-              <span className={styles.rowScore}><span>{rally.score[0]}</span><i>–</i><span>{rally.score[1]}</span></span>
+        <ol className={styles.list} aria-label="Rallies by score before each rally">
+          {rallies.map((item, index) => (
+            <li key={item.start} data-selected={index === current || undefined}>
+              <span className={styles.rowNumber}>{index + 1}</span>
+              <span className={styles.rowScore}><span>{item.score[0]}</span><i>–</i><span>{item.score[1]}</span></span>
             </li>
           ))}
         </ol>
 
-        <div className={styles.compaction}>
+        <div className={styles.compaction} aria-hidden="true">
           <div className={styles.timeline}>
-            {rallies.map((rally, rallyIndex) => <i key={rally.start} data-active={rallyIndex === index || undefined} style={{ left: `${rally.start}%`, width: `${rally.end - rally.start}%` }} />)}
-            {jump && <span key={jump.id} className={styles.jumpArc} style={{ left: `${jump.from}%`, width: `${jump.to - jump.from}%` }} />}
-            <span className={styles.playhead} style={{ left: `${time}%` }} />
+            {rallies.map((item, index) => <i key={item.start} data-active={index === current || undefined} style={{ left: percent(item.start), width: percent(item.end - item.start) }} />)}
+            {jump && <span key={jump.id} className={styles.jumpArc} style={{ left: percent(jump.from), width: percent(jump.to - jump.from) }} />}
+            <span ref={playheadRef} className={styles.playhead} style={{ left: percent(rallies[0].start) }} />
           </div>
         </div>
       </div>

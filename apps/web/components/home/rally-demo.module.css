@@ -3,12 +3,14 @@
 .stage { display: grid; grid-template-columns: minmax(0, 1fr) 116px; gap: 10px; }
 
 .video { position: relative; overflow: hidden; aspect-ratio: 16 / 10; border-radius: var(--radius-md); background: radial-gradient(120% 90% at 50% 100%, var(--ink-750), var(--bg-sunken) 70%); }
-.court { position: absolute; inset: 4% 0 2%; width: 100%; height: 94%; color: var(--ink-300); }
-.shuttle { fill: none; stroke: var(--ink-200); stroke-width: 1.2; stroke-dasharray: 2 4; stroke-linecap: round; }
-.playerA { fill: var(--player-a); filter: drop-shadow(0 0 6px rgba(54, 147, 255, .6)); }
-.playerB { fill: var(--player-b); filter: drop-shadow(0 0 6px rgba(139, 156, 255, .55)); }
-.tag { position: absolute; top: 8px; right: 10px; color: var(--text-faint); font-size: var(--text-2xs); }
-.chip { position: absolute; left: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 10px; padding: 5px 10px; border: 1px solid var(--live-ring); border-radius: var(--radius-sm); background: var(--frost-bg-scrolled); box-shadow: var(--ring-live); }
+/* The 3D court fills the video frame; dragging rotates it (cursor shows it can be grabbed). */
+.canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+.canvas:active { cursor: grabbing; }
+.tag { position: absolute; top: 8px; right: 10px; display: inline-flex; align-items: center; gap: 8px; color: var(--text-faint); font-size: var(--text-2xs); pointer-events: none; }
+.hint, .reset { padding-left: 8px; border-left: 1px solid var(--frost-border-strong); color: var(--text-muted); }
+.reset { padding: 0 0 0 8px; border-top: 0; border-right: 0; border-bottom: 0; background: none; font: inherit; cursor: pointer; pointer-events: auto; }
+.reset:hover, .reset:focus-visible { color: var(--text-strong); }
+.chip { position: absolute; pointer-events: none; left: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 10px; padding: 5px 10px; border: 1px solid var(--live-ring); border-radius: var(--radius-sm); background: var(--frost-bg-scrolled); box-shadow: var(--ring-live); }
 .chipRally { color: var(--live); font-size: var(--text-xs); }
 .chipScore { display: inline-flex; align-items: center; gap: 6px; padding-left: 10px; border-left: 1px solid var(--frost-border-strong); font: var(--fw-medium) var(--text-base) var(--font-mono); font-variant-numeric: tabular-nums; }
 .chipScore b { font-weight: inherit; }
@@ -17,7 +19,7 @@
 .scoreB { color: var(--player-b); }
 
 .list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 6px; list-style: none; border-radius: var(--radius-md); background: var(--bg-base); }
-.list li { display: flex; flex: 1; align-items: center; justify-content: space-between; gap: 8px; padding: 0 9px; border: 1px solid transparent; border-radius: var(--radius-sm); color: var(--text-muted); transition: background var(--dur-base), border-color var(--dur-base), color var(--dur-base); }
+.list li { display: flex; flex: 1; min-height: 0; align-items: center; justify-content: space-between; gap: 8px; padding: 0 9px; border: 1px solid transparent; border-radius: var(--radius-sm); color: var(--text-muted); transition: background var(--dur-base), border-color var(--dur-base), color var(--dur-base); }
 .list li[data-selected] { border-color: var(--live-ring); background: var(--live-soft); color: var(--text-strong); }
 .rowNumber { font: var(--text-2xs) var(--font-mono); }
 .list li[data-selected] .rowNumber { color: var(--live); }
