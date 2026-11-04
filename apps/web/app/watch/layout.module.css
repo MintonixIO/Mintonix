@@ -1,0 +1,2 @@
+.shell { width: calc(100% - 48px); margin-inline: auto; }
+@media (max-width: 640px) { .shell { width: calc(100% - 20px); } }

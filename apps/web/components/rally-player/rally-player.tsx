@@ -1,21 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { formatTime, normalizeMediaTime, rallyPlaybackPosition, type RallyManifest } from "./timeline";
 import { describeYouTubeError, loadYouTubeApi, PlayerState, type YouTubePlayer } from "./youtube";
 import styles from "./rally-player.module.css";
 
-type IconName = "play" | "pause" | "previous" | "next" | "expand";
+type IconName = "previous" | "next" | "expand" | "collapse" | "list" | "close";
 const iconPaths: Record<IconName, string> = {
-  play: "M8 5l11 7-11 7V5Z",
-  pause: "M8 5v14M16 5v14",
   previous: "M5 5v14M19 5 8 12l11 7V5Z",
   next: "M19 5v14M5 5l11 7-11 7V5Z",
   expand: "M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5",
+  collapse: "M3 8h5V3m8 0v5h5M8 21v-5H3m18 0h-5v5",
+  list: "M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01",
+  close: "m6 6 12 12M6 18 18 6",
 };
 
 function Icon({ name }: { name: IconName }) {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill={name === "play" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={iconPaths[name]} /></svg>;
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={iconPaths[name]} /></svg>;
 }
 
 const SYNC_INTERVAL_MS = 100;
@@ -26,13 +27,18 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
   const mountRef = useRef<HTMLDivElement>(null);
   const youtubeRef = useRef<YouTubePlayer | null>(null);
   const lastSeekRef = useRef(0);
-  const playerRef = useRef<HTMLDivElement>(null);
+  const viewerRef = useRef<HTMLElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelId = useId();
   const listRef = useRef<HTMLDivElement>(null);
   const rallies = manifest.rallies;
   const [sourceTime, setSourceTime] = useState(rallies[0].startSeconds);
   const [isPlaying, setIsPlaying] = useState(false);
   const [ready, setReady] = useState(false);
   const [skipGaps, setSkipGaps] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [mediaError, setMediaError] = useState("");
   const selectedIndex = rallies.findIndex((rally, index) => sourceTime >= rally.startSeconds && (sourceTime < rally.endSeconds || (index === rallies.length - 1 && sourceTime === rally.endSeconds)));
   const selected = rallies[selectedIndex];
@@ -40,7 +46,6 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
   const previousTarget = selectedIndex >= 0 ? selectedIndex - 1 : (nextIndex === -1 ? rallies.length : nextIndex) - 1;
   const nextTarget = selectedIndex >= 0 ? selectedIndex + 1 : nextIndex;
   const { videoId, durationSeconds: duration } = manifest.source;
-  const progress = Math.min(100, Math.max(0, sourceTime / duration * 100));
   const firstStart = rallies[0].startSeconds;
 
   // Keep the current rally visible in the list without scrolling the page.
@@ -52,23 +57,47 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
     if (top < list.scrollTop || top + row.offsetHeight > list.scrollTop + list.clientHeight) {
       list.scrollTo({ top: top - list.clientHeight / 3, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
     }
-  }, [selectedIndex]);
+  }, [selectedIndex, panelOpen, isFullscreen]);
+
+  useEffect(() => {
+    const syncFullscreen = () => {
+      setIsFullscreen(document.fullscreenElement === viewerRef.current);
+      setPanelOpen(false);
+    };
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreen);
+  }, []);
+
+  useEffect(() => {
+    if (!isFullscreen || !panelOpen) return;
+    panelRef.current?.querySelector<HTMLButtonElement>("[data-close]")?.focus();
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setPanelOpen(false);
+      triggerRef.current?.focus();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isFullscreen, panelOpen]);
 
   // The match plays from its published YouTube upload; nothing is re-hosted.
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
     let cancelled = false;
+    let instance: YouTubePlayer | null = null;
     const target = document.createElement("div");
     mount.replaceChildren(target);
     loadYouTubeApi().then((YT) => {
       if (cancelled) return;
-      youtubeRef.current = new YT.Player(target, {
+      setReady(false);
+      setIsPlaying(false);
+      instance = new YT.Player(target, {
         videoId,
         host: "https://www.youtube-nocookie.com",
         width: "100%",
         height: "100%",
-        playerVars: { playsinline: 1, rel: 0, start: Math.floor(firstStart), origin: window.location.origin },
+        playerVars: { playsinline: 1, rel: 0, fs: 0, start: Math.floor(firstStart), origin: window.location.origin },
         events: {
           onReady: ({ target: player }) => {
             if (cancelled) return;
@@ -77,17 +106,20 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
               setMediaError("The YouTube video’s length doesn’t match this match’s rally timeline.");
               return;
             }
+            // Refresh can preserve `ready` while replacing the player. Only expose
+            // this instance to polling and controls once its API is available.
+            youtubeRef.current = player;
             setReady(true);
           },
-          onStateChange: ({ data }) => setIsPlaying(data === PlayerState.playing || data === PlayerState.buffering),
-          onError: ({ data }) => { setIsPlaying(false); setMediaError(describeYouTubeError(data)); },
+          onStateChange: ({ data }) => { if (!cancelled) setIsPlaying(data === PlayerState.playing || data === PlayerState.buffering); },
+          onError: ({ data }) => { if (!cancelled) { setIsPlaying(false); setMediaError(describeYouTubeError(data)); } },
         },
       });
     }, (error: Error) => { if (!cancelled) setMediaError(error.message); });
     return () => {
       cancelled = true;
-      youtubeRef.current?.destroy();
       youtubeRef.current = null;
+      instance?.destroy();
       mount.replaceChildren();
     };
   }, [videoId, duration, firstStart]);
@@ -130,22 +162,18 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
     if (rally) seek(rally.startSeconds);
   }
 
-  function togglePlayback() {
-    const player = youtubeRef.current;
-    if (!player || !ready) return;
-    const state = player.getPlayerState();
-    if (state === PlayerState.playing || state === PlayerState.buffering) {
-      player.pauseVideo();
-      return;
+  function closePanel() {
+    setPanelOpen(false);
+    triggerRef.current?.focus();
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement === viewerRef.current) await document.exitFullscreen();
+      else await viewerRef.current?.requestFullscreen();
+    } catch {
+      setMediaError("Fullscreen is unavailable in this browser.");
     }
-    if (skipGaps) {
-      const target = rallyPlaybackPosition(rallies, player.getCurrentTime());
-      seek(target.ended ? rallies[0].startSeconds : target.time);
-    } else if (state === PlayerState.ended) {
-      seek(0);
-    }
-    player.playVideo();
-    setMediaError("");
   }
 
   const games = rallies.reduce<{ game: number; indices: number[] }[]>((groups, rally, index) => {
@@ -156,55 +184,36 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
   }, []);
 
   return (
-    <section id="viewer" className={styles.viewer} aria-label="Match viewer" data-playing={isPlaying || undefined}>
+    <section ref={viewerRef} id="viewer" className={styles.viewer} aria-label="Match viewer" data-playing={isPlaying || undefined}>
       <div className={styles.workspace}>
-        <div ref={playerRef} className={styles.playerColumn}>
-          <div className={styles.poster}>
-            <div ref={mountRef} className={styles.embed} title={manifest.title} />
-          </div>
+        <div className={styles.stage}>
+          <div ref={mountRef} className={styles.embed} title={manifest.title} />
           {mediaError && <p className={styles.mediaError} role="alert">{mediaError}</p>}
 
-          <div className={styles.controls}>
-            <div className={styles.timeline}>
-              <div className={styles.segments} aria-hidden="true">
-                {rallies.map((rally, index) => <span key={rally.id} className={index === selectedIndex ? styles.activeSegment : styles.segment} style={{ left: `${rally.startSeconds / duration * 100}%`, width: `${(rally.endSeconds - rally.startSeconds) / duration * 100}%` }} />)}
-                <span className={styles.playhead} style={{ left: `${progress}%` }} />
-              </div>
-              <input type="range" min={0} max={duration} step={0.01} value={sourceTime} disabled={!ready} onChange={(event) => seek(Number(event.target.value))} aria-label="Match video timeline" aria-valuetext={`${formatTime(sourceTime)} of ${formatTime(duration)}${selected ? `, rally ${selectedIndex + 1}` : ", between rallies"}`} />
-            </div>
-
-            <div className={styles.transport}>
-              <div className={styles.transportLeft}>
-                <button type="button" className={styles.playButton} disabled={!ready} aria-label={isPlaying ? "Pause" : "Play"} onClick={togglePlayback}><Icon name={isPlaying ? "pause" : "play"} /></button>
-                <button type="button" className={styles.iconButton} aria-label="Previous rally" title="Previous rally" disabled={!ready || !rallies[previousTarget]} onClick={() => selectRally(previousTarget)}><Icon name="previous" /></button>
-                <button type="button" className={styles.iconButton} aria-label="Next rally" title="Next rally" disabled={!ready || !rallies[nextTarget]} onClick={() => selectRally(nextTarget)}><Icon name="next" /></button>
-                <span className={styles.timeReadout}><span>{formatTime(sourceTime)}</span><span className={styles.timeDivider}>/</span>{formatTime(duration)}</span>
-                <span className={styles.scoreChip} aria-live="polite">
-                  {selected ? (
-                    <>
-                      <span className={styles.chipRally}>Rally {selectedIndex + 1}</span>
-                      {selected.scoreBefore && <span className={styles.chipScore}><b className={styles.scoreA}>{selected.scoreBefore[0]}</b><span aria-hidden="true">–</span><b className={styles.scoreB}>{selected.scoreBefore[1]}</b><span className={styles.visuallyHidden}> score before rally, game {selected.game}</span></span>}
-                    </>
-                  ) : <span className={styles.chipRally}>Between rallies</span>}
-                </span>
-              </div>
-              <div className={styles.transportRight}>
-                <label className={styles.gapToggle}><input type="checkbox" role="switch" checked={skipGaps} onChange={(event) => setSkipGaps(event.target.checked)} /><span className={styles.switch} aria-hidden="true" />Skip gaps</label>
-                <button type="button" className={styles.iconButton} disabled={!ready} aria-label="Fullscreen video" title="Fullscreen" onClick={() => { void playerRef.current?.requestFullscreen().catch(() => setMediaError("Fullscreen is unavailable in this browser.")); }}><Icon name="expand" /></button>
-              </div>
-            </div>
+          <div className={styles.rallyDock} role="group" aria-label="Rally navigation">
+            <button type="button" className={styles.iconButton} aria-label="Previous rally" title="Previous rally" disabled={!ready || !rallies[previousTarget]} onClick={() => selectRally(previousTarget)}><Icon name="previous" /></button>
+            <button ref={triggerRef} type="button" className={styles.ralliesButton} aria-expanded={panelOpen} aria-controls={panelId} aria-haspopup="dialog" onClick={() => setPanelOpen(!panelOpen)}>
+              <Icon name="list" /><span>Rallies</span><span className={styles.rallyPosition}>{selected ? selectedIndex + 1 : "–"}<span> / {rallies.length}</span></span>
+            </button>
+            <button type="button" className={styles.iconButton} aria-label="Next rally" title="Next rally" disabled={!ready || !rallies[nextTarget]} onClick={() => selectRally(nextTarget)}><Icon name="next" /></button>
+            <span className={styles.dockDivider} aria-hidden="true" />
+            <button type="button" className={styles.iconButton} aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"} title={isFullscreen ? "Exit fullscreen" : "Fullscreen with rally controls"} onClick={() => { void toggleFullscreen(); }}><Icon name={isFullscreen ? "collapse" : "expand"} /></button>
           </div>
-        </div>
 
-        <aside className={styles.rallyPanel} aria-labelledby="rallies-heading">
+        </div>
+        <aside ref={panelRef} id={panelId} className={styles.rallyPanel} hidden={isFullscreen && !panelOpen} role={isFullscreen ? "dialog" : undefined} aria-labelledby={`${panelId}-heading`}>
           <div className={styles.panelHeader}>
-            <h2 id="rallies-heading">Rallies <span className={styles.rallyCount}>{rallies.length}</span></h2>
-            <p>Score before each rally</p>
+            <div className={styles.panelTitle}>
+              <h2 id={`${panelId}-heading`}>Rallies <span className={styles.rallyCount}>{rallies.length}</span></h2>
+              {isFullscreen ? <button data-close type="button" className={styles.iconButton} aria-label="Close rally controls" onClick={closePanel}><Icon name="close" /></button> : <button type="button" className={styles.iconButton} aria-label="Enter fullscreen" title="Fullscreen with rally controls" onClick={() => { void toggleFullscreen(); }}><Icon name="expand" /></button>}
+            </div>
+            <label className={styles.gapToggle} title="Automatically skip the time between detected rallies"><span>Skip gaps</span><input type="checkbox" role="switch" checked={skipGaps} onChange={(event) => setSkipGaps(event.target.checked)} /><span className={styles.switch} aria-hidden="true" /></label>
+            <div className={styles.columnLabels} aria-hidden="true"><span>#</span><span>Score before</span><span>Start</span><span>Length</span></div>
           </div>
           <div ref={listRef} className={styles.listScroll}>
             {games.map(({ game, indices }) => (
-              <section key={game} aria-labelledby={`game-${game}`}>
-                <h3 id={`game-${game}`} className={styles.gameHeading}>Game {game}</h3>
+              <section key={game} aria-labelledby={`${panelId}-game-${game}`}>
+                <h3 id={`${panelId}-game-${game}`} className={styles.gameHeading}><span>Game {game}</span><span>{indices.length} {indices.length === 1 ? "rally" : "rallies"}</span></h3>
                 <ol className={styles.rallyList}>
                   {indices.map((index) => {
                     const rally = rallies[index];
@@ -212,8 +221,9 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
                     return (
                       <li key={rally.id}>
                         <button type="button" disabled={!ready} data-selected={isSelected || undefined} className={styles.rallyRow} aria-current={isSelected ? "true" : undefined} aria-label={`Rally ${index + 1}, game ${rally.game}, ${rally.scoreBefore ? `score ${rally.scoreBefore.join(" to ")}` : "score unknown"}, ${formatTime(rally.startSeconds)} in original video`} onClick={() => selectRally(index)}>
-                          <span className={styles.rallyNumber}>{isSelected && isPlaying ? <span className={styles.equalizer} aria-hidden="true"><i /><i /><i /></span> : index + 1}</span>
+                          <span className={styles.rallyNumber}>{isSelected && isPlaying ? <span className={styles.equalizer} aria-hidden="true"><i /><i /><i /></span> : String(index + 1).padStart(2, "0")}</span>
                           <span className={styles.rallyScore}>{rally.scoreBefore ? <><span>{rally.scoreBefore[0]}</span><span className={styles.scoreDash}>–</span><span>{rally.scoreBefore[1]}</span></> : <span className={styles.scoreDash}>No score</span>}</span>
+                          <span className={styles.rallyStart}>{formatTime(rally.startSeconds)}</span>
                           <span className={styles.rallyDuration}>{Math.round(rally.endSeconds - rally.startSeconds)}s</span>
                         </button>
                       </li>
@@ -225,7 +235,6 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
           </div>
         </aside>
       </div>
-
       <p className={styles.previewNotice}>Rally boundaries and scores were detected automatically and haven’t been reviewed by hand.</p>
     </section>
   );
