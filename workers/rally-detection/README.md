@@ -15,16 +15,18 @@ From this directory:
 ```sh
 python3.10 -m venv .venv
 . .venv/bin/activate
-pip install '.[ocr]'
+pip install '.[ocr,shuttle]'
 cmake -S native/court-detection -B build/native -DCMAKE_BUILD_TYPE=Release
 cmake --build build/native --parallel 2
 export MINTONIX_COURT_DETECTOR="$PWD/build/native/mintonix-court-detect"
+export MINTONIX_TRACKNET_WEIGHTS=/path/to/TrackNetV5.pt
 mintonix-rallies --job /data/match/job.json --output /data/match/manifest.json
 ```
 
 The executable can also be installed on PATH as `mintonix-court-detect`.
 It is rebuilt from source; archived binaries tied to older OpenCV versions are
-not required. Pose, TrackNet, InpaintNet, and MotionBERT weights are not needed.
+not required. TrackNetV5 weights (`RESEARCH/models/TrackNetV5.pt`) are
+required and stay outside Git; pose, InpaintNet, and MotionBERT are not needed.
 PaddleOCR downloads OCR models on first use; retain its cache outside Git.
 
 Job JSON (also see `example.job.json`):
@@ -52,12 +54,14 @@ even when output score labels are disabled.
 
 ```sh
 docker build -t mintonix-rallies .
-docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v /absolute/job-directory:/data mintonix-rallies --job /data/job.json --output /data/manifest.json
+docker run --rm --gpus all --user "$(id -u):$(id -g)" -e HOME=/tmp -v /absolute/job-directory:/data \
+  -v /absolute/models:/models:ro -e MINTONIX_TRACKNET_WEIGHTS=/models/TrackNetV5.pt \
+  mintonix-rallies --job /data/job.json --output /data/manifest.json
 ```
 
 The image builds the native detector and installs Python/OCR dependencies.
-Both court fitting and OCR run on CPU, including on Vast GPU hosts; CUDA is not
-required. Default container UID is 10001; mounted output/cache directories must
+Court fitting and OCR run on CPU. Shuttle tracking uses CUDA when the host
+has it (drop `--gpus all` to run it on CPU, much slower). Default container UID is 10001; mounted output/cache directories must
 be writable. For repeat runs, mount a persistent cache and set
 `PADDLE_PDX_CACHE_HOME` to that directory.
 
@@ -108,8 +112,13 @@ camera and the research scoreboard crop at the top left. A score that is not
 between agreeing neighbouring scores is treated as an OCR misread and dropped.
 A rally that the main camera never shows produces no playback interval. Court visibility
 alone cannot prove shuttle play or identify replays using the original camera;
-some walking/dead time or replays may remain. On dl1, 10 of 120 intervals
-were main-camera dead time (court mopping, waiting to serve). Treat output as candidates for
+some walking/dead time or replays may remain. TrackNetV5 then drops each
+interval in which the shuttle never flies continuously for 0.5 s (court
+mopping, waiting to serve). On dl1 this removed 8 of 10 such intervals and
+no real rally (the lowest real rally flew 0.80 s); the 2 left were a challenge
+break and a shuttle tossed back to the server. Shuttle tracking stops at the
+first 0.5 s of flight per interval and took about 12 minutes on Apple MPS for
+an 85-minute match. Treat output as candidates for
 review. Evaluate boundary accuracy, missed rallies, replay inclusion, OCR, and
 processing time on reviewed full broadcasts before publishing results.
 

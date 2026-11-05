@@ -78,14 +78,19 @@ coach features with the overlapping and complementary player features.
 
 ## Homepage emphasis
 
-The homepage explains individual features directly, using diagrams and one-line
-captions. Give rally search, 3D shuttle replay, and shot-pattern analysis the
-largest areas. Use smaller tiles for personalized highlights, shot comparisons,
-opponent tendencies, serve-and-return analysis, saved collections, practice goals,
-and rally sharing. Label the planned feature showcase clearly.
+The homepage explains individual features directly, with a clear size hierarchy
+and selective illustration, following the restrained product presentation on
+Supabase's homepage. The largest card is 3D shuttle reconstruction and contains
+the showcase's only court illustration. Rally search and shot patterns sit
+beside it as smaller primary cards, with concise text examples.
 
-Keep the current rally viewer prominent with the real sample match and smaller
-tiles for rally detection, replay filtering, score navigation, and the timeline.
+Use compact text cards for personalized highlights, shot comparisons, opponent
+scouting, and training insights. Present serve-and-return analysis, saved
+collections, and rally sharing as a quiet supporting row. Do not draw a separate
+diagram for every feature. Label the planned feature showcase clearly.
+
+Keep the current rally viewer prominent with the real sample match and compact
+text for rally detection, replay filtering, score navigation, and the timeline.
 The homepage feature tiles are explanations, not links to blog posts or working
 controls for unimplemented features.
 

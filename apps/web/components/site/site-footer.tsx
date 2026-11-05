@@ -22,7 +22,7 @@ export function SiteFooter() {
           <Link href="/library">Library</Link>
         </nav>
         <nav className={styles.footerLinks} aria-labelledby="footer-notes">
-          <h2 id="footer-notes">Behind the game</h2>
+          <h2 id="footer-notes">Deep dives</h2>
           <Link href="/blog">Blog</Link>
           <Link href="/blog/entertainment">Entertainment</Link>
           <Link href="/blog/technical">Technical</Link>
