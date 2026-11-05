@@ -24,8 +24,8 @@ export function SiteFooter() {
         <nav className={styles.footerLinks} aria-labelledby="footer-notes">
           <h2 id="footer-notes">Behind the game</h2>
           <Link href="/blog">Blog</Link>
-          <Link href="/blog/original-video-timestamps">Playback design</Link>
-          <Link href="/blog/finding-live-play">Detection notes</Link>
+          <Link href="/blog/entertainment">Entertainment</Link>
+          <Link href="/blog/technical">Technical</Link>
         </nav>
       </div>
       <div className={styles.footerBottom}>

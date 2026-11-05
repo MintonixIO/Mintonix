@@ -1,5 +1,6 @@
-# Build from this worker directory. The ported research detector runs on CPU;
-# it can run on Vast CPU or GPU hosts without requiring a CUDA toolkit.
+# Build from this worker directory. Court fitting and OCR run on CPU; shuttle
+# tracking uses a GPU when the host provides one. Mount the TrackNetV5 weights
+# and set MINTONIX_TRACKNET_WEIGHTS; weights are not baked into the image.
 FROM python:3.10.19-slim-bookworm AS native-builder
 RUN apt-get update && apt-get install -y --no-install-recommends cmake g++ libopencv-dev \
     && rm -rf /var/lib/apt/lists/*
@@ -24,7 +25,7 @@ WORKDIR /opt/mintonix
 COPY --from=native-builder /build/output/mintonix-court-detect /usr/local/bin/
 COPY pyproject.toml ./
 COPY src ./src
-RUN pip install '.[ocr]'
+RUN pip install '.[ocr,shuttle]'
 
 USER worker
 WORKDIR /data

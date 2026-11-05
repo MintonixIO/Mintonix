@@ -19,7 +19,7 @@ const LOOP_MS = 1600;
 const percent = (seconds: number) => `${(seconds / duration) * 100}%`;
 
 /** Score labels that fit on a rail this wide: the current rally's always, then any that won't overlap. */
-const LABEL_PX = 42;
+const LABEL_PX = 48;
 function labelled(current: number, width: number) {
   const gap = (LABEL_PX / Math.max(width, 1)) * duration;
   const shown = [current];

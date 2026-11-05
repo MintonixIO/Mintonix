@@ -69,8 +69,11 @@ the caller, outside the job and manifest.
 - Exit 0 means a complete, validated manifest was atomically written. Exit 1
   means input, court fitting, decoding, OCR, or validation failed. Invalid CLI
   arguments return 2.
-- Court fitting tries five deterministic positions, with a 120-second timeout
-  per attempt. Unreliable fits fail; no manual-coordinate fallback exists.
+- Court fitting tries up to nine deterministic positions, with a 120-second
+  timeout per attempt. Each fit is scored by the share of 30 frames sampled
+  across the video that show its court lines; fits from replays or other
+  angles score low. It stops at 30% support and fails below 15%. No
+  manual-coordinate fallback exists.
   The caller should impose an overall deadline based on measured throughput.
 - Retrying identical inputs/settings atomically replaces the destination.
   IDs derive from game and source frame boundaries. Concurrent jobs need
@@ -96,14 +99,27 @@ optional score; IDs distinguish them without changing the v2 contract.
 Entirely excluded candidates are dropped. Zero playable intervals fail
 validation instead of generating fake data.
 
-Inputs must use nonnegative constant-frame-rate timestamps. Missing pictures
-retain their source-time holes; variable-rate/off-grid timestamps fail instead
-of shifting boundaries. Color/line votes assume a green court, a fixed main
-camera, and the research scoreboard crop at the top left. Court visibility
+Each decoded picture is placed on the nominal frame grid by its own
+presentation timestamp, so variable-rate and off-grid uploads keep the source
+timeline; missing pictures stay holes, and OCR seeks by time. Timestamps must
+be nonnegative. The court colour is learned from the fitted frame, so any
+surface colour works with white lines. Detection still assumes a fixed main
+camera and the research scoreboard crop at the top left. A score that is not
+between agreeing neighbouring scores is treated as an OCR misread and dropped.
+A rally that the main camera never shows produces no playback interval. Court visibility
 alone cannot prove shuttle play or identify replays using the original camera;
-some walking/dead time or replays may remain. Treat output as candidates for
+some walking/dead time or replays may remain. On dl1, 10 of 120 intervals
+were main-camera dead time (court mopping, waiting to serve). Treat output as candidates for
 review. Evaluate boundary accuracy, missed rallies, replay inclusion, OCR, and
 processing time on reviewed full broadcasts before publishing results.
+
+## Evaluation and visual review
+
+`scripts/evaluate.py` runs detection with court fit, court scores and OCR
+cached, and scores intervals against reviewed truth. `scripts/review_sheets.py`
+renders one image per interval and per gap (filmstrip, boundary context,
+scoreboard crop) for visual review by a person or an image-capable agent.
+Truth must be visually verified: promoted detector output is not independent.
 
 ## Verification
 

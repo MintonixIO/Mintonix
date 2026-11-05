@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 
 import cv2
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +44,40 @@ def read_detected_corners(path):
     return validate_corners([top_left, top_right, bottom_right, bottom_left])
 
 
-def detect_court(video, *, binary=None):
+# Where to try the native fit, as fractions of the video. Earlier entries are
+# the archived wrapper's positions; later ones only run if those all fail.
+FIT_POSITIONS = (0.40, 0.25, 0.60, 0.33, 0.75, 0.50, 0.15, 0.85, 0.10)
+SUPPORT_SAMPLES = 30
+# The main camera is the most common view in a broadcast. A fit taken from a
+# replay, close-up, or other angle matches few sampled frames.
+SUPPORT_ACCEPT = 0.30
+SUPPORT_MIN = 0.15
+
+
+def _sample_frames(cap, total, count=SUPPORT_SAMPLES, size=(384, 216)):
+    frames = []
+    for k in range(count):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, int(total * (0.05 + 0.9 * k / max(1, count - 1))))
+        ok, image = cap.read()
+        if ok:
+            frames.append(cv2.resize(image, size))
+    return frames
+
+
+def fit_support(points, court_lab, frames, image_size, threshold=0.50):
+    """Fraction of sampled frames in which the fitted court lines are visible."""
     from .research import court_frame_score, court_probe_points
+
+    probes = court_probe_points(points, image_size)
+    if len(probes) < 8 or not frames:
+        return 0.0
+    scaled = probes * np.float32([frames[0].shape[1] / image_size[0], frames[0].shape[0] / image_size[1]])
+    return float(np.mean([court_frame_score(f, scaled, court_lab) >= threshold for f in frames]))
+
+
+def detect_court(video, *, binary=None):
+    """Return ``(corners, court_lab)`` for the main camera, or raise."""
+    from .research import court_color, court_frame_score, court_probe_points
 
     executable = binary or os.environ.get("MINTONIX_COURT_DETECTOR") or shutil.which("mintonix-court-detect")
     if not executable:
@@ -57,11 +90,12 @@ def detect_court(video, *, binary=None):
         width, height = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         if total <= 0:
             raise ValueError("Cannot read video frame count for court detection")
+        samples = None
+        best = None
         with tempfile.TemporaryDirectory(prefix="mintonix-court-") as directory:
-            # Same candidate positions as the archived Python wrapper. Unique
-            # files prevent a failed retry from reusing an earlier attempt's CSV.
-            for attempt, fraction in enumerate((0.40, 0.25, 0.60, 0.33, 0.75)):
+            for attempt, fraction in enumerate(FIT_POSITIONS):
                 frame = min(total - 1, int(total * fraction))
+                # Unique files prevent a failed retry from reusing an earlier CSV.
                 output = Path(directory) / f"court-{attempt}.csv"
                 env = dict(os.environ, COURT_DETECT_FRAME=str(frame), COURT_DETECT_MAX_WIDTH="960")
                 try:
@@ -78,13 +112,23 @@ def detect_court(video, *, binary=None):
                     ok, image = cap.read()
                     if not ok:
                         continue
+                    court_lab = court_color(image, points)
                     probes = court_probe_points(points, (width, height))
-                    if len(probes) < 8 or court_frame_score(image, probes) < 0.50:
+                    if len(probes) < 8 or court_frame_score(image, probes, court_lab) < 0.50:
                         logger.info("Court fit lacks painted-line support at frame %s", frame)
                         continue
-                    return points
+                    if samples is None:
+                        samples = _sample_frames(cap, total)
+                    support = fit_support(points, court_lab, samples, (width, height))
+                    logger.info("Court fit at frame %s matches %.0f%% of sampled frames", frame, 100 * support)
+                    if best is None or support > best[0]:
+                        best = (support, points, court_lab)
+                    if support >= SUPPORT_ACCEPT:
+                        break
                 except (ValueError, KeyError, subprocess.TimeoutExpired) as exc:
                     logger.info("Court fit failed at frame %s: %s", frame, exc)
-        raise RuntimeError("No reliable court fit in five attempts")
+        if best is None or best[0] < SUPPORT_MIN:
+            raise RuntimeError(f"No reliable court fit in {len(FIT_POSITIONS)} attempts")
+        return best[1], best[2]
     finally:
         cap.release()

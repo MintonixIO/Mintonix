@@ -17,6 +17,8 @@ dependencies = [
 [project.optional-dependencies]
 # The research detector uses PaddleOCR on CPU, even on a Vast GPU instance.
 ocr = ["paddleocr==3.7.0", "paddlepaddle==3.2.0"]
+# TrackNetV5 shuttle tracking drops main-camera dead time. Uses CUDA or MPS when present.
+shuttle = ["torch==2.9.0"]
 
 [project.scripts]
 mintonix-rallies = "mintonix_rallies.worker:main"

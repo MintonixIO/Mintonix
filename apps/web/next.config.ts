@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   cacheComponents: true,
   partialPrefetching: true,
+  images: {
+    remotePatterns: [{ protocol: "https", hostname: "i.ytimg.com", pathname: "/vi/**/hqdefault.jpg", search: "" }],
+  },
   turbopack: {
     rules: {
       // Transform the Tailwind entry only; preserve native CSS Module exports.

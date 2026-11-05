@@ -36,14 +36,14 @@ def validate_manifest(manifest):
 
 
 def playable_frames(rally):
-    """Subtract all inclusive camera-switch ranges; yield half-open frames.
+    """Subtract inclusive camera-switch and no-play ranges; yield half-open frames.
 
     One research rally may become several playback intervals. The current
     contract has no nested segments, so each gets its own stable ID.
     """
     start, end = rally["start_frame"], rally["end_frame"] + 1
     switches = sorted((s["start_frame"], s["end_frame"] + 1)
-                      for s in rally.get("camera_switches", []))
+                      for s in rally.get("camera_switches", []) + rally.get("no_play", []))
     for left, right in switches:
         if right <= start or left >= end:
             continue

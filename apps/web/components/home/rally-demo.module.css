@@ -10,23 +10,23 @@
 
 /* Overlays never block the drag. */
 .note, .hint { position: absolute; pointer-events: none; }
-.note { right: 6%; top: 9%; color: var(--text-faint); font-size: var(--text-2xs); }
-.hint { right: 6%; bottom: 7%; display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: var(--text-2xs); }
+.note { right: 6%; top: 9%; color: var(--text-secondary); font-size: var(--text-xs); }
+.hint { right: 6%; bottom: 7%; display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: var(--text-xs); }
 
 /* Rally rail: each rally sits at its real place in the match, labelled with the score before it. */
 .rail { position: relative; height: 40px; margin: 6px 6% 0; }
 .rail::before { content: ""; position: absolute; left: 0; right: 0; bottom: 2px; height: 2px; border-radius: 1px; background: var(--surface-2); }
 .rallies { margin: 0; padding: 0; list-style: none; }
 .rallies li { position: absolute; top: 0; bottom: 0; min-width: 6px; }
-.rallies button { position: absolute; inset: 0; display: block; min-width: 14px; padding: 0; border: 0; border-radius: var(--radius-xs); background: none; color: var(--text-faint); }
+.rallies button { position: absolute; inset: 0; display: block; min-width: 14px; padding: 0; border: 0; border-radius: var(--radius-xs); background: none; color: var(--text-secondary); }
 .rallies button:focus-visible { outline: none; box-shadow: var(--ring-live); }
-.railScore { position: absolute; left: 0; top: 0; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; font: var(--fw-medium) var(--text-2xs) var(--font-mono); font-variant-numeric: tabular-nums; transition: color var(--dur-base), opacity var(--dur-base); }
+.railScore { position: absolute; left: 0; top: 0; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; font: var(--fw-medium) var(--text-xs) var(--font-mono); font-variant-numeric: tabular-nums; transition: color var(--dur-base), opacity var(--dur-base); }
 .railScore i { font-style: normal; opacity: .6; }
 .railBar { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; border-radius: 3px; background: var(--brand-ring); transition: background var(--dur-base), box-shadow var(--dur-base); }
 /* Labels that would overlap a neighbour stay hidden until hovered or current. */
 .rallies li[data-unlabelled] .railScore { opacity: 0; }
 .rallies li[data-unlabelled] button:hover .railScore, .rallies li[data-unlabelled] button:focus-visible .railScore { opacity: 1; z-index: 2; padding: 0 3px; border-radius: 3px; background: var(--bg-base); }
-.rallies li[data-played] .railScore { color: var(--text-muted); }
+.rallies li[data-played] .railScore { color: var(--text-secondary); }
 .rallies button:hover .railScore { color: var(--text-strong); }
 .rallies li[data-selected] .railScore > span:first-child { color: var(--player-a); }
 .rallies li[data-selected] .railScore > span:last-child { color: var(--player-b); }
@@ -37,9 +37,6 @@
 .jumpArc { position: absolute; bottom: 8px; height: 16px; border: 1.5px dashed var(--live); border-bottom: 0; border-radius: 50% 50% 0 0 / 100% 100% 0 0; pointer-events: none; animation: hop 900ms var(--ease-out) forwards; }
 @keyframes hop { 0% { opacity: 0; clip-path: inset(0 100% 0 0); } 35% { opacity: 1; clip-path: inset(0 0 0 0); } 100% { opacity: 0; clip-path: inset(0 0 0 0); } }
 
-@media (max-width: 520px) {
-  .note { display: none; }
-}
 @media (prefers-reduced-motion: reduce) {
   .jumpArc { animation: none; opacity: 0; }
   .railScore, .railBar { transition: none; }

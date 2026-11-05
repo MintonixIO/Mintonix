@@ -8,6 +8,7 @@ import logging
 import subprocess
 import tempfile
 from collections import Counter
+from fractions import Fraction
 
 import cv2
 import numpy as np
@@ -21,8 +22,6 @@ NET_Y = 6.70
 ALLEY = 0.46
 SHORT_SERVICE = 1.98
 LONG_SERVICE = 0.76
-_COURT_GREEN_LO = np.array([40, 80, 80], dtype=np.uint8)
-_COURT_GREEN_HI = np.array([85, 255, 255], dtype=np.uint8)
 
 
 def court_intersections_world():
@@ -82,12 +81,37 @@ def court_probe_points(points, image_size, margin=8.0):
     return probes[inside].astype(np.float32)
 
 
-def court_frame_score(frame, probes, half=None):
-    """Fraction of probe patches that look like a white court line on green.
+def court_color(frame, points):
+    """Median Lab colour of the court surface inside the four corners.
 
-    A labeled-court frame has painted-line crossings at the annotated corners
-    and at the reprojected service/alley/centre intersections. Alternate
-    cameras, intros, and plain green fills do not.
+    Bright line pixels are left out, so the result is the paint between the
+    lines: green, blue, red, or anything else a venue uses.
+    """
+    h, w = frame.shape[:2]
+    mask = np.zeros((h, w), np.uint8)
+    cv2.fillConvexPoly(mask, np.rint(np.asarray(points, np.float32)[:4]).astype(np.int32), 255)
+    mask = cv2.erode(mask, np.ones((5, 5), np.uint8))
+    mask[cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) >= 180] = 0
+    lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)[mask > 0]
+    if len(lab) < 100:
+        raise ValueError("Too little court surface inside the fitted corners")
+    return np.median(lab, axis=0).astype(np.float32)
+
+
+def court_surface_mask(frame, court_lab, chroma_tol=22.0, light_tol=70.0):
+    """Pixels whose colour is close to the fitted court surface."""
+    lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB).astype(np.float32)
+    ref = np.asarray(court_lab, np.float32)
+    chroma = np.hypot(lab[..., 1] - ref[1], lab[..., 2] - ref[2])
+    return (chroma <= chroma_tol) & (np.abs(lab[..., 0] - ref[0]) <= light_tol)
+
+
+def court_frame_score(frame, probes, court_lab, half=None):
+    """Fraction of probe patches that look like a white court line on the court colour.
+
+    A main-camera frame has painted-line crossings at the corners and at the
+    reprojected service/alley/centre intersections. Alternate cameras,
+    intros, and plain fills do not.
     """
     if frame is None:
         return 0.0
@@ -98,8 +122,7 @@ def court_frame_score(frame, probes, half=None):
     if half is None:
         half = max(2, int(round(height * 8.0 / 1080.0)))
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    green = cv2.inRange(hsv, _COURT_GREEN_LO, _COURT_GREEN_HI)
+    surface = court_surface_mask(frame, court_lab)
     std_min = max(8.0, 3.0 * half)
     votes = 0
     n = 0
@@ -108,13 +131,13 @@ def court_frame_score(frame, probes, half=None):
         if not (half <= xi < width - half and half <= yi < height - half):
             continue
         patch = gray[yi - half : yi + half + 1, xi - half : xi + half + 1]
-        gmask = green[yi - half : yi + half + 1, xi - half : xi + half + 1]
+        smask = surface[yi - half : yi + half + 1, xi - half : xi + half + 1]
         if patch.size == 0:
             continue
         n += 1
-        green_f = float((gmask > 0).mean())
+        surface_f = float(smask.mean())
         white_f = float((patch >= 180).mean())
-        if green_f >= 0.15 and white_f >= 0.08 and float(patch.std()) >= std_min:
+        if surface_f >= 0.15 and white_f >= 0.08 and float(patch.std()) >= std_min:
             votes += 1
     if n == 0:
         return 0.0
@@ -122,22 +145,42 @@ def court_frame_score(frame, probes, half=None):
 
 
 def frame_index_from_timestamp(timestamp, ticks_per_frame):
-    """Container frame index for one decoded picture.
+    """Nearest slot on the nominal frame grid for one decoded picture.
 
-    ``timestamp`` is in stream time-base ticks. ``ticks_per_frame`` is
-    ``time_base_den / fps`` (512 for these 30 fps and 25 fps files). A clip
-    whose first picture is not at time 0 (dl2c62 starts at 0.08 s) keeps that
-    hole instead of shifting every later frame.
+    ``timestamp`` is in stream time-base ticks; ``ticks_per_frame`` is
+    ``(1 / fps) / time_base`` and may be fractional for variable-rate or
+    off-grid uploads. A clip whose first picture is not at time 0 (dl2c62
+    starts at 0.08 s) keeps that hole instead of shifting later frames.
     """
-    ticks = int(timestamp)
-    step = int(ticks_per_frame)
+    step = Fraction(ticks_per_frame)
     if step <= 0:
         raise ValueError(f"bad ticks_per_frame {ticks_per_frame}")
-    return (ticks + step // 2) // step
+    return int(Fraction(int(timestamp)) / step + Fraction(1, 2))
+
+
+def _rate(text):
+    num, den = (text or "0/1").split("/")
+    return Fraction(int(num), int(den)) if int(den) > 0 else Fraction(0)
+
+
+def timeline_fps(r_frame_rate, avg_frame_rate):
+    """Frame grid used for every frame index and for manifest seconds.
+
+    Frames are placed by their own timestamps, so the grid only sets the
+    resolution and cannot drift. Dropped frames lower the average rate, so
+    r_frame_rate is kept unless it is a container tick rate (e.g. 90000/1)
+    far above the average, as some variable-rate uploads report.
+    """
+    r, avg = _rate(r_frame_rate), _rate(avg_frame_rate)
+    if r <= 0 and avg <= 0:
+        raise RuntimeError(f"Bad frame rate {r_frame_rate} / {avg_frame_rate}")
+    if r > 0 and (avg <= 0 or r <= 2 * avg):
+        return r
+    return avg
 
 
 def _video_timing(video_path):
-    """Return fps, frame count, and time-base ticks per frame."""
+    """Return the timeline fps, frame count, and time-base ticks per frame."""
     cmd = [
         "ffprobe",
         "-v",
@@ -145,7 +188,7 @@ def _video_timing(video_path):
         "-select_streams",
         "v:0",
         "-show_entries",
-        "stream=r_frame_rate,time_base,nb_frames",
+        "stream=r_frame_rate,avg_frame_rate,time_base,nb_frames",
         "-of",
         "default=nw=1",
         video_path,
@@ -161,30 +204,20 @@ def _video_timing(video_path):
             continue
         key, value = line.split("=", 1)
         info[key] = value
-    rate = info.get("r_frame_rate", "0/1")
-    num, den = rate.split("/")
-    fps_num, fps_den = int(num), int(den)
-    if fps_den <= 0 or fps_num <= 0:
-        raise RuntimeError(f"Bad frame rate {rate} for {video_path}")
-    tb_num, tb_den = info.get("time_base", "1/1").split("/")
-    tb_num, tb_den = int(tb_num), int(tb_den)
-    if tb_num <= 0 or tb_den <= 0:
+    fps = timeline_fps(info.get("r_frame_rate"), info.get("avg_frame_rate"))
+    time_base = _rate(info.get("time_base", "0/1"))
+    if time_base <= 0:
         raise RuntimeError(f"Bad time base for {video_path}")
-    # ticks_per_frame = (1/fps) / time_base = tb_den / tb_num * fps_den / fps_num
-    ticks_num = tb_den * fps_den
-    ticks_den = tb_num * fps_num
-    if ticks_num % ticks_den != 0:
-        raise RuntimeError(
-            f"Frame duration is not an integer number of time-base ticks "
-            f"for {video_path} ({rate}, time_base {tb_num}/{tb_den})"
-        )
-    n_frames = int(info["nb_frames"]) if info.get("nb_frames", "N/A") != "N/A" else 0
-    fps = fps_num / float(fps_den)
-    return fps, n_frames, ticks_num // ticks_den
+    n_frames = int(info["nb_frames"]) if info.get("nb_frames", "N/A").isdigit() else 0
+    return float(fps), n_frames, 1 / (fps * time_base)
 
 
 def _frame_timeline_indexes(video_path, ticks_per_frame):
-    """Timeline index of each decoded picture, in decode order."""
+    """Timeline slot of each decoded picture, in decode order, or None.
+
+    None marks a picture that rounds onto an already used slot (a variable
+    rate burst); callers skip it so every slot keeps its first picture.
+    """
     cmd = [
         "ffprobe",
         "-v",
@@ -203,17 +236,20 @@ def _frame_timeline_indexes(video_path, ticks_per_frame):
             "ffprobe timestamps failed:\n" + (proc.stderr or "")[-2000:]
         )
     indexes = []
+    last = -1
     for line in proc.stdout.splitlines():
         field = line.strip().split(",", 1)[0].strip()
         if not field:
             continue
+        if field == "N/A" or int(field) < 0:
+            raise ValueError("Video frames need nonnegative presentation timestamps")
         index = frame_index_from_timestamp(field, ticks_per_frame)
-        if int(field) < 0 or abs(int(field) - index * ticks_per_frame) > 1:
-            raise ValueError("Video timestamps must lie on a nonnegative constant-frame-rate grid")
-        if indexes and index <= indexes[-1]:
-            raise ValueError("Video frame timestamps must strictly increase")
+        if index <= last:
+            indexes.append(None)
+            continue
         indexes.append(index)
-    if not indexes:
+        last = index
+    if last < 0:
         raise RuntimeError(f"No video frames in {video_path}")
     return indexes
 
@@ -263,9 +299,11 @@ def _ffmpeg_bgr_frames(video_path, sw, sh, ticks=None):
                     raise RuntimeError(
                         f"Decoded more frames than timestamps in {video_path}"
                     )
-                frame = np.frombuffer(buf, np.uint8).reshape(sh, sw, 3).copy()
-                yield int(indexes[produced]), frame
+                index = indexes[produced]
                 produced += 1
+                if index is None:
+                    continue
+                yield int(index), np.frombuffer(buf, np.uint8).reshape(sh, sw, 3).copy()
             if proc.wait() != 0:
                 errf.seek(0)
                 raise RuntimeError(
@@ -282,7 +320,7 @@ def _ffmpeg_bgr_frames(video_path, sw, sh, ticks=None):
             proc.wait()
 
 
-def court_frame_scores(video_path, points, sw=384, sh=216):
+def court_frame_scores(video_path, points, court_lab, sw=384, sh=216):
     """Per-frame labeled-court votes at the working scale of find_court_frames."""
     pts = list(points)
     cap = cv2.VideoCapture(video_path)
@@ -317,7 +355,7 @@ def court_frame_scores(video_path, points, sw=384, sh=216):
         decoded += 1
         if idx >= len(scores):
             scores = np.pad(scores, (0, idx + 1 - len(scores)))
-        scores[idx] = court_frame_score(frame, scaled)
+        scores[idx] = court_frame_score(frame, scaled, court_lab)
     if decoded == 0:
         raise RuntimeError("No frames decoded for court visibility")
     return scores
@@ -347,12 +385,13 @@ def _runs(mask, value=True):
     return list(zip(edges[::2].tolist(), edges[1::2].tolist()))
 
 
-def find_court_frames(video_path, points):
-    """Mark frames where the annotated main-camera court is visible."""
+def find_court_frames(video_path, points, court_lab, scores=None):
+    """Mark frames where the fitted main-camera court is visible."""
 
     min_run, max_gap = 5, 3
 
-    scores = court_frame_scores(video_path, points)
+    if scores is None:
+        scores = court_frame_scores(video_path, points, court_lab)
     n_src = len(scores)
 
     court = court_visible_from_scores(scores)
@@ -536,6 +575,32 @@ def ends_swapped_for(game, p1, p0):
     return int(p1) >= 11 or int(p0) >= 11
 
 
+def _le(a, b):
+    return a[0] <= b[0] and a[1] <= b[1]
+
+
+def drop_misreads(pieces):
+    """Remove score pieces that disagree with both neighbours.
+
+    Within a game both scores only rise. If the pieces either side of one
+    agree with each other (the later is at most three points on) and the
+    middle score does not lie between them, the middle one was misread.
+    Without this, one forward misread (13 read as 18) makes every real
+    score up to 18 look like a step backwards, and those rallies are lost.
+    """
+    kept = []
+    for i, piece in enumerate(pieces):
+        prev = kept[-1]["score"] if kept else None
+        nxt = pieces[i + 1]["score"] if i + 1 < len(pieces) else None
+        cur = piece["score"]
+        if (prev is not None and nxt is not None and _le(prev, nxt)
+                and sum(nxt) - sum(prev) <= 3 and not (_le(prev, cur) and _le(cur, nxt))):
+            logger.info("dropping misread score %s between %s and %s", cur, prev, nxt)
+            continue
+        kept.append(piece)
+    return kept
+
+
 def opening_piece_index(pieces):
     """First score span to keep.
 
@@ -564,21 +629,28 @@ def opening_piece_index(pieces):
     return start_i
 
 
-def refine_court_frames(video_path, court_frames, ocr):
+def refine_court_frames(video_path, court_frames, ocr, fps=None, n_frames=0):
+    """Score-sequenced rallies on the timeline grid of find_court_frames.
 
+    ``fps`` must be the same timeline rate used for court frames and the
+    manifest; it is probed when omitted.
+    """
+    if fps is None:
+        fps, n_frames, _ticks = _video_timing(video_path)
+    fps = float(fps)
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise FileNotFoundError(f"Could not open video: {video_path}")
-    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
-    n_src = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 0
-    n_src = max(n_src, max((s["end"] + 1 for s in court_frames), default=0))
+    n_src = max(int(n_frames or 0), max((s["end"] + 1 for s in court_frames), default=0))
 
     try:
         def grab_frame(idx):
             idx = int(idx)
             if idx < 0 or (n_src and idx >= n_src):
                 return None
-            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+            # Seek by time: decode order differs from the timeline when the
+            # file has holes or a variable frame rate.
+            cap.set(cv2.CAP_PROP_POS_MSEC, idx * 1000.0 / fps)
             ret, frame = cap.read()
             return frame if ret else None
 
@@ -802,6 +874,7 @@ def refine_court_frames(video_path, court_frames, ocr):
 
         pieces = [p for p in pieces if p["score"] is not None and p["end"] >= p["start"]]
         pieces.sort(key=lambda p: p["start"])
+        pieces = drop_misreads(pieces)
         logger.info("score pieces: %s", len(pieces))
 
         start_i = opening_piece_index(pieces)
@@ -934,8 +1007,6 @@ def refine_court_frames(video_path, court_frames, ocr):
                 court_on[max(0, a) : b + 1] = True
 
         trail_fallback = max(1, int(round(fps * 1.0)))
-        min_sw = max(8, int(round(fps * 1.0)))
-        max_sw = int(round(fps * 50))
 
         starts = []
         ends = []
@@ -984,11 +1055,13 @@ def refine_court_frames(video_path, court_frames, ocr):
         out = []
         for i, r in enumerate(raw):
             start, end = starts[i], ends[i]
-            switches = camera_switches_in_span(court_on, start, end, fps=fps)
-            if r.get("off_only") and not switches:
-                dur = end - start + 1
-                if min_sw <= dur <= max_sw:
-                    switches.append({"start_frame": int(start), "end_frame": int(end)})
+            if r.get("off_only"):
+                # Known only from the scoreboard: the main camera never showed
+                # this rally, so it is not a playable rally. It stays in the
+                # list to keep the score sequence intact.
+                switches = [{"start_frame": int(start), "end_frame": int(end)}]
+            else:
+                switches = camera_switches_in_span(court_on, start, end, fps=fps)
             p1, p0 = r["score"]
             out.append(
                 {
