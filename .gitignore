@@ -6,9 +6,6 @@ out/
 !.env.example
 .DS_Store
 *.tsbuildinfo
-__pycache__/
-.venv/
-.pytest_cache/
 /data/
 /models/
 *.mp4

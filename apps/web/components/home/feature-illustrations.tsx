@@ -25,8 +25,8 @@ export function FlightIllustration() {
     <path className={styles.courtSurface} d="m171 117 258 0 86 153H85z" />
     <path className={styles.courtLines} d="m182 117-77 153m313-153 77 153M161 135h278M99 245h402M147 160h306M118 211h364M300 117v43m0 51v59" />
     <path className={styles.courtLines} d="M132 151h336v35H132zM132 160h336m-336 9h336m-336 8h336m-308-26v35m28-35v35m28-35v35m28-35v35m28-35v35m28-35v35m28-35v35m28-35v35m28-35v35m28-35v35m28-35v35" />
-    <path className={styles.blueLine} d="M170 247C170 4 350 4 388 137" />
-    <path className={styles.purpleLine} d="M170 247C210 61 313 93 328 173" />
+    <path className={styles.blueLine} pathLength="1" d="M170 247C170 4 350 4 388 137" />
+    <path className={styles.purpleLine} pathLength="1" d="M170 247C210 61 313 93 328 173" />
     <circle className={styles.blueFill} cx="170" cy="247" r="5" /><circle className={styles.blueFill} cx="388" cy="137" r="5" /><circle className={styles.purpleFill} cx="328" cy="173" r="5" />
   </svg>;
 }

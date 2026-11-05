@@ -3,21 +3,22 @@
 .heading h2 { margin: 0; color: var(--text-strong); font: var(--fw-medium) clamp(28px, 3vw, 40px)/1.2 var(--font-display); letter-spacing: var(--tracking-tighter); }
 .heading > p { flex-shrink: 0; margin: 0; color: var(--text-secondary); font-size: var(--text-sm); }
 .featureGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-.card { min-width: 0; padding: 30px 28px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-1); }
+.card { min-width: 0; padding: 30px 28px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-1); transition: border-color 220ms ease, background 220ms ease, transform 220ms ease; }
 .card h3 { margin: 0; color: var(--text-strong); font: var(--fw-medium) var(--text-lg)/1.35 var(--font-display); letter-spacing: var(--tracking-tight); }
 .card > p { position: relative; z-index: 1; margin: 16px 0 0; color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.7; }
 .featureName { display: flex; align-items: center; gap: 12px; }
 .featureName > svg { flex-shrink: 0; color: var(--text-secondary); }
+.featureName > svg, .supportingCard > svg, .additionalFeatures svg { transition: color 220ms ease, transform 220ms ease; }
 .reconstruction { position: relative; grid-column: span 2; min-height: 380px; overflow: hidden; }
 .reconstruction .featureName h3 { font-size: var(--text-xl); }
 .reconstruction > p { max-width: 27em; }
 .keyBenefits { position: relative; z-index: 1; display: grid; gap: 12px; margin: 132px 0 0; padding: 0; color: var(--text-primary); font-size: var(--text-sm); list-style: none; }
 .keyBenefits li::before { content: '✓'; margin-right: 10px; color: var(--blue-300); }
-.flightVisual { position: absolute; right: -8px; bottom: 2px; display: block; width: 66%; height: auto; }
+.flightVisual { position: absolute; right: -8px; bottom: 2px; display: block; width: 66%; height: auto; transform-origin: 60% 80%; transition: transform 500ms ease; }
 .courtSurface { fill: var(--steel-soft); stroke: var(--steel-300); stroke-width: 1.25; }
 .courtLines { stroke: var(--steel-400); stroke-width: 1; opacity: .65; }
-.blueLine { stroke: var(--blue-300); stroke-width: 2.5; stroke-linecap: round; }
-.purpleLine { stroke: var(--player-b); stroke-width: 2.5; stroke-linecap: round; opacity: .7; }
+.blueLine { stroke: var(--blue-300); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 1; }
+.purpleLine { stroke: var(--player-b); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 1; opacity: .7; }
 .blueFill { fill: var(--blue-300); }
 .purpleFill { fill: var(--player-b); }
 .primaryCard { display: flex; flex-direction: column; }
@@ -25,10 +26,14 @@
 .exampleLabel { color: var(--text-muted); font-size: var(--text-xs); }
 .searchExample > p { margin: 12px 0 20px; color: var(--text-primary); font-size: var(--text-base); line-height: 1.6; }
 .searchTags { display: flex; flex-wrap: wrap; gap: 7px; }
-.searchTags > span { padding: 5px 9px; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: var(--text-xs); }
+.searchTags > span { padding: 5px 9px; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: var(--text-xs); transition: color 220ms ease, border-color 220ms ease, transform 220ms ease; }
+.searchTags > span:nth-child(2) { transition-delay: 45ms; }
+.searchTags > span:nth-child(3) { transition-delay: 90ms; }
 .patternExample ol { display: grid; gap: 0; margin: 14px 0 0; padding: 0; list-style: none; }
-.patternExample li { position: relative; padding: 0 0 18px 20px; color: var(--text-secondary); font-size: var(--text-sm); }
-.patternExample li::before { position: absolute; left: 0; top: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--steel-400); content: ''; }
+.patternExample li { position: relative; padding: 0 0 18px 20px; color: var(--text-secondary); font-size: var(--text-sm); transition: color 240ms ease; }
+.patternExample li::before { position: absolute; left: 0; top: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--steel-400); content: ''; transition: background 240ms ease, box-shadow 240ms ease; }
+.patternExample li:nth-child(2), .patternExample li:nth-child(2)::before { transition-delay: 100ms; }
+.patternExample li:nth-child(3), .patternExample li:nth-child(3)::before { transition-delay: 200ms; }
 .patternExample li:not(:last-child)::after { position: absolute; left: 2px; top: 14px; bottom: 5px; width: 1px; background: var(--border-strong); content: ''; }
 .patternExample li:last-child { padding-bottom: 0; color: var(--text-primary); }
 .patternExample li:last-child::before { background: var(--blue-300); }
@@ -36,10 +41,36 @@
 .supportingCard > svg { color: var(--text-secondary); margin-bottom: 18px; }
 .supportingCard > p { margin-top: 10px; }
 .additionalFeatures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; margin-top: 36px; padding: 0 8px; }
-.additionalFeatures > article { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.additionalFeatures > article { display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 0; padding: 16px 12px; border-radius: var(--radius-md); text-align: center; transition: background 220ms ease, transform 220ms ease; }
 .additionalFeatures svg { flex-shrink: 0; color: var(--text-muted); }
 .additionalFeatures h3 { margin: 0; color: var(--text-primary); font-size: var(--text-sm); font-weight: var(--fw-medium); line-height: 1.5; }
 .additionalFeatures p { margin: 6px 0 0; color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.6; }
+
+/* Decorative responses leave the feature descriptions as non-clickable content. */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover { border-color: var(--border-strong); transform: translateY(-3px); }
+  .card:hover .featureName > svg, .supportingCard:hover > svg { color: var(--blue-300); transform: translateY(-2px); }
+  .reconstruction:hover .flightVisual { transform: scale(1.035); }
+  .reconstruction:hover .blueLine { animation: traceFlight 850ms ease-out both; }
+  .reconstruction:hover .purpleLine { animation: traceFlight 850ms 120ms ease-out both; }
+  .primaryCard:hover .searchTags > span { color: var(--blue-200); border-color: var(--brand-ring); transform: translateY(-2px); }
+  .primaryCard:hover .patternExample li { color: var(--text-primary); }
+  .primaryCard:hover .patternExample li::before { background: var(--blue-300); box-shadow: 0 0 8px var(--brand-ring); }
+  .additionalFeatures > article:hover { background: var(--surface-1); transform: translateY(-2px); }
+  .additionalFeatures > article:hover svg { color: var(--blue-300); transform: translateY(-3px); }
+}
+.card:active { border-color: var(--brand-ring); }
+.additionalFeatures > article:active { background: var(--surface-1); }
+@keyframes traceFlight { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .card, .featureName > svg, .supportingCard > svg, .additionalFeatures svg,
+  .additionalFeatures > article, .flightVisual, .searchTags > span,
+  .patternExample li, .patternExample li::before { transition: none; }
+  .card:hover, .card:hover .featureName > svg, .supportingCard:hover > svg,
+  .reconstruction:hover .flightVisual, .primaryCard:hover .searchTags > span,
+  .additionalFeatures > article:hover, .additionalFeatures > article:hover svg { transform: none; }
+  .reconstruction:hover .blueLine, .reconstruction:hover .purpleLine { animation: none; }
+}
 @media (max-width: 1100px) {
   .featureGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .reconstruction { min-height: 340px; }

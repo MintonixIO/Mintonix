@@ -2,7 +2,7 @@
 
 A BWF match viewer focused on uninterrupted gameplay: detect rally boundaries, skip the time between rallies and broadcast replays, and navigate by score.
 
-This is a fresh monorepo. The website preserves the original logos and visual design tokens. The batch rally detector ports the research preprocessing logic and archived native court fitter; the old application, database, and deployment configuration were not imported.
+This repository contains the Mintonix app. The backend is maintained separately. The website preserves the original logos and visual design tokens.
 
 ## Local development
 
@@ -27,12 +27,11 @@ pnpm start
 
 | Directory | Purpose | Status |
 | --- | --- | --- |
-| `apps/web` | Next.js website and custom rally viewer | Local match playback and detector output integration |
-| `workers/rally-detection` | Batch worker with automatic court fitting and research rally detection | Implemented; requires broadcast evaluation |
+| `apps/web` | Next.js website and custom rally viewer | Local match playback |
 | `contracts` | Versioned rally manifest schema | Implemented |
 | `docs` | Scope, architecture, brand, and deployment guidance | Implemented |
 
-The homepage provides a match-link form and explains the viewer components. The form validates URL syntax locally but does not submit a processing job. Local detector output can be viewed at `/watch/[matchId]` with `MINTONIX_LOCAL_MATCHES_DIR` configured in `apps/web/.env.local`; see `docs/development.md`. The current local sample is `dl1s0`, assembled from 11 research clips. There is no upload, account, or cloud integration in the website yet.
+The homepage provides a match-link form and explains the viewer components. The form validates URL syntax locally but does not submit a processing job. Local match manifests can be viewed at `/watch/[matchId]` with `MINTONIX_LOCAL_MATCHES_DIR` configured in `apps/web/.env.local`; see `docs/development.md`. The current local sample is `dl1s0`, assembled from 11 research clips. There is no upload, account, or cloud integration in the website yet.
 
 The technical blog is available at `/blog`. Each article is a simple `.md` file under `apps/web/content/blog`; see `docs/blogging.md` for frontmatter and authoring instructions.
 
@@ -40,8 +39,4 @@ The technical blog is available at `/blog`. Each article is a simple `.md` file 
 
 Import this repository into Vercel, select **Next.js**, and set the project's **Root Directory** to `apps/web`. Keep the repository-root pnpm workspace and lockfile. No credentials are required for this preview. See `docs/development.md`.
 
-## Next implementation
-
-Review the local detector output against the video for boundary accuracy and replay inclusion. The local viewer plays generated manifests, but those intervals and OCR scores are not yet manually verified. Public dispatch and cloud storage remain separate implementation work.
-
-See `workers/rally-detection/README.md` to run the batch detector and `docs/architecture.md` for the intended Vast.ai and Backblaze B2 boundaries.
+See `docs/architecture.md` for the app architecture and playback model.

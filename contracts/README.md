@@ -1,12 +1,12 @@
 # Rally manifest v2
 
-`rally-manifest.schema.json` is the persisted data contract for the viewer and Python detector. Synthetic data for timeline and validation tests lives directly in `apps/web/components/rally-player/timeline.test.ts`.
+`rally-manifest.schema.json` defines the persisted match data consumed by the viewer. Synthetic data for timeline and validation tests lives directly in `apps/web/components/rally-player/timeline.test.ts`.
 
 ## Source video
 
 `source` names the published video that every timestamp refers to. Mintonix plays matches by embedding that video and never re-hosts broadcast media. The only provider is `youtube`: `videoId` is the 11-character YouTube ID, and `durationSeconds` is the full length of that video.
 
-The detector analyses a local copy of the same video. That copy must be the complete upload, not a trimmed or concatenated cut, so its timeline is the same as the embed's.
+Every rally timestamp must refer to the complete published upload, so its timeline matches the embed's. Timestamps from trimmed or concatenated clips must be mapped to that upload before the app can use them.
 
 ## Timestamps
 
@@ -19,7 +19,7 @@ Beyond JSON Schema validation, consumers must check:
 - Game numbers do not move backward.
 - Timestamps and duration are finite numbers.
 
-JSON Schema cannot express those cross-field constraints by itself. The web parser and worker enforce them before accepting or publishing a manifest. The worker packages a copy of the schema and checks it against this canonical file in its tests.
+JSON Schema cannot express those cross-field constraints by itself. The web parser enforces them before accepting a manifest.
 
 Do not treat missing score labels as missing rallies.
 

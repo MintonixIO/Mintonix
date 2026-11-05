@@ -39,13 +39,6 @@ export default function Home() {
         <article><h3>Match timeline</h3><p>Keep every point in context.</p><span>In the viewer</span></article>
       </section>
 
-      <section className={styles.closing} aria-labelledby="closing-heading">
-        <div>
-          <p className={styles.eyebrow}>More time for the game</p>
-          <h2 id="closing-heading">Get to the next rally.</h2>
-        </div>
-        <Link className={styles.primaryLink} href="/library">Try the rally viewer <span aria-hidden="true">→</span></Link>
-      </section>
     </main>
   );
 }

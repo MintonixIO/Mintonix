@@ -1,8 +1,8 @@
 ---
-title: "Technical: read the game, shape your next one"
-description: "Our plans for shot-pattern analysis, opponent preparation, and practice insights for coaches and players."
+title: "Product Vision: The Revolution"
+description: "What we can do for viewers, players, and coaches"
 date: "2026-11-04"
-category: "Technical"
+category: "Product"
 ---
 
 A match contains more than the final score. There are repeated replies,

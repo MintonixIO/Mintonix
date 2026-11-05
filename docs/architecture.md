@@ -8,11 +8,9 @@ The original video's timestamps remain authoritative. Do not assume the broadcas
 
 ## Components
 
-1. **Next.js on Vercel:** the website, manifest reader, score list, and custom video controls.
-2. **Rally detection on Vast.ai:** consumes a match and returns chronological rally intervals in the source video's time coordinates.
-3. **Backblaze B2:** stores the source media and published JSON manifest. Large files and model weights do not belong in Git.
+This repository contains the Next.js app configured for deployment on Vercel, including the website, manifest reader, score list, and custom video controls. Backend implementation and deployment are maintained separately.
 
-The website, local video viewer, manifest contract, and single-job batch detector are implemented. Local watch pages validate detector output and embed the manifest's YouTube source; Mintonix never re-hosts broadcast video. The library lists configured local matches. The detector combines automatic C++ court fitting with the research court/score pipeline; its output still requires broadcast evaluation and review. Worker provisioning, cloud storage, job orchestration, and server credentials are not configured yet. Persistent job state and reliable dispatch will be needed before a public processing flow is added; B2 is object storage, not a job database.
+Local watch pages validate v2 match manifests and embed the manifest's YouTube source. The library lists configured local matches. Mintonix never re-hosts broadcast video. The match-link form validates URL syntax locally; public processing is not connected.
 
 ## Playback model
 
@@ -22,19 +20,9 @@ Use the published source video plus a manifest. This supports correcting boundar
 
 Score labels identify the score **before** the rally and are optional. Detecting rallies does not guarantee accurate score OCR. A manifest without score labels must remain playable and navigable by rally number.
 
-## Security and data
+## App data boundary
 
-- Resolve temporary playback URLs through a server-side boundary when private B2 storage is connected. Do not persist expiring URLs in the manifest.
-- Workers should receive scoped temporary input/output access, rather than account credentials.
-- Use stable match and rally IDs. Define retry/idempotency behavior before scheduling GPU jobs.
-- Publish only manifests validated against the contract and the temporal invariants documented in `contracts/README.md`.
-
-## Implementation sequence
-
-1. Connect one real match and a manually reviewed manifest.
-2. Implement real media controls, automatic gap skipping, and source/gameplay timeline mapping.
-3. Implement and evaluate rally detection, including replay exclusion and boundary accuracy.
-4. Add B2 publishing and Vast deployment with tracked jobs and safe retries.
-5. Add score recognition with correction/review support.
-
-Do not add the old 3D pipeline, catalog scraper, mobile app, auth, or billing during the foundation work.
+- Read local match manifests on the server using `MINTONIX_LOCAL_MATCHES_DIR`; do not send filesystem paths or server credentials to the client.
+- Accept only manifests that satisfy the contract and temporal invariants documented in `contracts/README.md`.
+- Keep match IDs and rally IDs stable so navigation remains consistent when boundaries are corrected.
+- Keep media, generated manifests, model weights, and credentials outside Git.

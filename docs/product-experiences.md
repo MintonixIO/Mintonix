@@ -96,4 +96,4 @@ controls for unimplemented features.
 
 Reserve `/blog/entertainment` and `/blog/technical` for detailed breakdowns reached
 through the footer. Those links replace Playback design and Detection notes; the
-original engineering posts remain available in the blog.
+playback design post remains available in the blog.
