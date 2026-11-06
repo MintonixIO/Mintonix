@@ -78,22 +78,33 @@ coach features with the overlapping and complementary player features.
 
 ## Homepage emphasis
 
-The homepage explains individual features directly, with a clear size hierarchy
-and selective illustration, following the restrained product presentation on
-Supabase's homepage. The largest card is 3D shuttle reconstruction and contains
-the showcase's only court illustration. Rally search and shot patterns sit
-beside it as smaller primary cards, with concise text examples.
+The homepage presents three feature groups while preserving the Entertainment
+and Technical product experiences above. **Player** includes coaches.
 
-Use compact text cards for personalized highlights, shot comparisons, opponent
-scouting, and training insights. Present serve-and-return analysis, saved
-collections, and rally sharing as a quiet supporting row. Do not draw a separate
-diagram for every feature. Label the planned feature showcase clearly.
+| Homepage group | Features |
+| --- | --- |
+| Common | 3D shuttle reconstruction, rally search, saved collections, rally sharing |
+| Player | Shot patterns, shot comparison, opponent scouting, serve & return, training insights |
+| Viewer | Personalized highlights, rally detection, replay filtering, score navigation, match timeline |
 
-Keep the current rally viewer prominent with the real sample match and compact
-text for rally detection, replay filtering, score navigation, and the timeline.
-The homepage feature tiles are explanations, not links to blog posts or working
-controls for unimplemented features.
+Use a distinct composition for each group: one wide shared toolkit with a 3D
+stage and a search rail; an editorial player section with a shot-sequence example
+and quiet supporting features; then a viewer section anchored by a measured
+playback benchmark and an independently available match excerpt. The section
+index links directly to all three groups. Avoid repeating an identical card grid
+or illustrating every feature. Keep serve & return, collections, and sharing
+centered. Play short feature animations once as they enter view, one at a time.
+Show the complete examples immediately when visitors prefer reduced motion.
+
+Label planned features and development status explicitly. The feature descriptions
+are not working controls for unimplemented features. Keep the source video in its
+existing player and the real match excerpt link available.
+
+The compaction comparison uses the supplied full-broadcast measurements documented
+in [rally-playback-benchmark.md](rally-playback-benchmark.md): 1:25:20 of video,
+27:29 of verified play, and 27:38 of detector output. Keep the benchmark separate
+from the library excerpt; do not calculate the headline from excerpt boundaries.
 
 Reserve `/blog/entertainment` and `/blog/technical` for detailed breakdowns reached
 through the footer. Those links replace Playback design and Detection notes; the
-playback design post remains available in the blog.
+playback design post remains available in the blog. Do not add a closing CTA.

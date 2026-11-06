@@ -34,7 +34,7 @@
 
 .playhead { position: absolute; z-index: 1; bottom: -3px; height: 12px; width: 2px; border-radius: 1px; background: var(--text-strong); transform: translateX(-1px); pointer-events: none; box-shadow: 0 0 8px rgba(243, 244, 246, .5); }
 /* The hop over dead time: a dashed arc drawn above the skipped gap. */
-.jumpArc { position: absolute; bottom: 8px; height: 16px; border: 1.5px dashed var(--live); border-bottom: 0; border-radius: 50% 50% 0 0 / 100% 100% 0 0; pointer-events: none; animation: hop 900ms var(--ease-out) forwards; }
+.jumpArc { position: absolute; bottom: 8px; height: 16px; border: 1.5px dashed var(--live); border-bottom: 0; border-radius: 50% 50% 0 0 / 100% 100% 0 0; pointer-events: none; animation: hop 1500ms var(--ease-out) forwards; }
 @keyframes hop { 0% { opacity: 0; clip-path: inset(0 100% 0 0); } 35% { opacity: 1; clip-path: inset(0 0 0 0); } 100% { opacity: 0; clip-path: inset(0 0 0 0); } }
 
 @media (prefers-reduced-motion: reduce) {

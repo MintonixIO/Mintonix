@@ -1,8 +1,10 @@
 .header { position: sticky; top: 18px; z-index: var(--z-sticky); display: flex; align-items: center; justify-content: space-between; gap: 24px; width: calc(100% - 96px); max-width: 1120px; min-height: 64px; margin: 24px auto 0; padding: 12px 22px; border: 1px solid var(--frost-border-strong); border-radius: var(--radius-xl); background: var(--frost-bg-scrolled); backdrop-filter: blur(var(--blur-lg)); box-shadow: var(--shadow-md), var(--frost-highlight); }
 .navigation { display: flex; align-items: center; gap: 24px; }
+.header :global(.brand) { flex-shrink: 0; }
 .navLink { color: var(--text-secondary); font-size: var(--text-sm); transition: color var(--dur-base); }
 .navLink:hover { color: var(--text-strong); }
 .previewBadge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 11px; border: 1px solid var(--border); border-radius: var(--radius-pill); color: var(--text-secondary); font-size: var(--text-xs); white-space: nowrap; }
+.previewShort { display: none; }
 .previewBadge i { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); }
 
 .footer { width: calc(100% - 96px); max-width: 1360px; margin: 32px auto 0; border-top: 1px solid var(--border); }
@@ -34,12 +36,13 @@
   .header :global(.brand img) { width: 21px; }
   .header :global(.brand span) { font-size: 20px; }
   .navigation { gap: 16px; }
-  .previewBadge { display: none; }
+  .previewBadge { gap: 6px; padding: 5px 9px; }
   .footer { width: calc(100% - 36px); }
   .footerTop { grid-template-columns: 1fr 1fr; gap: 32px 20px; padding: 36px 8px; }
   .footerIdentity { grid-column: 1 / -1; }
     .footerBottom { flex-wrap: wrap; gap: 12px; padding: 20px 8px 24px; }
   .footerBottom .independent { order: 3; width: 100%; }
 }
-@media (max-width: 360px) { .navigation { gap: 12px; } .header :global(.brand span) { font-size: 18px; } }
+@media (max-width: 420px) { .navigation { gap: 12px; } .previewLong { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } .previewShort { display: inline; } }
+@media (max-width: 360px) { .header { padding-inline: 14px; } .header :global(.brand span) { display: none; } }
 @media (prefers-reduced-motion: reduce) { .navLink, .footerLinks > a { transition: none; } }

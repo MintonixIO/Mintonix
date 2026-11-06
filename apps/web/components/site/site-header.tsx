@@ -9,7 +9,7 @@ export function SiteHeader() {
       <nav className={styles.navigation} aria-label="Main navigation">
         <Link href="/library" className={styles.navLink}>Library</Link>
         <Link href="/blog" className={styles.navLink}>Blog</Link>
-        <span className={styles.previewBadge}><i aria-hidden="true" /> Early preview</span>
+        <span className={styles.previewBadge}><i aria-hidden="true" /><span className={styles.previewLong}>Early preview</span><span className={styles.previewShort} aria-hidden="true">Preview</span></span>
       </nav>
     </header>
   );
