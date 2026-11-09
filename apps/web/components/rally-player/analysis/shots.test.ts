@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { Shot } from "../contract.ts";
-import { shot as shotFixture } from "../test-fixtures.ts";
-import { activeShotIndex, kmh, netClearance, qualityNote, shuttleAt } from "./shots.ts";
+import type { MatchAnalysis, Shot } from "../contract.ts";
+import { analysisFixture, shot as shotFixture } from "../test-fixtures.ts";
+import { activeShotIndex, formatShotParam, kmh, netClearance, parseShotParam, qualityNote, resolveShot, shotCueTime, shuttleAt } from "./shots.ts";
 
 const shots = [shotFixture(10, 11), shotFixture(11, 12.5, "b")] as unknown as Shot[];
 
@@ -36,4 +36,31 @@ test("a flight crossing below the net top without hitting it has no reliable cle
   assert.equal(netClearance({ ...shots[0], netClearance: -0.25 }), null);
   assert.equal(netClearance({ ...shots[0], netClearance: -0.1, endContact: "net" }), -0.1);
   assert.equal(netClearance({ ...shots[0], netClearance: null }), null);
+});
+
+test("shot params round-trip with a 1-based shot number", () => {
+  assert.equal(formatShotParam({ rallyId: "r12", index: 2 }), "r12.3");
+  assert.deepEqual(parseShotParam("r12.3"), { rallyId: "r12", index: 2 });
+  assert.deepEqual(parseShotParam("g1_r-4.10"), { rallyId: "g1_r-4", index: 9 });
+});
+
+test("malformed shot params are ignored", () => {
+  for (const value of [null, "", "r1", "r1.", "r1.0", "r1.-1", "r1.1.2", "R1.1", "r1.1x", ".1"]) {
+    assert.equal(parseShotParam(value), null, String(value));
+  }
+});
+
+test("a shot ref resolves only to a shot that exists", () => {
+  const analysis = analysisFixture() as unknown as MatchAnalysis;
+  assert.equal(resolveShot(analysis, { rallyId: "r1", index: 1 })?.shot.hitter, "b");
+  assert.equal(resolveShot(analysis, { rallyId: "r1", index: 2 }), null);
+  assert.equal(resolveShot(analysis, { rallyId: "r2", index: 0 }), null);
+  assert.equal(resolveShot(analysis, { rallyId: "nope", index: 0 }), null);
+  assert.equal(resolveShot(undefined, { rallyId: "r1", index: 0 }), null);
+  assert.equal(resolveShot(analysis, null), null);
+});
+
+test("the video is cued just before contact but never before the rally", () => {
+  assert.equal(shotCueTime(9, shots[0]), 9.6);    // shot starts at 10 s
+  assert.equal(shotCueTime(9.8, shots[0]), 9.8);  // clamped to the rally start
 });

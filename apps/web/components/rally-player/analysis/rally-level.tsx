@@ -38,7 +38,7 @@ export function RallySummary({ match, rally, index, shots, onSelectShot }: {
         <div><dt>Highest</dt><dd>{record(summary.highest, `${value(shots[summary.highest]?.apex, 1)} m`)}</dd></div>
       </dl>
       {summary.unreliable > 0 && <p className={styles.detailNote}>{summary.unreliable} of {summary.shots} shots weren’t measured reliably and are left out of the records.</p>}
-      <p className={styles.zoomHint}>Pick a shot to zoom in.</p>
+      <p className={styles.zoomHint}>Pick a shot to replay it in 3D.</p>
     </div>
   );
 }

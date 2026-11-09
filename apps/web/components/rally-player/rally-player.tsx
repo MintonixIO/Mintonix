@@ -1,15 +1,21 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import type { Match } from "./contract";
 import { formatTime, normalizeMediaTime, playableSegments, rallyIndexAt, rallyPlaybackPosition, rallySeconds, rallyStart } from "./timeline";
-import { describeYouTubeError, isSeekPending, loadYouTubeApi, PlayerState, type PendingSeek, type YouTubePlayer } from "./youtube";
-import { AnalysisDeck, ShotRail, useAnalysis, ZoomTrail } from "./analysis/analysis-views";
+import { cuePaused, describeYouTubeError, isSeekPending, loadYouTubeApi, PlayerState, type PendingSeek, type YouTubePlayer } from "./youtube";
+import { AnalysisDeck, useAnalysis } from "./analysis/analysis-views";
 import { MatchRail } from "./analysis/match-level";
-import type { Zoom } from "./analysis/summary";
-import { activeShotIndex } from "./analysis/shots";
-import { useView } from "./view";
+import { activeShotIndex, formatShotParam, resolveShot, SHOT_LEAD_SECONDS, shotCueTime, type ShotRef } from "./analysis/shots";
+import { setOpenShot, useOpenShot, useView } from "./view";
 import styles from "./rally-player.module.css";
+
+// three.js is only fetched when a shot is first opened.
+const ShotStage = dynamic(() => import("./analysis/shot-stage"), {
+  ssr: false,
+  loading: () => <div className={styles.stageLoading} role="status">Loading 3D replay…</div>,
+});
 
 type IconName = "play" | "pause" | "volume" | "muted" | "previous" | "next" | "expand" | "collapse" | "list" | "close";
 const iconPaths: Record<IconName, string> = {
@@ -31,12 +37,13 @@ function Icon({ name }: { name: IconName }) {
 
 const SYNC_INTERVAL_MS = 100;
 const DURATION_TOLERANCE_SECONDS = 2;
-const SHOT_LEAD_SECONDS = 0.4;
 
 export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasAnalysis?: boolean }) {
   const mountRef = useRef<HTMLDivElement>(null);
   const youtubeRef = useRef<YouTubePlayer | null>(null);
   const pendingSeekRef = useRef<PendingSeek | null>(null);
+  // While a shot replay hides the video, it must never play (or be heard) behind it.
+  const shotOpenRef = useRef(false);
   const viewerRef = useRef<HTMLElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -63,15 +70,31 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
   const view = useView(hasAnalysis);
   const analyzing = view === "analyze" && !isFullscreen;
   const { analysis, error: analysisError } = useAnalysis(match.matchId, view === "analyze");
+  // The shot open in the 3D replay comes from the URL; it shows only once the analysis has it.
+  const openRef = useOpenShot();
+  const open = analyzing ? resolveShot(analysis, openRef) : null;
+  const openRallyIndex = open ? rallies.findIndex((rally) => rally.id === open.ref.rallyId) : -1;
+  const pendingShot = analyzing && openRef !== null && !analysis && !analysisError;
+  // Below the video: the match overview, or the rally last picked in the sidebar.
+  const [deck, setDeck] = useState<"match" | "rally">("match");
+  const [expanded, setExpanded] = useState<number | null>(null);
+  // A newly opened shot (including one from a shared link) expands its rally.
+  const openKey = open ? formatShotParam(open.ref) : null;
+  const [syncedShot, setSyncedShot] = useState<string | null>(null);
+  if (openKey !== syncedShot) {
+    setSyncedShot(openKey);
+    if (open) {
+      setExpanded(openRallyIndex);
+      setDeck("rally");
+    }
+  }
   // Between rallies, analyze view keeps showing the rally that just ended.
-  const focusIndex = selectedIndex >= 0 ? selectedIndex : Math.max(0, previousTarget);
+  const focusIndex = openRallyIndex >= 0 ? openRallyIndex : selectedIndex >= 0 ? selectedIndex : Math.max(0, previousTarget);
   const focusRally = rallies[focusIndex];
   const shots = analysis?.rallies[focusRally.id]?.shots ?? [];
-  // A shot becomes current SHOT_LEAD_SECONDS before contact, matching where seekShot lands.
+  // A shot becomes current SHOT_LEAD_SECONDS before contact, matching where a shot's video cue lands.
   // Before the serve, show the first shot so the detail panel is never empty.
   const activeShot = shots.length ? Math.max(0, activeShotIndex(shots, sourceTime + SHOT_LEAD_SECONDS)) : -1;
-  // Analyze view zooms between the whole match, the rally under the playhead and its current shot.
-  const [zoom, setZoom] = useState<Zoom>("match");
 
   // Keep the current rally visible in the list without scrolling the page.
   useEffect(() => {
@@ -137,7 +160,14 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
             setMuted(player.isMuted());
             setReady(true);
           },
-          onStateChange: ({ data }) => { if (!cancelled) setIsPlaying(data === PlayerState.playing || data === PlayerState.buffering); },
+          onStateChange: ({ data }) => {
+            if (cancelled) return;
+            if (data === PlayerState.playing && shotOpenRef.current) {
+              instance?.pauseVideo();
+              return;
+            }
+            setIsPlaying(data === PlayerState.playing || data === PlayerState.buffering);
+          },
           onError: ({ data }) => { if (!cancelled) { setIsPlaying(false); setMediaError(describeYouTubeError(data)); } },
         },
       });
@@ -178,12 +208,27 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
     return () => window.clearInterval(timer);
   }, [ready, skipGaps, segments]);
 
-  function seek(time: number) {
+  // Opening a shot pauses the hidden video and cues it at that shot, so "Back to video" shows the real
+  // stroke. Waits for the player, so a shot opened from a shared link is cued once it is ready.
+  const cueKey = open && ready ? openKey : null;
+  useEffect(() => {
+    shotOpenRef.current = open !== null;
+  });
+  useEffect(() => {
+    const player = youtubeRef.current;
+    if (!cueKey || !open || !player) return;
+    seek(shotCueTime(rallyStart(rallies[openRallyIndex]), open.shot), true);
+    // Only a newly opened shot cues the video.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cueKey]);
+
+  function seek(time: number, paused = false) {
     const player = youtubeRef.current;
     if (!player || !ready) return;
     const clamped = Math.max(0, Math.min(time, duration));
     pendingSeekRef.current = { time: clamped, startedAt: performance.now() };
-    player.seekTo(clamped, true);
+    if (paused) cuePaused(player, clamped);
+    else player.seekTo(clamped, true);
     setSourceTime(normalizeMediaTime(segments, clamped));
   }
 
@@ -192,20 +237,41 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
     if (rally) seek(rallyStart(rally));
   }
 
-  function seekShot(index: number) {
-    const shot = shots[index];
-    // Start just before contact so the stroke is visible.
-    if (shot) seek(Math.max(rallyStart(focusRally), shot.startSeconds - SHOT_LEAD_SECONDS));
+  function openShot(ref: ShotRef) {
+    setOpenShot(ref);
   }
 
-  function zoomToRally(index: number) {
+  /** Back to the video, with focus returned to the closed shot's row in the rail. */
+  function closeShot() {
+    const ref = open?.ref ?? openRef;
+    setOpenShot(null);
+    if (ref) panelRef.current?.querySelector<HTMLElement>(`[data-shot="${formatShotParam(ref)}"]`)?.focus({ preventScroll: true });
+  }
+
+  function openFocusShot(index: number) {
+    openShot({ rallyId: focusRally.id, index });
+  }
+
+  /** Sidebar rally row: expand it and play from its start, or collapse it (closing any open shot). */
+  function toggleRally(index: number) {
+    if (index === expanded) {
+      setExpanded(null);
+      if (openRef) setOpenShot(null);
+      return;
+    }
+    showRally(index);
+  }
+
+  function showRally(index: number) {
+    if (openRef) setOpenShot(null);
+    setExpanded(index);
+    setDeck("rally");
     selectRally(index);
-    setZoom("rally");
   }
 
-  function zoomToShot(index: number) {
-    seekShot(index);
-    setZoom("shot");
+  function showMatchSummary() {
+    if (openRef) setOpenShot(null);
+    setDeck("match");
   }
 
   function togglePlayback() {
@@ -255,6 +321,7 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
   return (
     <section ref={viewerRef} id="viewer" className={styles.viewer} aria-label="Match viewer" data-playing={isPlaying || undefined}>
       <div className={styles.workspace}>
+        <div className={styles.stageColumn} data-replay={open || pendingShot ? true : undefined}>
         <div className={styles.stage}>
           <div ref={mountRef} className={styles.embed} title={match.title} />
           {mediaError && <p className={styles.mediaError} role="alert">{mediaError}</p>}
@@ -271,25 +338,17 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
           </div>
 
         </div>
+        {open && (
+          <ShotStage match={match} shot={open.shot} index={open.ref.index} count={shots.length}
+            onStep={openFocusShot} onClose={closeShot} />
+        )}
+        {pendingShot && <div className={styles.stageLoading} role="status">Loading 3D replay…</div>}
+        </div>
         <aside ref={panelRef} id={panelId} className={styles.rallyPanel} hidden={isFullscreen && !panelOpen} role={isFullscreen ? "dialog" : undefined} aria-labelledby={analyzing ? undefined : `${panelId}-heading`} aria-label={analyzing ? "Analysis" : undefined}>
-          {analyzing && <ZoomTrail zoom={zoom} rallyLabel={`Rally ${focusIndex + 1}`} shotLabel={shots.length ? `Shot ${activeShot + 1}` : null} onZoom={setZoom} />}
-          {analyzing && zoom === "match" ? (
-            <MatchRail match={match} analysis={analysis} current={focusIndex} playing={isPlaying} ready={ready} onSelectRally={zoomToRally} />
-          ) : analyzing ? (
-            <ShotRail
-              match={match}
-              rally={focusRally}
-              rallyIndex={focusIndex}
-              shots={shots}
-              activeIndex={activeShot}
-              playing={isPlaying}
-              ready={ready}
-              onSelectShot={zoomToShot}
-              onPrevious={focusIndex > 0 ? () => selectRally(focusIndex - 1) : undefined}
-              onNext={focusIndex < rallies.length - 1 ? () => selectRally(focusIndex + 1) : undefined}
-              loading={!analysis && !analysisError}
-              error={analysisError}
-            />
+          {analyzing ? (
+            <MatchRail match={match} analysis={analysis} analysisError={analysisError} current={focusIndex} playing={isPlaying} ready={ready}
+              expanded={expanded} liveShot={activeShot} openShot={open?.ref ?? null} onToggleRally={toggleRally} onOpenShot={openShot}
+              onMatchSummary={showMatchSummary} matchSummaryActive={deck === "match" && !open} />
           ) : <>
           <div className={styles.panelHeader}>
             <div className={styles.panelTitle}>
@@ -331,8 +390,9 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
         </aside>
       </div>
       {analyzing && (
-        <AnalysisDeck zoom={zoom} match={match} analysis={analysis} rally={focusRally} rallyIndex={focusIndex} shots={shots}
-          activeIndex={activeShot} time={sourceTime} onSelectRally={zoomToRally} onSelectShot={zoomToShot} />
+        <AnalysisDeck deck={deck} openShot={open ? { shot: open.shot, index: open.ref.index } : null} match={match} analysis={analysis}
+          rally={focusRally} rallyIndex={focusIndex} shots={shots} activeIndex={activeShot} time={sourceTime}
+          onSelectRally={showRally} onSelectShot={openFocusShot} />
       )}
       {match.review === "automatic" && <p className={styles.previewNotice}>Rally boundaries and scores were detected automatically and haven’t been reviewed by hand.</p>}
     </section>

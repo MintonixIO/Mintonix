@@ -1,9 +1,5 @@
 import type { Match, MatchAnalysis, Shot } from "../contract.ts";
 
-/** How far the analyze view is zoomed: the whole match, one rally, or one shot. */
-export type Zoom = "match" | "rally" | "shot";
-export const ZOOMS: readonly Zoom[] = ["match", "rally", "shot"];
-
 type Distribution = MatchAnalysis["players"][string]["speed"];
 
 function best(shots: readonly Shot[], pick: (shot: Shot) => number | null) {

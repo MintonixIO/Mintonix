@@ -28,20 +28,25 @@ shared; switching uses `history.pushState`, so the player is not remounted.
 Shot data is fetched from `/api/matches/<matchId>/analysis` only when the view
 opens; the Watch view never downloads it.
 
-Analyze has three zoom levels, chosen with the Match › Rally › Shot trail at the
-top of the side panel. Rally and Shot always mean the rally and shot under the
-playhead, so zooming never loses sync with the video.
+The side panel always lists every rally with its shot count and winner, and a
+"Match summary" button. Picking a rally seeks to it and expands its shots in place;
+picking it again collapses it.
 
-- **Match**: the side panel lists every rally with its shot count and winner.
-  Under the video: shots per rally coloured by point winner, each game's score
-  and longest rally, and each player's shot profile. Picking a rally seeks to it
-  and zooms in.
-- **Rally**: the side panel lists the rally's shots. Under the video: a court
-  drawing of every shot from above and from the side, with the shuttle's live
-  position, and how the point went (winner, ending, fastest and highest shot).
-  Picking a shot seeks to just before its contact and zooms in.
-- **Shot**: the drawing shows only that shot, beside all its measurements, and
-  each measurement is placed against the hitter's middle 80% for the match.
+- **Under the video** is the match overview by default (shots per rally coloured
+  by point winner, each game's score and longest rally, each player's shot
+  profile), or, after picking a rally, a court drawing of its shots from above and
+  from the side with the shuttle's live position, and how the point went.
+- **Opening a shot** (`?shot=<rallyId>.<n>`, n from 1, pushed to history like the
+  view) pauses the video, cues it just before that shot's contact, and hides it:
+  the YouTube player stays mounted, out of flow and invisible, and a 3D replay of
+  the shot takes its place, so nothing is ever drawn over the embed. The replay
+  is built with three.js, loaded only when a shot first opens, from the shot's
+  measured `path`; it loops with a short hold at the landing and offers orbit,
+  broadcast/side/top/hitter cameras, scrub, 0.25×–1× speed and previous/next
+  shot. It is labelled "3D reconstruction". Under it: all the shot's measurements,
+  each placed against the hitter's middle 80% for the match. "Back to video", the
+  rally row, Escape or browser Back return to the paused, cued video. Shots with no
+  3D path, or browsers without WebGL, get a message instead of the replay.
 - Per-player summaries use reliably measured shots only and show sample sizes.
   Unreliable shots are listed without numbers; estimated contacts are marked.
 

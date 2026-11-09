@@ -15,6 +15,16 @@ export type YouTubePlayer = {
   destroy(): void;
 };
 
+/**
+ * Seek while staying paused. `seekTo` starts playback from the unstarted or cued state, so a
+ * hidden video (behind an open shot replay) is paused again after the seek.
+ */
+export function cuePaused(player: YouTubePlayer, time: number) {
+  player.pauseVideo();
+  player.seekTo(time, true);
+  player.pauseVideo();
+}
+
 export type PendingSeek = { time: number; startedAt: number };
 
 /** Ignore stale timestamps and keyframe pre-roll until the requested rally arrives. */

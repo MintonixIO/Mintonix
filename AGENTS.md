@@ -2,7 +2,7 @@
 
 ## Product scope
 
-The first product is a BWF match viewer that plays rallies while skipping dead time and broadcast replays. Users navigate rallies by score and scrub the gameplay timeline. When a match has an `analysis.json`, an Analyze view beside the same video shows the Engine's per-shot measurements (speed, height, net clearance, placement) and per-player summaries with sample sizes. Shot types, sequences, accounts, billing, and user uploads are outside the current scope.
+The first product is a BWF match viewer that plays rallies while skipping dead time and broadcast replays. Users navigate rallies by score and scrub the gameplay timeline. When a match has an `analysis.json`, an Analyze view lists rallies beside the same video, each expanding to its shots; opening a shot replaces the embed with a 3D reconstruction of its measured flight, with that shot's measurements (speed, height, net clearance, placement) below, and per-player summaries with sample sizes. Shot types, sequences, accounts, billing, and user uploads are outside the current scope.
 
 ## Boundaries
 

@@ -9,6 +9,10 @@ not a list of shipped capabilities or a committed delivery schedule. The initial
 product remains the rally viewer; search, analytics, and expanded 3D experiences
 below are planned ideas unless explicitly identified as available elsewhere.
 
+Available today: a 3D replay of one measured shot at a time, from the watch
+page's Analyze view (see `docs/architecture.md`). Whole-rally replay, comparison
+overlays and the rest of the 3D ideas below remain planned.
+
 ## Entertainment
 
 Find, enjoy, and understand great badminton.

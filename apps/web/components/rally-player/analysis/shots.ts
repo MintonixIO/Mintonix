@@ -1,4 +1,4 @@
-import type { Shot } from "../contract.ts";
+import type { MatchAnalysis, Shot } from "../contract.ts";
 
 /** Badminton court, metres. y runs from the far baseline (0) to the camera baseline. */
 export const COURT = {
@@ -68,3 +68,28 @@ export function endLabel(shot: Shot) {
   const labels: Record<string, string> = { ground: "Landed", net: "Hit the net", racket: "Returned" };
   return (shot.endContact && labels[shot.endContact]) || "Unknown";
 }
+
+/** A shot by its rally id and 0-based position in that rally. */
+export type ShotRef = { rallyId: string; index: number };
+
+/** Seconds before contact that a shot's video cue starts, so the stroke is visible. */
+export const SHOT_LEAD_SECONDS = 0.4;
+
+const SHOT_PARAM = /^([a-z0-9][a-z0-9_-]{0,63})\.([1-9]\d{0,3})$/;
+
+/** Read `?shot=<rallyId>.<n>` (n is 1-based); null when it is missing or malformed. */
+export function parseShotParam(value: string | null): ShotRef | null {
+  const found = value ? SHOT_PARAM.exec(value) : null;
+  return found ? { rallyId: found[1], index: Number(found[2]) - 1 } : null;
+}
+
+export const formatShotParam = ({ rallyId, index }: ShotRef) => `${rallyId}.${index + 1}`;
+
+/** The shot a ref points to, or null when the analysis doesn't have it. */
+export function resolveShot(analysis: MatchAnalysis | undefined, ref: ShotRef | null): { ref: ShotRef; shot: Shot } | null {
+  const shot = ref ? analysis?.rallies[ref.rallyId]?.shots[ref.index] : undefined;
+  return ref && shot ? { ref, shot } : null;
+}
+
+/** Where the video is cued for a shot: just before contact, but never before its rally starts. */
+export const shotCueTime = (rallyStartSeconds: number, shot: Shot) => Math.max(rallyStartSeconds, shot.startSeconds - SHOT_LEAD_SECONDS);

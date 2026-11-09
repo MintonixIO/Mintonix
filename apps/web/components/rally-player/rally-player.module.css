@@ -85,3 +85,10 @@
   .rallyDock { bottom: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .equalizer i { animation: none; } }
+
+/* Analyze view: an open shot's 3D replay takes the embed's place. The YouTube player stays
+   mounted (sized, paused, cued) but hidden and out of flow; nothing is drawn over it. */
+.stageColumn { position: relative; min-width: 0; display: flex; flex-direction: column; }
+.stageColumn[data-replay] > .stage { position: absolute; inset: 0; z-index: 0; visibility: hidden; aspect-ratio: auto; max-height: none; min-height: 0; }
+.stageLoading { display: grid; place-items: center; width: 100%; aspect-ratio: 16 / 9; max-height: calc(100svh - 180px); min-height: 200px; background: var(--bg-sunken); color: var(--text-secondary); font-size: var(--text-sm); }
+.viewer:fullscreen .stageColumn { height: 100%; }

@@ -5,6 +5,8 @@ import type { Match, MatchAnalysis } from "../contract";
 import { rallySeconds } from "../timeline";
 import { PlacementMap } from "./court-drawing";
 import { METRICS, playerTools } from "./players";
+import { ShotRow } from "./shot-row";
+import type { ShotRef } from "./shots";
 import { gameSummaries } from "./summary";
 import styles from "./analysis.module.css";
 
@@ -198,9 +200,24 @@ export function MatchOverview({ match, analysis, current, onSelectRally }: {
   );
 }
 
-/** Match zoom, beside the video: every rally with its length and winner. */
-export function MatchRail({ match, analysis, current, playing, ready, onSelectRally }: {
-  match: Match; analysis?: MatchAnalysis; current: number; playing: boolean; ready: boolean; onSelectRally: (index: number) => void;
+/** Beside the video in analyze view: every rally; a rally expands to list its shots. */
+export function MatchRail({
+  match, analysis, analysisError, current, playing, ready, expanded, liveShot, openShot,
+  onToggleRally, onOpenShot, onMatchSummary, matchSummaryActive,
+}: {
+  match: Match;
+  analysis?: MatchAnalysis;
+  analysisError?: string;
+  current: number;
+  playing: boolean;
+  ready: boolean;
+  expanded: number | null;
+  liveShot: number;
+  openShot: ShotRef | null;
+  onToggleRally: (index: number) => void;
+  onOpenShot: (ref: ShotRef) => void;
+  onMatchSummary: () => void;
+  matchSummaryActive: boolean;
 }) {
   const players = playerTools(match);
   const [a, b] = match.players;
@@ -208,15 +225,23 @@ export function MatchRail({ match, analysis, current, playing, ready, onSelectRa
   const counts = match.rallies.map((rally) => analysis?.rallies[rally.id]?.shots.length ?? 0);
   const max = Math.max(1, ...counts);
   const games = gameSummaries(match);
+  const focus = expanded ?? current;
   useEffect(() => {
     const list = listRef.current;
-    const row = list?.querySelector<HTMLElement>("[aria-current='true']");
-    if (list && row && (row.offsetTop < list.scrollTop || row.offsetTop + row.offsetHeight > list.scrollTop + list.clientHeight)) {
-      list.scrollTo({ top: row.offsetTop - list.clientHeight / 3 });
+    const row = list?.querySelector<HTMLElement>(`[data-rally="${focus}"]`);
+    if (!list || !row) return;
+    // Measure against the scroll container: each game's list is positioned, so offsetTop is per game.
+    const top = row.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop;
+    if (top < list.scrollTop || top + row.offsetHeight > list.scrollTop + list.clientHeight) {
+      list.scrollTo({ top: top - list.clientHeight / 3 });
     }
-  }, [current]);
+  }, [focus]);
   return (
     <div className={styles.rail}>
+      <div className={styles.railTop}>
+        <h2>Rallies <span>{match.rallies.length}</span></h2>
+        <button type="button" className={styles.summaryButton} aria-pressed={matchSummaryActive} onClick={onMatchSummary}>Match summary</button>
+      </div>
       <div className={styles.matchColumns} aria-hidden="true"><span>#</span><span>Score</span><span>Shots</span><span>Point</span></div>
       <div ref={listRef} className={styles.shotScroll}>
         {games.map(({ game, indices }) => (
@@ -226,11 +251,14 @@ export function MatchRail({ match, analysis, current, playing, ready, onSelectRa
               {indices.map((index) => {
                 const rally = match.rallies[index];
                 const selected = index === current;
+                const open = index === expanded;
+                const shots = analysis?.rallies[rally.id]?.shots ?? [];
                 return (
                   <li key={rally.id}>
-                    <button type="button" className={styles.matchRow} disabled={!ready} aria-current={selected ? "true" : undefined}
-                      aria-label={`Rally ${index + 1}, ${rally.scoreBefore ? `score ${rally.scoreBefore[a.id]} to ${rally.scoreBefore[b.id]}` : "score unknown"}, ${analysis ? `${counts[index]} shots, ` : ""}${Math.round(rallySeconds(rally))} seconds${rally.winner ? `, point to ${players.name(rally.winner)}` : ""}. Zoom in.`}
-                      onClick={() => onSelectRally(index)}>
+                    <button type="button" className={styles.matchRow} disabled={!ready} data-rally={index}
+                      aria-current={selected ? "true" : undefined} aria-expanded={open}
+                      aria-label={`Rally ${index + 1}, ${rally.scoreBefore ? `score ${rally.scoreBefore[a.id]} to ${rally.scoreBefore[b.id]}` : "score unknown"}, ${analysis ? `${counts[index]} shots, ` : ""}${Math.round(rallySeconds(rally))} seconds${rally.winner ? `, point to ${players.name(rally.winner)}` : ""}. ${open ? "Hide shots." : "Show shots."}`}
+                      onClick={() => onToggleRally(index)}>
                       <span className={styles.shotNumber}>{selected && playing ? <span className={styles.liveDot} aria-hidden="true" /> : index + 1}</span>
                       <span className={styles.railScore}>{rally.scoreBefore ? <><b data-tone="a">{rally.scoreBefore[a.id]}</b>–<b data-tone="b">{rally.scoreBefore[b.id]}</b></> : "–"}</span>
                       <span className={styles.shotBar} data-tone={players.tone(rally.winner)}>
@@ -239,6 +267,25 @@ export function MatchRail({ match, analysis, current, playing, ready, onSelectRa
                       </span>
                       <span className={styles.shotPlayer} data-tone={players.tone(rally.winner)}>{rally.winner ? players.shortName(rally.winner) : "–"}</span>
                     </button>
+                    {open && (
+                      <div className={styles.railShots}>
+                        {!analysis && !analysisError && <p className={styles.railMessage} role="status">Loading shot data…</p>}
+                        {analysisError && <p className={styles.railMessage} role="alert">{analysisError}</p>}
+                        {analysis && shots.length === 0 && <p className={styles.railMessage}>No shots were reconstructed for this rally.</p>}
+                        {shots.length > 0 && (
+                          <ol className={styles.shotList} aria-label={`Shots in rally ${index + 1}`}>
+                            {shots.map((shot, shotIndex) => (
+                              <li key={shotIndex}>
+                                <ShotRow match={match} shot={shot} index={shotIndex} rallyId={rally.id}
+                                  current={openShot?.rallyId === rally.id && openShot.index === shotIndex}
+                                  live={selected && playing && !openShot && shotIndex === liveShot}
+                                  onSelect={() => onOpenShot({ rallyId: rally.id, index: shotIndex })} />
+                              </li>
+                            ))}
+                          </ol>
+                        )}
+                      </div>
+                    )}
                   </li>
                 );
               })}
