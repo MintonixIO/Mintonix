@@ -31,7 +31,7 @@
 @media (max-width: 760px) { .allNotes { margin-top: 18px; } }
 @media (prefers-reduced-motion: reduce) { .allNotes { transition: none; } }
 
-/* ---- Full-broadcast benchmark and independently available excerpt ---- */
+/* ---- Full-broadcast benchmark and an available library match ---- */
 .eyebrow { margin: 0 0 20px; color: var(--text-secondary); font-size: var(--text-xs); font-weight: var(--fw-medium); line-height: 1.5; }
 .allNotes { gap: 16px; }
 .sampleGrid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: center; gap: clamp(32px, 5vw, 72px); }

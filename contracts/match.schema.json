@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "number",
+      "const": 3
+    },
+    "matchId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "players": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/Player"
+        },
+        {
+          "$ref": "#/$defs/Player"
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "const": "youtube"
+        },
+        "videoId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{11}$"
+        },
+        "durationSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "provider",
+        "videoId",
+        "durationSeconds"
+      ],
+      "additionalProperties": false,
+      "description": "The published video every timestamp refers to. Playback embeds it; media is never re-hosted."
+    },
+    "review": {
+      "type": "string",
+      "enum": [
+        "automatic",
+        "reviewed"
+      ],
+      "description": "automatic: produced by the engine and not checked by hand; reviewed: rally boundaries and scores checked by hand"
+    },
+    "rallies": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "description": "Stable rally id within the match"
+          },
+          "game": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "segments": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "number",
+                  "minimum": 0
+                }
+              ],
+              "items": false,
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "description": "Watchable [start, end) intervals in source-video seconds; camera cuts and replays inside a rally are left out"
+          },
+          "scoreBefore": {
+            "description": "Each player's score before the rally, keyed by player id",
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            },
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "server": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "winner": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          }
+        },
+        "required": [
+          "id",
+          "game",
+          "segments"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "version",
+    "matchId",
+    "title",
+    "players",
+    "source",
+    "review",
+    "rallies"
+  ],
+  "additionalProperties": false,
+  "title": "Mintonix match v3",
+  "$defs": {
+    "Player": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+          "description": "Stable player id used by scores, servers, winners and shots"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

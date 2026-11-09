@@ -15,6 +15,7 @@
 .versus { color: var(--text-muted); font-family: var(--font-sans); font-size: var(--text-sm); font-weight: var(--fw-regular); letter-spacing: 0; }
 .matchSummary { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; color: var(--text-secondary); font-size: var(--text-xs); }
 .matchSummary > span + span::before { content: "·"; margin-right: 8px; color: var(--text-faint); }
+.headerActions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .sourceLink { display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0; min-height: 38px; padding: 0 13px; border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-secondary); font-size: var(--text-xs); transition: background var(--dur-fast), color var(--dur-fast); }
 .sourceLink:hover { background: var(--surface-2); color: var(--text-strong); }
 .sourceLink > span { font-size: var(--text-md); }

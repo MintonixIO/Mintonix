@@ -90,7 +90,7 @@ and Technical product experiences above. **Player** includes coaches.
 Use a distinct composition for each group: one wide shared toolkit with a 3D
 stage and a search rail; an editorial player section with a shot-sequence example
 and quiet supporting features; then a viewer section anchored by a measured
-playback benchmark and an independently available match excerpt. The section
+playback benchmark and an available library match. The section
 index links directly to all three groups. Avoid repeating an identical card grid
 or illustrating every feature. Keep serve & return, collections, and sharing
 centered. Play short feature animations once as they enter view, one at a time.
@@ -98,12 +98,12 @@ Show the complete examples immediately when visitors prefer reduced motion.
 
 Label planned features and development status explicitly. The feature descriptions
 are not working controls for unimplemented features. Keep the source video in its
-existing player and the real match excerpt link available.
+existing player and the real library match link available.
 
 The compaction comparison uses the supplied full-broadcast measurements documented
 in [rally-playback-benchmark.md](rally-playback-benchmark.md): 1:25:20 of video,
 27:29 of verified play, and 27:38 of detector output. Keep the benchmark separate
-from the library excerpt; do not calculate the headline from excerpt boundaries.
+from the library match; do not calculate the headline from its boundaries.
 
 Reserve `/blog/entertainment` and `/blog/technical` for detailed breakdowns reached
 through the footer. Those links replace Playback design and Detection notes; the

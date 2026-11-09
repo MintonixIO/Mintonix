@@ -1,0 +1,416 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "number",
+      "const": 1
+    },
+    "matchId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "quality": {
+      "type": "object",
+      "properties": {
+        "shots": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "ok": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "guessed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "unreliable": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "shots",
+        "ok",
+        "guessed",
+        "unreliable"
+      ],
+      "additionalProperties": false
+    },
+    "rallies": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "shots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Shot"
+            }
+          }
+        },
+        "required": [
+          "shots"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Shots per rally, keyed by rally id"
+    },
+    "players": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "shots": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "okShots": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "speed": {
+            "$ref": "#/$defs/Distribution"
+          },
+          "apex": {
+            "$ref": "#/$defs/Distribution"
+          },
+          "contactHeight": {
+            "$ref": "#/$defs/Distribution"
+          },
+          "netClearance": {
+            "$ref": "#/$defs/Distribution"
+          },
+          "placements": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "racket",
+                        "net",
+                        "ground"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              ],
+              "items": false,
+              "minItems": 4,
+              "maxItems": 4
+            }
+          },
+          "pointsWon": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "pointsWithKnownWinner": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "serves": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "pointsWonOnServe": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "shots",
+          "okShots",
+          "speed",
+          "apex",
+          "contactHeight",
+          "netClearance",
+          "placements",
+          "pointsWon",
+          "pointsWithKnownWinner",
+          "serves",
+          "pointsWonOnServe"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Per-player summaries over ok shots, keyed by player id"
+    }
+  },
+  "required": [
+    "version",
+    "matchId",
+    "quality",
+    "rallies",
+    "players"
+  ],
+  "additionalProperties": false,
+  "title": "Mintonix match analysis v1",
+  "$defs": {
+    "Shot": {
+      "type": "object",
+      "properties": {
+        "hitter": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Player id; null for a net-cord continuation"
+        },
+        "startSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "endSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "startContact": {
+          "type": "string",
+          "enum": [
+            "racket",
+            "net"
+          ]
+        },
+        "endContact": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "racket",
+                "net",
+                "ground"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "speed": {
+          "description": "Launch speed, m/s",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "arrivalSpeed": {
+          "description": "Speed at the next contact, m/s",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "contact": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "Contact point, court metres: x across (0–6.10), y from the far baseline (0) to the camera baseline (13.40), z up"
+        },
+        "end": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "apex": {
+          "description": "Highest point, m",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "netClearance": {
+          "description": "Height above the 1.524 m net top where the path crosses the net, m",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "launchAngle": {
+          "description": "Degrees above horizontal; negative is downward",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "descentAngle": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "hitterEnd": {
+          "type": "string",
+          "enum": [
+            "near",
+            "far"
+          ],
+          "description": "near: the end nearest the broadcast camera"
+        },
+        "placement": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "End point seen with the hitter at the camera end"
+        },
+        "quality": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "guessed",
+            "unreliable"
+          ]
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 4,
+            "maxItems": 4
+          },
+          "description": "[seconds, x, y, z] samples; empty when the 3D fit failed"
+        }
+      },
+      "required": [
+        "hitter",
+        "startSeconds",
+        "endSeconds",
+        "startContact",
+        "endContact",
+        "speed",
+        "arrivalSpeed",
+        "contact",
+        "end",
+        "apex",
+        "netClearance",
+        "launchAngle",
+        "descentAngle",
+        "hitterEnd",
+        "placement",
+        "quality",
+        "issues",
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "Distribution": {
+      "type": "object",
+      "properties": {
+        "n": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "median": {
+          "type": "number"
+        },
+        "p10": {
+          "type": "number"
+        },
+        "p90": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "n"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

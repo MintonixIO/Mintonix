@@ -34,7 +34,7 @@ async function MatchLibrary() {
             <Link className={styles.match} href={`/watch/${match.matchId}`}>
               <span className={styles.label}>Rally viewer <span aria-hidden="true">↗</span></span>
               <h2>{match.title}</h2>
-              <p>{match.players[0]} <span className={styles.versus}>vs</span> {match.players[1]}</p>
+              <p>{match.players[0].name} <span className={styles.versus}>vs</span> {match.players[1].name}</p>
               <div className={styles.details}>
                 <span>{match.rallies.length} {match.rallies.length === 1 ? "rally" : "rallies"}</span>
                 <span>{formatTime(match.source.durationSeconds)} broadcast</span>
@@ -45,7 +45,7 @@ async function MatchLibrary() {
           </li>
         ))}
       </ul>
-      <p className={styles.note}>Early preview: rally boundaries and scores are automatically detected and may contain errors.</p>
+      {matches.some((match) => match.review === "automatic") && <p className={styles.note}>Early preview: rally boundaries and scores in automatically detected matches may contain errors.</p>}
     </>
   );
 }

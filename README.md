@@ -28,10 +28,10 @@ pnpm start
 | Directory | Purpose | Status |
 | --- | --- | --- |
 | `apps/web` | Next.js website and custom rally viewer | Local match playback |
-| `contracts` | Versioned rally manifest schema | Implemented |
+| `contracts` | Match and shot-analysis schemas (generated from the app's zod contract) | Implemented |
 | `docs` | Scope, architecture, brand, and deployment guidance | Implemented |
 
-The homepage provides a match-link form and explains the viewer components. The form validates URL syntax locally but does not submit a processing job. Local match manifests can be viewed at `/watch/[matchId]` with `MINTONIX_LOCAL_MATCHES_DIR` configured in `apps/web/.env.local`; see `docs/development.md`. The current local sample is `dl1s0`, assembled from 11 research clips. There is no upload, account, or cloud integration in the website yet.
+The homepage provides a match-link form and explains the viewer components. The form validates URL syntax locally but does not submit a processing job. Local matches can be viewed at `/watch/[matchId]` with `MINTONIX_LOCAL_MATCHES_DIR` configured in `apps/web/.env.local`; see `docs/development.md`. The local sample is `dl1` (reviewed rallies and shot data from the Engine). There is no upload, account, or cloud integration in the website yet.
 
 The technical blog is available at `/blog`. Each article is a simple `.md` file under `apps/web/content/blog`; see `docs/blogging.md` for frontmatter and authoring instructions.
 

@@ -1,7 +1,7 @@
 # Rally playback benchmark: dl1
 
 Source: user-provided measurement summary supplied on November 5, 2026. These
-values describe one full broadcast (`dl1`), not whichever match excerpt happens
+values describe one full broadcast (`dl1`), not whichever match happens
 to be available in the local library. They are supplied results, not measurements
 reproduced by this web repository.
 
@@ -26,6 +26,6 @@ the broadcast are breaks between points and games.
 ## Homepage presentation
 
 Present these numbers as a **single-broadcast benchmark**, separately from the
-playable library excerpt. Use verified play for the primary time comparison and
+playable library match. Use verified play for the primary time comparison and
 show detector output as a secondary result. Do not imply every match has the same
-ratio or that this benchmark verifies the current excerpt's boundaries.
+ratio or that this benchmark verifies the library match's boundaries.

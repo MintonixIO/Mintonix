@@ -1,75 +1,71 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { listLocalMatches, readLocalMatch } from "./local-match.ts";
+import { listLocalMatches, readLocalAnalysis, readLocalMatch } from "./local-match.ts";
+import { analysisFixture, matchFixture } from "./test-fixtures.ts";
 
-test("local match loading is opt-in, validates manifests, and restricts match IDs", async () => {
+async function withMatchesDirectory(run: (directory: string) => Promise<void>) {
   const previous = process.env.MINTONIX_LOCAL_MATCHES_DIR;
   const directory = await mkdtemp(join(tmpdir(), "mintonix-match-"));
   try {
-    delete process.env.MINTONIX_LOCAL_MATCHES_DIR;
-    assert.equal(await readLocalMatch("local"), null);
-    process.env.MINTONIX_LOCAL_MATCHES_DIR = directory;
-    for (const id of ["../local", "..", "/etc/passwd", "%2e%2e", "a/b", ""]) {
-      assert.equal(await readLocalMatch(id), null);
-    }
-    assert.equal(await readLocalMatch("missing"), null);
-    const match = join(directory, "local");
-    await mkdir(match);
-    const manifest = {
-      version: 2, matchId: "local", title: "Local match", players: ["A", "B"],
-      source: { provider: "youtube", videoId: "AAAAAAAAAAA", durationSeconds: 10 },
-      rallies: [{ id: "one", game: 1, startSeconds: 1, endSeconds: 2 }],
-    };
-    await writeFile(join(match, "manifest.json"), JSON.stringify(manifest));
-    const loaded = await readLocalMatch("local");
-    assert.equal(loaded?.manifest.matchId, "local");
-    assert.equal(loaded?.manifest.source.videoId, "AAAAAAAAAAA");
-    await writeFile(join(match, "manifest.json"), JSON.stringify({ ...manifest, matchId: "other" }));
-    await assert.rejects(readLocalMatch("local"), /match ID/);
-    await writeFile(join(match, "manifest.json"), JSON.stringify({ ...manifest, rallies: [] }));
-    await assert.rejects(readLocalMatch("local"), /at least one rally/);
+    await run(directory);
   } finally {
     if (previous === undefined) delete process.env.MINTONIX_LOCAL_MATCHES_DIR;
     else process.env.MINTONIX_LOCAL_MATCHES_DIR = previous;
     await rm(directory, { recursive: true, force: true });
   }
-});
+}
 
-test("the library lists all matches with valid manifests and excludes invalid entries", async () => {
-  const previous = process.env.MINTONIX_LOCAL_MATCHES_DIR;
-  const directory = await mkdtemp(join(tmpdir(), "mintonix-library-"));
-  try {
-    delete process.env.MINTONIX_LOCAL_MATCHES_DIR;
-    assert.deepEqual(await listLocalMatches(), []);
-    process.env.MINTONIX_LOCAL_MATCHES_DIR = join(directory, "missing");
-    assert.deepEqual(await listLocalMatches(), []);
-    process.env.MINTONIX_LOCAL_MATCHES_DIR = directory;
-    assert.deepEqual(await listLocalMatches(), []);
+async function writeMatch(directory: string, folder: string, match: unknown, analysis?: unknown) {
+  await mkdir(join(directory, folder), { recursive: true });
+  await writeFile(join(directory, folder, "match.json"), typeof match === "string" ? match : JSON.stringify(match));
+  if (analysis !== undefined) await writeFile(join(directory, folder, "analysis.json"), JSON.stringify(analysis));
+}
 
-    for (const id of ["match-b", "match-a", "invalid", "v1-manifest", "wrong-id", "Invalid ID"]) {
-      const match = join(directory, id);
-      await mkdir(match);
-      const manifest = id === "v1-manifest"
-        ? { version: 1, matchId: id, title: `Match ${id}`, players: ["A", "B"], sourceDurationSeconds: 10,
-          rallies: [{ id: "one", game: 1, startSeconds: 1, endSeconds: 2 }] }
-        : { version: 2, matchId: id === "wrong-id" ? "other" : id, title: `Match ${id}`, players: ["A", "B"],
-          source: { provider: "youtube", videoId: "AAAAAAAAAAA", durationSeconds: 10 },
-          rallies: [{ id: "one", game: 1, startSeconds: 1, endSeconds: 2 }] };
-      await writeFile(join(match, "manifest.json"), id === "invalid" ? "{}" : JSON.stringify(manifest));
-    }
-    await mkdir(join(directory, "unfinished"));
-    await writeFile(join(directory, "notes.txt"), "Not a match");
-    const matches = await listLocalMatches();
-    assert.deepEqual(matches.map((match) => match.matchId), ["match-a", "match-b"]);
-    assert.equal(matches[0].title, "Match match-a");
-    process.env.MINTONIX_LOCAL_MATCHES_DIR = "relative/path";
-    await assert.rejects(listLocalMatches(), /absolute path/);
-  } finally {
-    if (previous === undefined) delete process.env.MINTONIX_LOCAL_MATCHES_DIR;
-    else process.env.MINTONIX_LOCAL_MATCHES_DIR = previous;
-    await rm(directory, { recursive: true, force: true });
+test("local match loading is opt-in, validates match files, and restricts match IDs", () => withMatchesDirectory(async (directory) => {
+  delete process.env.MINTONIX_LOCAL_MATCHES_DIR;
+  assert.equal(await readLocalMatch("illustrative-match"), null);
+  process.env.MINTONIX_LOCAL_MATCHES_DIR = directory;
+  for (const id of ["../local", "..", "/etc/passwd", "%2e%2e", "a/b", ""]) assert.equal(await readLocalMatch(id), null);
+  assert.equal(await readLocalMatch("missing"), null);
+  await writeMatch(directory, "illustrative-match", matchFixture());
+  const match = await readLocalMatch("illustrative-match");
+  assert.equal(match?.source.videoId, "AAAAAAAAAAA");
+  assert.equal(await readLocalAnalysis(match!), null);
+  await writeMatch(directory, "illustrative-match", { ...matchFixture(), matchId: "other" });
+  await assert.rejects(readLocalMatch("illustrative-match"), /match ID/);
+  await writeMatch(directory, "illustrative-match", { ...matchFixture(), rallies: [] });
+  await assert.rejects(readLocalMatch("illustrative-match"), /Invalid match/);
+}));
+
+test("analysis is optional and validated against its match", () => withMatchesDirectory(async (directory) => {
+  process.env.MINTONIX_LOCAL_MATCHES_DIR = directory;
+  await writeMatch(directory, "illustrative-match", matchFixture(), analysisFixture());
+  const match = (await readLocalMatch("illustrative-match"))!;
+  assert.equal((await readLocalAnalysis(match))?.rallies.r1.shots.length, 2);
+  await writeMatch(directory, "illustrative-match", matchFixture(), { ...analysisFixture(), matchId: "other" });
+  await assert.rejects(readLocalAnalysis(match), /Invalid analysis/);
+}));
+
+test("the library lists all valid matches and excludes invalid entries", () => withMatchesDirectory(async (directory) => {
+  delete process.env.MINTONIX_LOCAL_MATCHES_DIR;
+  assert.deepEqual(await listLocalMatches(), []);
+  process.env.MINTONIX_LOCAL_MATCHES_DIR = join(directory, "missing");
+  assert.deepEqual(await listLocalMatches(), []);
+  process.env.MINTONIX_LOCAL_MATCHES_DIR = directory;
+  assert.deepEqual(await listLocalMatches(), []);
+  for (const id of ["match-b", "match-a", "wrong-id", "Invalid ID"]) {
+    await writeMatch(directory, id, { ...matchFixture(), matchId: id === "wrong-id" ? "other" : id, title: `Match ${id}` });
   }
-});
+  await writeMatch(directory, "invalid", "{}");
+  await writeMatch(directory, "v2-manifest", { ...matchFixture(), matchId: "v2-manifest", version: 2 });
+  await mkdir(join(directory, "unfinished"));
+  await writeFile(join(directory, "notes.txt"), "Not a match");
+  const matches = await listLocalMatches();
+  assert.deepEqual(matches.map((match) => match.matchId), ["match-a", "match-b"]);
+  assert.equal(matches[0].title, "Match match-a");
+  process.env.MINTONIX_LOCAL_MATCHES_DIR = "relative/path";
+  await assert.rejects(listLocalMatches(), /absolute path/);
+}));

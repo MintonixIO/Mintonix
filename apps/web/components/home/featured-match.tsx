@@ -3,11 +3,11 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { io } from "next/cache";
 import { listLocalMatches } from "@/components/rally-player/local-match";
-import { formatTime } from "@/components/rally-player/timeline";
+import { formatTime, rallySeconds } from "@/components/rally-player/timeline";
 import styles from "@/app/(site)/home.module.css";
 
 // User-supplied dl1 measurements. This full-broadcast benchmark is independent
-// of whichever excerpt is available in the local library. See docs/rally-playback-benchmark.md.
+// of whichever match is available in the local library. See docs/rally-playback-benchmark.md.
 const benchmark = { broadcastSeconds: 5120, verifiedSeconds: 1648.8 };
 
 function RallyBenchmark() {
@@ -21,32 +21,39 @@ function RallyBenchmark() {
       <div className={styles.comparisonLabel}><span>Verified live play</span><strong>{formatTime(Math.round(benchmark.verifiedSeconds))}</strong></div>
       <div className={styles.compactBar} data-feature-motion="measure" aria-hidden="true"><span style={{ width: `${playPercent}%` }} /></div>
     </figure>
-    <p className={styles.sampleCaveat}>Main-camera play only. Excludes replays, other camera angles, and dead time. A full-broadcast benchmark, separate from the viewer excerpt.</p>
+    <p className={styles.sampleCaveat}>Main-camera play only. Excludes replays, other camera angles, and dead time.</p>
   </article>;
 }
 
-/** Feature only an available, validated manifest; never invent a playable sample. */
+/** Feature only an available, validated match; never invent a playable sample. */
 async function AvailableMatch() {
   await io();
   const [match] = await listLocalMatches();
-  const rallySeconds = match?.rallies.reduce((total, rally) => total + rally.endSeconds - rally.startSeconds, 0) ?? 0;
+  if (!match) return <EmptySample />;
+  const playSeconds = match.rallies.reduce((total, rally) => total + rallySeconds(rally), 0);
+  const [playerA, playerB] = match.players.map((player) => player.name);
+  const detected = match.review === "automatic" ? "detected " : "";
 
-  return match ? <Link className={styles.sampleCard} href={`/watch/${match.matchId}`} aria-label={`Watch rallies: ${match.players[0]} vs ${match.players[1]}`}>
+  return <Link className={styles.sampleCard} href={`/watch/${match.matchId}`} aria-label={`Watch rallies: ${playerA} vs ${playerB}`}>
       <div className={styles.sampleImage}>
         <Image src={`https://i.ytimg.com/vi/${match.source.videoId}/hqdefault.jpg`} alt="" fill sizes="(max-width: 760px) 100vw, 45vw" />
-        <span className={styles.sampleBadge}>Try the viewer · Match excerpt</span>
+        <span className={styles.sampleBadge}>Try the viewer</span>
         <span className={styles.samplePlay} aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7L8 5Z" /></svg></span>
       </div>
       <div className={styles.sampleDetails}>
         <p className={styles.sampleEvent}>{match.title}</p>
-        <h4>{match.players[0]} <span>vs</span> {match.players[1]}</h4>
-        <p className={styles.sampleMeta}>{match.rallies.length} detected {match.rallies.length === 1 ? "rally" : "rallies"} <span aria-hidden="true">·</span> {formatTime(Math.round(rallySeconds))} rally playback</p>
+        <h4>{playerA} <span>vs</span> {playerB}</h4>
+        <p className={styles.sampleMeta}>{match.rallies.length} {detected}{match.rallies.length === 1 ? "rally" : "rallies"} <span aria-hidden="true">·</span> {formatTime(Math.round(playSeconds))} rally playback</p>
         <span className={styles.sampleAction}>Watch rallies <span aria-hidden="true">→</span></span>
       </div>
-    </Link> : <div className={styles.emptySample}>
+    </Link>;
+}
+
+function EmptySample() {
+  return <div className={styles.emptySample}>
       <p className={styles.eyebrow}>The rally viewer · Early preview</p>
       <h4>A seat at the court.<br />At your own pace.</h4>
-      <p>Available match excerpts will appear in the library.</p>
+      <p>Available matches will appear in the library.</p>
       <Link className={styles.allNotes} href="/library">Explore the library <span aria-hidden="true">→</span></Link>
     </div>;
 }

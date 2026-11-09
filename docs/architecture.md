@@ -8,21 +8,49 @@ The original video's timestamps remain authoritative. Do not assume the broadcas
 
 ## Components
 
-This repository contains the Next.js app configured for deployment on Vercel, including the website, manifest reader, score list, and custom video controls. Backend implementation and deployment are maintained separately.
+This repository contains the Next.js app configured for deployment on Vercel, including the website, match reader, score list, and custom video controls. Backend implementation and deployment are maintained separately.
 
-Local watch pages validate v2 match manifests and embed the manifest's YouTube source. The library lists configured local matches. Mintonix never re-hosts broadcast video. The match-link form validates URL syntax locally; public processing is not connected.
+Local watch pages validate v3 match files and embed the match's YouTube source. An optional analysis file carries per-shot data for the planned analysis view. The library lists configured local matches. Mintonix never re-hosts broadcast video. The match-link form validates URL syntax locally; public processing is not connected.
 
 ## Playback model
 
-A rally is a half-open interval `[startSeconds, endSeconds)` in the original source. The gameplay timeline is the concatenation of these intervals. The visible player uses the original-video timeline with rally intervals highlighted. During playback, the default Skip gaps setting advances from each rally end to the next start and pauses after the last interval. Disable it to inspect the full source. Paused timeline scrubbing retains the chosen source timestamp. The concatenated gameplay timeline remains an internal mapping rather than a separate visible timeline.
+A rally is one point of play made of one or more half-open segments `[start, end)` in the original source; a camera cut or replay inside a rally separates its segments. The gameplay timeline is the concatenation of all segments. The visible player uses the original-video timeline with rally intervals highlighted. During playback, the default Skip gaps setting advances from each segment end to the next segment start and pauses after the last one. Disable it to inspect the full source. Paused timeline scrubbing retains the chosen source timestamp. The concatenated gameplay timeline remains an internal mapping rather than a separate visible timeline.
 
-Use the published source video plus a manifest. This supports correcting boundaries without re-encoding footage, and the embed keeps playback on the rights holder's upload. A generated gameplay-only rendition is not an option for broadcast footage we do not own; seeking pauses inside the YouTube embed are an accepted cost.
+Use the published source video plus a match file. This supports correcting boundaries without re-encoding footage, and the embed keeps playback on the rights holder's upload. A generated gameplay-only rendition is not an option for broadcast footage we do not own; seeking pauses inside the YouTube embed are an accepted cost.
 
-Score labels identify the score **before** the rally and are optional. Detecting rallies does not guarantee accurate score OCR. A manifest without score labels must remain playable and navigable by rally number.
+Score labels identify the score **before** the rally and are optional. Detecting rallies does not guarantee accurate score OCR. A match without score labels must remain playable and navigable by rally number.
+
+## Analyze view
+
+`/watch/<matchId>?view=analyze` keeps the same embedded video and adds shot data
+beside and below it, never over it. The view lives in the URL so links can be
+shared; switching uses `history.pushState`, so the player is not remounted.
+Shot data is fetched from `/api/matches/<matchId>/analysis` only when the view
+opens; the Watch view never downloads it.
+
+Analyze has three zoom levels, chosen with the Match › Rally › Shot trail at the
+top of the side panel. Rally and Shot always mean the rally and shot under the
+playhead, so zooming never loses sync with the video.
+
+- **Match**: the side panel lists every rally with its shot count and winner.
+  Under the video: shots per rally coloured by point winner, each game's score
+  and longest rally, and each player's shot profile. Picking a rally seeks to it
+  and zooms in.
+- **Rally**: the side panel lists the rally's shots. Under the video: a court
+  drawing of every shot from above and from the side, with the shuttle's live
+  position, and how the point went (winner, ending, fastest and highest shot).
+  Picking a shot seeks to just before its contact and zooms in.
+- **Shot**: the drawing shows only that shot, beside all its measurements, and
+  each measurement is placed against the hitter's middle 80% for the match.
+- Per-player summaries use reliably measured shots only and show sample sizes.
+  Unreliable shots are listed without numbers; estimated contacts are marked.
+
+Shot data is automatic and labelled as such. Shot types, sequences and
+serve-and-return patterns are planned and labelled as planned.
 
 ## App data boundary
 
-- Read local match manifests on the server using `MINTONIX_LOCAL_MATCHES_DIR`; do not send filesystem paths or server credentials to the client.
-- Accept only manifests that satisfy the contract and temporal invariants documented in `contracts/README.md`.
+- Read local matches on the server from `MINTONIX_LOCAL_MATCHES_DIR/<matchId>/{match.json, analysis.json}`; do not send filesystem paths or server credentials to the client.
+- Accept only files that satisfy the contracts and the cross-field rules documented in `contracts/README.md`.
 - Keep match IDs and rally IDs stable so navigation remains consistent when boundaries are corrected.
-- Keep media, generated manifests, model weights, and credentials outside Git.
+- Keep media, generated match files, model weights, and credentials outside Git.

@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
-import { formatTime, normalizeMediaTime, rallyPlaybackPosition, type RallyManifest } from "./timeline";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import type { Match } from "./contract";
+import { formatTime, normalizeMediaTime, playableSegments, rallyIndexAt, rallyPlaybackPosition, rallySeconds, rallyStart } from "./timeline";
 import { describeYouTubeError, isSeekPending, loadYouTubeApi, PlayerState, type PendingSeek, type YouTubePlayer } from "./youtube";
+import { AnalysisDeck, ShotRail, useAnalysis, ZoomTrail } from "./analysis/analysis-views";
+import { MatchRail } from "./analysis/match-level";
+import type { Zoom } from "./analysis/summary";
+import { activeShotIndex } from "./analysis/shots";
+import { useView } from "./view";
 import styles from "./rally-player.module.css";
 
 type IconName = "play" | "pause" | "volume" | "muted" | "previous" | "next" | "expand" | "collapse" | "list" | "close";
@@ -25,8 +31,9 @@ function Icon({ name }: { name: IconName }) {
 
 const SYNC_INTERVAL_MS = 100;
 const DURATION_TOLERANCE_SECONDS = 2;
+const SHOT_LEAD_SECONDS = 0.4;
 
-export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
+export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasAnalysis?: boolean }) {
   const mountRef = useRef<HTMLDivElement>(null);
   const youtubeRef = useRef<YouTubePlayer | null>(null);
   const pendingSeekRef = useRef<PendingSeek | null>(null);
@@ -35,8 +42,9 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
   const listRef = useRef<HTMLDivElement>(null);
-  const rallies = manifest.rallies;
-  const [sourceTime, setSourceTime] = useState(rallies[0].startSeconds);
+  const rallies = match.rallies;
+  const segments = useMemo(() => playableSegments(rallies), [rallies]);
+  const [sourceTime, setSourceTime] = useState(rallyStart(rallies[0]));
   const [isPlaying, setIsPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [ready, setReady] = useState(false);
@@ -44,13 +52,26 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mediaError, setMediaError] = useState("");
-  const selectedIndex = rallies.findIndex((rally, index) => sourceTime >= rally.startSeconds && (sourceTime < rally.endSeconds || (index === rallies.length - 1 && sourceTime === rally.endSeconds)));
+  const selectedIndex = rallyIndexAt(rallies, sourceTime);
   const selected = rallies[selectedIndex];
-  const nextIndex = rallies.findIndex((rally) => rally.startSeconds > sourceTime);
+  const nextIndex = rallies.findIndex((rally) => rallyStart(rally) > sourceTime);
   const previousTarget = selectedIndex >= 0 ? selectedIndex - 1 : (nextIndex === -1 ? rallies.length : nextIndex) - 1;
   const nextTarget = selectedIndex >= 0 ? selectedIndex + 1 : nextIndex;
-  const { videoId, durationSeconds: duration } = manifest.source;
-  const firstStart = rallies[0].startSeconds;
+  const { videoId, durationSeconds: duration } = match.source;
+  const firstStart = rallyStart(rallies[0]);
+  const [scoreFirst, scoreSecond] = match.players.map((player) => player.id);
+  const view = useView(hasAnalysis);
+  const analyzing = view === "analyze" && !isFullscreen;
+  const { analysis, error: analysisError } = useAnalysis(match.matchId, view === "analyze");
+  // Between rallies, analyze view keeps showing the rally that just ended.
+  const focusIndex = selectedIndex >= 0 ? selectedIndex : Math.max(0, previousTarget);
+  const focusRally = rallies[focusIndex];
+  const shots = analysis?.rallies[focusRally.id]?.shots ?? [];
+  // A shot becomes current SHOT_LEAD_SECONDS before contact, matching where seekShot lands.
+  // Before the serve, show the first shot so the detail panel is never empty.
+  const activeShot = shots.length ? Math.max(0, activeShotIndex(shots, sourceTime + SHOT_LEAD_SECONDS)) : -1;
+  // Analyze view zooms between the whole match, the rally under the playhead and its current shot.
+  const [zoom, setZoom] = useState<Zoom>("match");
 
   // Keep the current rally visible in the list without scrolling the page.
   useEffect(() => {
@@ -143,7 +164,7 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
       if (pending && isSeekPending(pending, time, performance.now())) return;
       pendingSeekRef.current = null;
       if (playing && skipGaps) {
-        const target = rallyPlaybackPosition(rallies, time);
+        const target = rallyPlaybackPosition(segments, time);
         if (target.ended) player.pauseVideo();
         if (Math.abs(target.time - time) > 0.25) {
           pendingSeekRef.current = { time: target.time, startedAt: performance.now() };
@@ -152,10 +173,10 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
         setSourceTime(target.time);
         return;
       }
-      setSourceTime(normalizeMediaTime(rallies, time));
+      setSourceTime(normalizeMediaTime(segments, time));
     }, SYNC_INTERVAL_MS);
     return () => window.clearInterval(timer);
-  }, [ready, skipGaps, rallies]);
+  }, [ready, skipGaps, segments]);
 
   function seek(time: number) {
     const player = youtubeRef.current;
@@ -163,12 +184,28 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
     const clamped = Math.max(0, Math.min(time, duration));
     pendingSeekRef.current = { time: clamped, startedAt: performance.now() };
     player.seekTo(clamped, true);
-    setSourceTime(normalizeMediaTime(rallies, clamped));
+    setSourceTime(normalizeMediaTime(segments, clamped));
   }
 
   function selectRally(index: number) {
     const rally = rallies[index];
-    if (rally) seek(rally.startSeconds);
+    if (rally) seek(rallyStart(rally));
+  }
+
+  function seekShot(index: number) {
+    const shot = shots[index];
+    // Start just before contact so the stroke is visible.
+    if (shot) seek(Math.max(rallyStart(focusRally), shot.startSeconds - SHOT_LEAD_SECONDS));
+  }
+
+  function zoomToRally(index: number) {
+    selectRally(index);
+    setZoom("rally");
+  }
+
+  function zoomToShot(index: number) {
+    seekShot(index);
+    setZoom("shot");
   }
 
   function togglePlayback() {
@@ -178,7 +215,7 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
     if (state === PlayerState.playing || state === PlayerState.buffering) player.pauseVideo();
     else {
       if (skipGaps) {
-        const target = rallyPlaybackPosition(rallies, pendingSeekRef.current?.time ?? player.getCurrentTime());
+        const target = rallyPlaybackPosition(segments, pendingSeekRef.current?.time ?? player.getCurrentTime());
         if (target.ended) seek(firstStart);
         else if (Math.abs(target.time - player.getCurrentTime()) > 0.25 && !pendingSeekRef.current) seek(target.time);
       }
@@ -219,7 +256,7 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
     <section ref={viewerRef} id="viewer" className={styles.viewer} aria-label="Match viewer" data-playing={isPlaying || undefined}>
       <div className={styles.workspace}>
         <div className={styles.stage}>
-          <div ref={mountRef} className={styles.embed} title={manifest.title} />
+          <div ref={mountRef} className={styles.embed} title={match.title} />
           {mediaError && <p className={styles.mediaError} role="alert">{mediaError}</p>}
 
           <div className={styles.rallyDock} role="group" aria-label="Rally navigation">
@@ -234,7 +271,26 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
           </div>
 
         </div>
-        <aside ref={panelRef} id={panelId} className={styles.rallyPanel} hidden={isFullscreen && !panelOpen} role={isFullscreen ? "dialog" : undefined} aria-labelledby={`${panelId}-heading`}>
+        <aside ref={panelRef} id={panelId} className={styles.rallyPanel} hidden={isFullscreen && !panelOpen} role={isFullscreen ? "dialog" : undefined} aria-labelledby={analyzing ? undefined : `${panelId}-heading`} aria-label={analyzing ? "Analysis" : undefined}>
+          {analyzing && <ZoomTrail zoom={zoom} rallyLabel={`Rally ${focusIndex + 1}`} shotLabel={shots.length ? `Shot ${activeShot + 1}` : null} onZoom={setZoom} />}
+          {analyzing && zoom === "match" ? (
+            <MatchRail match={match} analysis={analysis} current={focusIndex} playing={isPlaying} ready={ready} onSelectRally={zoomToRally} />
+          ) : analyzing ? (
+            <ShotRail
+              match={match}
+              rally={focusRally}
+              rallyIndex={focusIndex}
+              shots={shots}
+              activeIndex={activeShot}
+              playing={isPlaying}
+              ready={ready}
+              onSelectShot={zoomToShot}
+              onPrevious={focusIndex > 0 ? () => selectRally(focusIndex - 1) : undefined}
+              onNext={focusIndex < rallies.length - 1 ? () => selectRally(focusIndex + 1) : undefined}
+              loading={!analysis && !analysisError}
+              error={analysisError}
+            />
+          ) : <>
           <div className={styles.panelHeader}>
             <div className={styles.panelTitle}>
               <h2 id={`${panelId}-heading`}>Rallies <span className={styles.rallyCount}>{rallies.length}</span></h2>
@@ -255,13 +311,14 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
                   {indices.map((index) => {
                     const rally = rallies[index];
                     const isSelected = selectedIndex === index;
+                    const score = rally.scoreBefore && [rally.scoreBefore[scoreFirst], rally.scoreBefore[scoreSecond]];
                     return (
                       <li key={rally.id}>
-                        <button type="button" disabled={!ready} data-selected={isSelected || undefined} className={styles.rallyRow} aria-current={isSelected ? "true" : undefined} aria-label={`Rally ${index + 1}, game ${rally.game}, ${rally.scoreBefore ? `score ${rally.scoreBefore.join(" to ")}` : "score unknown"}, ${formatTime(rally.startSeconds)} in original video`} onClick={() => selectRally(index)}>
+                        <button type="button" disabled={!ready} data-selected={isSelected || undefined} className={styles.rallyRow} aria-current={isSelected ? "true" : undefined} aria-label={`Rally ${index + 1}, game ${rally.game}, ${score ? `score ${score.join(" to ")}` : "score unknown"}, ${formatTime(rallyStart(rally))} in original video`} onClick={() => selectRally(index)}>
                           <span className={styles.rallyNumber}>{isSelected && isPlaying ? <span className={styles.equalizer} aria-hidden="true"><i /><i /><i /></span> : String(index + 1).padStart(2, "0")}</span>
-                          <span className={styles.rallyScore}>{rally.scoreBefore ? <><span>{rally.scoreBefore[0]}</span><span className={styles.scoreDash}>–</span><span>{rally.scoreBefore[1]}</span></> : <span className={styles.scoreDash}>No score</span>}</span>
-                          <span className={styles.rallyStart}>{formatTime(rally.startSeconds)}</span>
-                          <span className={styles.rallyDuration}>{Math.round(rally.endSeconds - rally.startSeconds)}s</span>
+                          <span className={styles.rallyScore}>{score ? <><span>{score[0]}</span><span className={styles.scoreDash}>–</span><span>{score[1]}</span></> : <span className={styles.scoreDash}>No score</span>}</span>
+                          <span className={styles.rallyStart}>{formatTime(rallyStart(rally))}</span>
+                          <span className={styles.rallyDuration}>{Math.round(rallySeconds(rally))}s</span>
                         </button>
                       </li>
                     );
@@ -270,9 +327,14 @@ export function RallyPlayer({ manifest }: { manifest: RallyManifest }) {
               </section>
             ))}
           </div>
+          </>}
         </aside>
       </div>
-      <p className={styles.previewNotice}>Rally boundaries and scores were detected automatically and haven’t been reviewed by hand.</p>
+      {analyzing && (
+        <AnalysisDeck zoom={zoom} match={match} analysis={analysis} rally={focusRally} rallyIndex={focusIndex} shots={shots}
+          activeIndex={activeShot} time={sourceTime} onSelectRally={zoomToRally} onSelectShot={zoomToShot} />
+      )}
+      {match.review === "automatic" && <p className={styles.previewNotice}>Rally boundaries and scores were detected automatically and haven’t been reviewed by hand.</p>}
     </section>
   );
 }
