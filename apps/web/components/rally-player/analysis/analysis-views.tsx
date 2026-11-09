@@ -5,7 +5,7 @@ import type { Match, MatchAnalysis, Rally, Shot } from "../contract";
 import { CourtDrawing } from "./court-drawing";
 import { MatchOverview } from "./match-level";
 import { playerTools } from "./players";
-import { RallySummary, ShotComparison, ShotDetail } from "./rally-level";
+import { RallySequence, RallySummary, ShotComparison, ShotDetail } from "./rally-level";
 import { endLabel } from "./shots";
 import styles from "./analysis.module.css";
 
@@ -53,9 +53,10 @@ export function AnalysisDeck({ deck, openShot, match, analysis, rally, rallyInde
           <div className={styles.shotDeck}>
             <ShotDetail match={match} shot={openShot.shot} index={openShot.index} count={shots.length} onStep={onSelectShot} />
           </div>
-          <ShotComparison match={match} analysis={analysis} shot={openShot.shot} />
+          <ShotComparison match={match} analysis={analysis} shots={shots} index={openShot.index} />
         </>
       ) : deck === "rally" ? (
+        <>
         <div className={styles.flight}>
           <CourtDrawing
             shots={shots}
@@ -65,14 +66,16 @@ export function AnalysisDeck({ deck, openShot, match, analysis, rally, rallyInde
             onSelect={onSelectShot}
             describe={(shot) => `${players.name(shot.hitter)}, ${endLabel(shot).toLowerCase()}`}
           />
-          <RallySummary match={match} rally={rally} index={rallyIndex} shots={shots} onSelectShot={onSelectShot} />
+          <RallySummary match={match} rally={rally} index={rallyIndex} shots={shots} records={analysis?.rallies[rally.id]?.summary} onSelectShot={onSelectShot} />
         </div>
+        <RallySequence match={match} rally={rally} shots={shots} activeIndex={activeIndex} onSelectShot={onSelectShot} />
+        </>
       ) : (
         <MatchOverview match={match} analysis={analysis} current={rallyIndex} onSelectRally={onSelectRally} />
       )}
       <p className={styles.deckNotice}>
-        Shot data is reconstructed automatically from the broadcast and hasn’t been checked by hand. Shot types, shot sequences and
-        serve-and-return patterns are planned.
+        Shot data is reconstructed automatically from the broadcast and hasn’t been checked by hand. Stroke types are inferred by a
+        model{analysis?.shotTypes ? ` (${analysis.shotTypes.model})` : ""} and corrected where the measured flight contradicts it.
       </p>
     </div>
   );

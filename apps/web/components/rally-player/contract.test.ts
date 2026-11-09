@@ -5,7 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { parseAnalysis, parseMatch } from "./contract.ts";
 import { contractFiles } from "./contract-files.ts";
-import { analysisFixture, matchFixture } from "./test-fixtures.ts";
+import { analysisFixture, matchFixture, typedAnalysisFixture } from "./test-fixtures.ts";
 
 test("a valid match parses, with optional scores, servers and winners", () => {
   const match = parseMatch(matchFixture());
@@ -64,6 +64,27 @@ test("analysis must reference the match's rallies and players, with shots inside
   ];
   for (const mutate of mutations) {
     const input = analysisFixture();
+    mutate(input);
+    assert.throws(() => parseAnalysis(input, match), /Invalid analysis/, String(mutate));
+  }
+});
+
+test("shot types are optional, racket-only and need their model named", () => {
+  const match = parseMatch(matchFixture());
+  assert.equal(parseAnalysis(typedAnalysisFixture(), match).rallies.r1.shots[0].shotType?.name, "short_serve");
+  const unknown = typedAnalysisFixture();
+  unknown.rallies.r1.shots[1].shotType.name = null;
+  assert.equal(parseAnalysis(unknown, match).rallies.r1.shots[1].shotType?.name, null);
+  const mutations: ((input: Record<string, any>) => void)[] = [
+    (a) => { delete a.shotTypes; },
+    (a) => { a.rallies.r1.shots[0].shotType.name = "lob"; },
+    (a) => { a.rallies.r1.shots[0].shotType.probability = 1.2; },
+    (a) => { a.rallies.r1.shots[0].startContact = "net"; a.rallies.r1.shots[0].hitter = null; },
+    (a) => { a.shotTypes.source = "not a url"; },
+    (a) => { a.rallies.r1.shots[0].shotType.correction = { from: "push", fromProbability: 0.5, reason: "guess" }; },
+  ];
+  for (const mutate of mutations) {
+    const input = typedAnalysisFixture();
     mutate(input);
     assert.throws(() => parseAnalysis(input, match), /Invalid analysis/, String(mutate));
   }

@@ -33,8 +33,39 @@ export function analysisFixture() {
     pointsWithKnownWinner: 1, serves: 1, pointsWonOnServe: 0,
   };
   return {
-    version: 1, matchId: "illustrative-match", quality: { shots: 2, ok: 2, guessed: 0, unreliable: 0 },
-    rallies: { r1: { shots: [shot(34.5, 35.3), shot(35.3, 36, "b")] } },
+    version: 2, matchId: "illustrative-match", quality: { shots: 2, ok: 2, guessed: 0, unreliable: 0 },
+    rallies: { r1: { shots: [shot(34.5, 35.3), shot(35.3, 36, "b")],
+      summary: { shots: 2, unreliable: 0, byPlayer: { a: 1, b: 1 }, fastest: 0, highest: 0 } } },
+    games: [
+      { game: 1, final: null, winner: null, rallies: 2, longest: "r1", averageShots: 1 },
+      { game: 2, final: null, winner: null, rallies: 1, longest: null, averageShots: 0 },
+    ],
     players: { a: player, b: player },
   } as Record<string, any>;
+}
+
+/** The analysis fixture with model shot types on both shots. */
+export function typedAnalysisFixture() {
+  const analysis = analysisFixture();
+  analysis.shotTypes = { model: "Model", training: "Training set", source: "https://example.com/model", order: ["lift", "short_serve"] };
+  const summary = (count: number, endedRally = 0) => ({
+    count, okShots: count, speed: { n: count, median: 20, p10: 18, p90: 22, max: 23 }, apex: { n: 0 }, contactHeight: { n: 0 },
+    netClearance: { n: 0 }, endedRally, endedRallyWon: endedRally, endedRallyKnownWinner: endedRally,
+  });
+  analysis.players.a = { ...analysis.players.a, shotTypes: { typed: 1, unclear: 0, byType: { short_serve: summary(1) } } };
+  analysis.players.b = { ...analysis.players.b, shotTypes: { typed: 1, unclear: 2, byType: { lift: summary(1, 1) } } };
+  analysis.patterns = {
+    responses: { a: {}, b: { short_serve: { n: 10, replies: [{ type: "lift", count: 6 }, { type: "push", count: 4 }] } } },
+    followUps: { a: { short_serve: { n: 10, replies: [{ type: "lift", count: 6 }, { type: "push", count: 4 }] } }, b: {} },
+  };
+  analysis.rallies.r1.shots[0].shotType = { name: "short_serve", probability: 0.9, runnerUp: "long_serve", runnerUpProbability: 0.06 };
+  analysis.rallies.r1.shots[1].shotType = { name: "lift", probability: 0.42, runnerUp: "push", runnerUpProbability: 0.38 };
+  return analysis;
+}
+
+/** The typed fixture with the second shot relabelled from push to lift by its flight. */
+export function correctedAnalysisFixture() {
+  const analysis = typedAnalysisFixture();
+  analysis.rallies.r1.shots[1].shotType.correction = { from: "push", fromProbability: 0.55, reason: "high_deep_flight" };
+  return analysis;
 }

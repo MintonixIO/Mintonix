@@ -4,7 +4,7 @@
   "properties": {
     "version": {
       "type": "number",
-      "const": 1
+      "const": 2
     },
     "matchId": {
       "type": "string",
@@ -56,14 +56,26 @@
             "items": {
               "$ref": "#/$defs/Shot"
             }
+          },
+          "summary": {
+            "$ref": "#/$defs/RallySummary"
           }
         },
         "required": [
-          "shots"
+          "shots",
+          "summary"
         ],
         "additionalProperties": false
       },
-      "description": "Shots per rally, keyed by rally id"
+      "description": "Shots per rally and their records, keyed by rally id"
+    },
+    "games": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/GameSummary"
+      },
+      "description": "One per game, in order"
     },
     "players": {
       "type": "object",
@@ -150,6 +162,51 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 9007199254740991
+          },
+          "shotTypes": {
+            "description": "Per stroke type: counts over all typed shots, metric distributions over ok shots, rally endings",
+            "type": "object",
+            "properties": {
+              "typed": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "unclear": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "byType": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "enum": [
+                    "net_shot",
+                    "return_net",
+                    "smash",
+                    "lift",
+                    "clear",
+                    "drive",
+                    "drop",
+                    "push",
+                    "rush",
+                    "cross_net",
+                    "short_serve",
+                    "long_serve"
+                  ]
+                },
+                "additionalProperties": {
+                  "$ref": "#/$defs/ShotTypeSummary"
+                }
+              }
+            },
+            "required": [
+              "typed",
+              "unclear",
+              "byType"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -168,6 +225,125 @@
         "additionalProperties": false
       },
       "description": "Per-player summaries over ok shots, keyed by player id"
+    },
+    "shotTypes": {
+      "description": "The model behind the shots' shotType; present whenever any shot has one",
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "training": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "format": "uri"
+        },
+        "order": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "net_shot",
+              "return_net",
+              "smash",
+              "lift",
+              "clear",
+              "drive",
+              "drop",
+              "push",
+              "rush",
+              "cross_net",
+              "short_serve",
+              "long_serve"
+            ]
+          },
+          "description": "Stroke types by total use in the match, most first"
+        }
+      },
+      "required": [
+        "model",
+        "training",
+        "source",
+        "order"
+      ],
+      "additionalProperties": false
+    },
+    "patterns": {
+      "description": "Direct exchanges between typed shots in this match",
+      "type": "object",
+      "properties": {
+        "responses": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "enum": [
+                "net_shot",
+                "return_net",
+                "smash",
+                "lift",
+                "clear",
+                "drive",
+                "drop",
+                "push",
+                "rush",
+                "cross_net",
+                "short_serve",
+                "long_serve"
+              ]
+            },
+            "additionalProperties": {
+              "$ref": "#/$defs/ReplyTally"
+            }
+          },
+          "description": "responses[player][type]: what the player played against the opponent's shot of that type"
+        },
+        "followUps": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "enum": [
+                "net_shot",
+                "return_net",
+                "smash",
+                "lift",
+                "clear",
+                "drive",
+                "drop",
+                "push",
+                "rush",
+                "cross_net",
+                "short_serve",
+                "long_serve"
+              ]
+            },
+            "additionalProperties": {
+              "$ref": "#/$defs/ReplyTally"
+            }
+          },
+          "description": "followUps[player][type]: what the opponent played after the player's shot of that type"
+        }
+      },
+      "required": [
+        "responses",
+        "followUps"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -175,10 +351,11 @@
     "matchId",
     "quality",
     "rallies",
+    "games",
     "players"
   ],
   "additionalProperties": false,
-  "title": "Mintonix match analysis v1",
+  "title": "Mintonix match analysis v2",
   "$defs": {
     "Shot": {
       "type": "object",
@@ -362,6 +539,10 @@
             "maxItems": 4
           },
           "description": "[seconds, x, y, z] samples; empty when the 3D fit failed"
+        },
+        "shotType": {
+          "description": "Stroke type inferred by a model from the pose and shuttle tracks, not checked by hand; racket shots only",
+          "$ref": "#/$defs/ShotType"
         }
       },
       "required": [
@@ -383,6 +564,253 @@
         "quality",
         "issues",
         "path"
+      ],
+      "additionalProperties": false
+    },
+    "ShotType": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "net_shot",
+                "return_net",
+                "smash",
+                "lift",
+                "clear",
+                "drive",
+                "drop",
+                "push",
+                "rush",
+                "cross_net",
+                "short_serve",
+                "long_serve"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null: the model found no stroke type"
+        },
+        "probability": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Model probability of name (or of no type when name is null)"
+        },
+        "runnerUp": {
+          "type": "string",
+          "enum": [
+            "net_shot",
+            "return_net",
+            "smash",
+            "lift",
+            "clear",
+            "drive",
+            "drop",
+            "push",
+            "rush",
+            "cross_net",
+            "short_serve",
+            "long_serve"
+          ]
+        },
+        "runnerUpProbability": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "correction": {
+          "description": "Set when the shot's measured 3D flight contradicted the model and name was changed; probability is still the model's for name",
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "enum": [
+                "net_shot",
+                "return_net",
+                "smash",
+                "lift",
+                "clear",
+                "drive",
+                "drop",
+                "push",
+                "rush",
+                "cross_net",
+                "short_serve",
+                "long_serve"
+              ],
+              "description": "The model's own pick"
+            },
+            "fromProbability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "reason": {
+              "type": "string",
+              "enum": [
+                "high_deep_flight",
+                "underarm_contact",
+                "flat_flight"
+              ],
+              "description": "high_deep_flight: a push that rose above 3 m and went over 5 m past the net (lift); underarm_contact: a clear hit below 1.8 m (lift); flat_flight: a clear that peaked below 2.5 m (drive)"
+            }
+          },
+          "required": [
+            "from",
+            "fromProbability",
+            "reason"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "name",
+        "probability",
+        "runnerUp",
+        "runnerUpProbability"
+      ],
+      "additionalProperties": false
+    },
+    "RallySummary": {
+      "type": "object",
+      "properties": {
+        "shots": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "unreliable": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "byPlayer": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "fastest": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Index of the fastest shot that isn't unreliable"
+        },
+        "highest": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "shots",
+        "unreliable",
+        "byPlayer",
+        "fastest",
+        "highest"
+      ],
+      "additionalProperties": false
+    },
+    "GameSummary": {
+      "type": "object",
+      "properties": {
+        "game": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "final": {
+          "anyOf": [
+            {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+              },
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Final score, when the last rally's score and winner are known"
+        },
+        "winner": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rallies": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "longest": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Rally id with the most shots"
+        },
+        "averageShots": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "game",
+        "final",
+        "winner",
+        "rallies",
+        "longest",
+        "averageShots"
       ],
       "additionalProperties": false
     },
@@ -409,6 +837,112 @@
       },
       "required": [
         "n"
+      ],
+      "additionalProperties": false
+    },
+    "ShotTypeSummary": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "okShots": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "speed": {
+          "$ref": "#/$defs/Distribution"
+        },
+        "apex": {
+          "$ref": "#/$defs/Distribution"
+        },
+        "contactHeight": {
+          "$ref": "#/$defs/Distribution"
+        },
+        "netClearance": {
+          "$ref": "#/$defs/Distribution"
+        },
+        "endedRally": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Times this type was the rally's last shot"
+        },
+        "endedRallyWon": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "endedRallyKnownWinner": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "count",
+        "okShots",
+        "speed",
+        "apex",
+        "contactHeight",
+        "netClearance",
+        "endedRally",
+        "endedRallyWon",
+        "endedRallyKnownWinner"
+      ],
+      "additionalProperties": false
+    },
+    "ReplyTally": {
+      "type": "object",
+      "properties": {
+        "n": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "replies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "net_shot",
+                  "return_net",
+                  "smash",
+                  "lift",
+                  "clear",
+                  "drive",
+                  "drop",
+                  "push",
+                  "rush",
+                  "cross_net",
+                  "short_serve",
+                  "long_serve"
+                ]
+              },
+              "count": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "type",
+              "count"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Most frequent first"
+        }
+      },
+      "required": [
+        "n",
+        "replies"
       ],
       "additionalProperties": false
     }

@@ -5,6 +5,7 @@ import type { Match, Shot } from "../contract";
 import { playerTools } from "./players";
 import { CAMERA_PRESETS, flightBounds, REPLAY_SPEEDS, replayKeyAction, replayTime, type CameraPreset } from "./replay";
 import { createShotScene, WebGLUnavailableError, type ShotScene } from "./shot-scene";
+import { shotTypeView } from "./shot-types";
 import { qualityNote } from "./shots";
 import styles from "./analysis.module.css";
 
@@ -48,6 +49,7 @@ export default function ShotStage({ match, shot, index, count, onStep, onClose }
   const hasPath = shot.path.length > 0;
   const tone = playerTools(match).tone(shot.hitter);
   const note = qualityNote(shot);
+  const type = shotTypeView(shot);
 
   // A new shot restarts the replay (adjusting state during render, not in an effect).
   if (shownShot !== shot) {
@@ -172,6 +174,7 @@ export default function ShotStage({ match, shot, index, count, onStep, onClose }
         {hasPath && failed && <p className={styles.replayMessage}>This browser can&apos;t show the 3D replay</p>}
         <div className={styles.replayLabels}>
           <span className={styles.replayBadge}>3D reconstruction</span>
+          {type?.name && <span className={styles.replayBadge}>{type.confident ? type.label : `${type.label}?`} · {type.corrected ? "corrected by flight" : `model ${Math.round(type.probability * 100)}%`}</span>}
           {note && <span className={styles.replayNote} data-quality={shot.quality}>{note}</span>}
         </div>
       </div>

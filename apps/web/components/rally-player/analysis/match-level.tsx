@@ -6,8 +6,9 @@ import { rallySeconds } from "../timeline";
 import { PlacementMap } from "./court-drawing";
 import { METRICS, playerTools } from "./players";
 import { ShotRow } from "./shot-row";
+import { hasShotTypes, percent, SHOT_TYPE_NAMES } from "./shot-types";
 import type { ShotRef } from "./shots";
-import { gameSummaries } from "./summary";
+import { groupByGame } from "./summary";
 import styles from "./analysis.module.css";
 
 type Distribution = MatchAnalysis["players"][string]["speed"];
@@ -52,6 +53,64 @@ export function metricDomain(stats: Distribution[], scale: number, extra?: numbe
   if (!Number.isFinite(low) || !Number.isFinite(high)) return [0, 1];
   const pad = (high - low) * 0.08 || 1;
   return [low - pad, high + pad];
+}
+
+/** Each player's stroke types as bars on one shared scale (share of that player's typed shots). */
+function ShotMixSection({ match, analysis }: { match: Match; analysis: MatchAnalysis }) {
+  const players = playerTools(match);
+  const ids = match.players.map((player) => player.id);
+  const order = analysis.shotTypes?.order ?? [];
+  const mixes = ids.map((id) => analysis.players[id]?.shotTypes);
+  if (!order.length || !analysis.shotTypes || mixes.some((mix) => !mix)) return null;
+  const mix = Object.fromEntries(ids.map((id, i) => [id, mixes[i]!]));
+  const count = (id: string, name: (typeof order)[number]) => mix[id].byType[name]?.count ?? 0;
+  const share = (id: string, name: (typeof order)[number]) => count(id, name) / Math.max(1, mix[id].typed);
+  const top = Math.max(...order.flatMap((name) => ids.map((id) => share(id, name))));
+  const unclear = ids.reduce((sum, id) => sum + mix[id].unclear, 0);
+  return (
+    <section className={styles.section} aria-labelledby="mix-heading">
+      <div className={styles.sectionHeader}>
+        <div className={styles.sectionIntro}>
+          <h3 id="mix-heading">What each player hit</h3>
+          <p>
+            Share of each player’s shots by stroke type. Types are inferred by a model ({analysis.shotTypes.model}, trained on {analysis.shotTypes.training}) from
+            the players’ poses and the shuttle’s track, and haven’t been checked by hand. Where a shot’s measured flight contradicts the model, such as a “push” that
+            went high and deep, the label is corrected.
+            {unclear > 0 && ` ${unclear} shots with no clear type are left out.`}
+          </p>
+        </div>
+        <p className={styles.legend}>
+          {match.players.map((player) => <span key={player.id} data-tone={players.tone(player.id)}>{players.shortName(player.id)} ({mix[player.id].typed})</span>)}
+        </p>
+      </div>
+      <table className={styles.mixTable}>
+        <caption className={styles.srOnly}>Shots by stroke type for each player, as a share of their shots with a type</caption>
+        <thead className={styles.srOnly}>
+          <tr><th scope="col">Stroke type</th>{match.players.map((player) => <th key={player.id} scope="col">{player.name}</th>)}</tr>
+        </thead>
+        <tbody>
+          {order.map((name) => (
+            <tr key={name}>
+              <th scope="row">{SHOT_TYPE_NAMES[name].label}</th>
+              {match.players.map((player) => {
+                const value = share(player.id, name);
+                const shots = count(player.id, name);
+                return (
+                  <td key={player.id} data-tone={players.tone(player.id)}>
+                    <div className={styles.mixCell}>
+                      <span className={styles.mixBar} aria-hidden="true"><i style={{ width: `${(value / top) * 100}%` }} /></span>
+                      <span className={styles.mixValue}>{percent(value)}<span className={styles.srOnly}>, {shots} shots</span></span>
+                      <span className={styles.rangeN} aria-hidden="true">{shots}</span>
+                    </div>
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
 }
 
 function PlayerProfiles({ match, analysis }: { match: Match; analysis: MatchAnalysis }) {
@@ -157,7 +216,12 @@ export function MatchOverview({ match, analysis, current, onSelectRally }: {
   const players = playerTools(match);
   const [a, b] = match.players;
   const counts = match.rallies.map((rally) => analysis?.rallies[rally.id]?.shots.length ?? 0);
-  const games = gameSummaries(match, analysis);
+  const indexOf = new Map(match.rallies.map((rally, index) => [rally.id, index]));
+  const games = groupByGame(match).map((group) => {
+    const summary = analysis?.games.find((game) => game.game === group.game);
+    return { ...group, final: summary?.final ?? null, winner: summary?.winner ?? null,
+      longest: summary?.longest ? indexOf.get(summary.longest) ?? -1 : -1, averageShots: summary?.averageShots ?? null };
+  });
   return (
     <>
       <section className={styles.section} aria-labelledby="rallies-heading">
@@ -196,6 +260,7 @@ export function MatchOverview({ match, analysis, current, onSelectRally }: {
         </ol>
       </section>
       {analysis && <PlayerProfiles match={match} analysis={analysis} />}
+      {analysis && <ShotMixSection match={match} analysis={analysis} />}
     </>
   );
 }
@@ -224,7 +289,7 @@ export function MatchRail({
   const listRef = useRef<HTMLDivElement>(null);
   const counts = match.rallies.map((rally) => analysis?.rallies[rally.id]?.shots.length ?? 0);
   const max = Math.max(1, ...counts);
-  const games = gameSummaries(match);
+  const games = groupByGame(match);
   const focus = expanded ?? current;
   useEffect(() => {
     const list = listRef.current;
@@ -279,6 +344,7 @@ export function MatchRail({
                                 <ShotRow match={match} shot={shot} index={shotIndex} rallyId={rally.id}
                                   current={openShot?.rallyId === rally.id && openShot.index === shotIndex}
                                   live={selected && playing && !openShot && shotIndex === liveShot}
+                                  showType={hasShotTypes(analysis)}
                                   onSelect={() => onOpenShot({ rallyId: rally.id, index: shotIndex })} />
                               </li>
                             ))}

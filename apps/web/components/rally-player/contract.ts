@@ -54,6 +54,27 @@ const distribution = z.object({
 
 const contact = z.enum(["racket", "net", "ground"]);
 
+/** ShuttleSet's 12 merged stroke types, as the engine's shot-type model names them. */
+export const SHOT_TYPES = [
+  "net_shot", "return_net", "smash", "lift", "clear", "drive",
+  "drop", "push", "rush", "cross_net", "short_serve", "long_serve",
+] as const;
+const shotTypeName = z.enum(SHOT_TYPES);
+const probability = z.number().min(0).max(1);
+
+export const shotTypeSchema = z.object({
+  name: shotTypeName.nullable().describe("null: the model found no stroke type"),
+  probability: probability.describe("Model probability of name (or of no type when name is null)"),
+  runnerUp: shotTypeName,
+  runnerUpProbability: probability,
+  correction: z.object({
+    from: shotTypeName.describe("The model's own pick"),
+    fromProbability: probability,
+    reason: z.enum(["high_deep_flight", "underarm_contact", "flat_flight"])
+      .describe("high_deep_flight: a push that rose above 3 m and went over 5 m past the net (lift); underarm_contact: a clear hit below 1.8 m (lift); flat_flight: a clear that peaked below 2.5 m (drive)"),
+  }).strict().optional().describe("Set when the shot's measured 3D flight contradicted the model and name was changed; probability is still the model's for name"),
+}).strict().meta({ id: "ShotType" });
+
 export const shotSchema = z.object({
   hitter: id.nullable().describe("Player id; null for a net-cord continuation"),
   startSeconds: seconds,
@@ -73,7 +94,26 @@ export const shotSchema = z.object({
   quality: z.enum(["ok", "guessed", "unreliable"]),
   issues: z.array(z.string()),
   path: z.array(z.tuple([seconds, metres, metres, metres])).describe("[seconds, x, y, z] samples; empty when the 3D fit failed"),
+  shotType: shotTypeSchema.optional()
+    .describe("Stroke type inferred by a model from the pose and shuttle tracks, not checked by hand; racket shots only"),
 }).strict().meta({ id: "Shot" });
+
+const shotTypeSummary = z.object({
+  count: z.int().nonnegative(),
+  okShots: z.int().nonnegative(),
+  speed: distribution,
+  apex: distribution,
+  contactHeight: distribution,
+  netClearance: distribution,
+  endedRally: z.int().nonnegative().describe("Times this type was the rally's last shot"),
+  endedRallyWon: z.int().nonnegative(),
+  endedRallyKnownWinner: z.int().nonnegative(),
+}).strict().meta({ id: "ShotTypeSummary" });
+
+const replyTally = z.object({
+  n: z.int().nonnegative(),
+  replies: z.array(z.object({ type: shotTypeName, count: z.int().positive() }).strict()).describe("Most frequent first"),
+}).strict().meta({ id: "ReplyTally" });
 
 export const playerAnalysisSchema = z.object({
   shots: z.int().nonnegative(),
@@ -87,10 +127,32 @@ export const playerAnalysisSchema = z.object({
   pointsWithKnownWinner: z.int().nonnegative(),
   serves: z.int().nonnegative(),
   pointsWonOnServe: z.int().nonnegative(),
+  shotTypes: z.object({
+    typed: z.int().nonnegative(),
+    unclear: z.int().nonnegative(),
+    byType: z.partialRecord(shotTypeName, shotTypeSummary),
+  }).strict().optional().describe("Per stroke type: counts over all typed shots, metric distributions over ok shots, rally endings"),
 }).strict();
 
+const rallySummarySchema = z.object({
+  shots: z.int().nonnegative(),
+  unreliable: z.int().nonnegative(),
+  byPlayer: z.record(id, z.int().nonnegative()),
+  fastest: z.int().nonnegative().nullable().describe("Index of the fastest shot that isn't unreliable"),
+  highest: z.int().nonnegative().nullable(),
+}).strict().meta({ id: "RallySummary" });
+
+const gameSchema = z.object({
+  game: z.int().min(1).max(3),
+  final: z.record(id, z.int().nonnegative()).nullable().describe("Final score, when the last rally's score and winner are known"),
+  winner: id.nullable(),
+  rallies: z.int().positive(),
+  longest: id.nullable().describe("Rally id with the most shots"),
+  averageShots: z.number().nonnegative().nullable(),
+}).strict().meta({ id: "GameSummary" });
+
 export const analysisSchema = z.object({
-  version: z.literal(1),
+  version: z.literal(2),
   matchId: id,
   quality: z.object({
     shots: z.int().nonnegative(),
@@ -98,16 +160,34 @@ export const analysisSchema = z.object({
     guessed: z.int().nonnegative(),
     unreliable: z.int().nonnegative(),
   }).strict(),
-  rallies: z.record(id, z.object({ shots: z.array(shotSchema) }).strict())
-    .describe("Shots per rally, keyed by rally id"),
+  rallies: z.record(id, z.object({ shots: z.array(shotSchema), summary: rallySummarySchema }).strict())
+    .describe("Shots per rally and their records, keyed by rally id"),
+  games: z.array(gameSchema).min(1).describe("One per game, in order"),
   players: z.record(id, playerAnalysisSchema).describe("Per-player summaries over ok shots, keyed by player id"),
-}).strict().meta({ title: "Mintonix match analysis v1" });
+  shotTypes: z.object({
+    model: z.string().trim().min(1),
+    training: z.string().trim().min(1),
+    source: z.url(),
+    order: z.array(shotTypeName).describe("Stroke types by total use in the match, most first"),
+  }).strict().optional().describe("The model behind the shots' shotType; present whenever any shot has one"),
+  patterns: z.object({
+    responses: z.record(id, z.partialRecord(shotTypeName, replyTally))
+      .describe("responses[player][type]: what the player played against the opponent's shot of that type"),
+    followUps: z.record(id, z.partialRecord(shotTypeName, replyTally))
+      .describe("followUps[player][type]: what the opponent played after the player's shot of that type"),
+  }).strict().optional().describe("Direct exchanges between typed shots in this match"),
+}).strict().meta({ title: "Mintonix match analysis v2" });
 
 export type Player = z.infer<typeof playerSchema>;
 export type Rally = z.infer<typeof rallySchema>;
 export type Match = z.infer<typeof matchSchema>;
 export type Shot = z.infer<typeof shotSchema>;
+export type ShotTypeName = (typeof SHOT_TYPES)[number];
 export type MatchAnalysis = z.infer<typeof analysisSchema>;
+export type ShotTypeSummary = z.infer<typeof shotTypeSummary>;
+export type ReplyTally = z.infer<typeof replyTally>;
+export type RallyRecords = z.infer<typeof rallySummarySchema>;
+export type GameSummary = z.infer<typeof gameSchema>;
 
 function fail(message: string): never {
   throw new Error(message);
@@ -161,13 +241,20 @@ export function parseAnalysis(input: unknown, match: Match): MatchAnalysis {
   if (analysis.matchId !== match.matchId) fail("Invalid analysis: match id differs from its match");
   const playerIds = match.players.map((player) => player.id);
   const rallies = new Map(match.rallies.map((rally) => [rally.id, rally]));
-  for (const [rallyId, { shots }] of Object.entries(analysis.rallies)) {
+  for (const [rallyId, { shots, summary }] of Object.entries(analysis.rallies)) {
+    for (const record of [summary.fastest, summary.highest]) {
+      if (record !== null && record >= shots.length) fail(`Invalid analysis: rally records point past its shots (${rallyId})`);
+    }
     const rally = rallies.get(rallyId) ?? fail(`Invalid analysis: unknown rally ${rallyId}`);
     const start = rally.segments[0][0];
     const end = rally.segments.at(-1)![1];
     let previous = start;
     for (const shot of shots) {
       if (shot.hitter !== null && !playerIds.includes(shot.hitter)) fail(`Invalid analysis: unknown hitter ${shot.hitter}`);
+      if (shot.shotType) {
+        if (shot.startContact !== "racket" || shot.hitter === null) fail(`Invalid analysis: only racket shots have a shot type (${rallyId})`);
+        if (!analysis.shotTypes) fail("Invalid analysis: shot types need shotTypes to name their model");
+      }
       if (shot.startSeconds < previous || shot.endSeconds <= shot.startSeconds || shot.endSeconds > end) {
         fail(`Invalid analysis: shots must be chronological and inside their rally (${rallyId})`);
       }
@@ -176,6 +263,13 @@ export function parseAnalysis(input: unknown, match: Match): MatchAnalysis {
   }
   for (const player of Object.keys(analysis.players)) {
     if (!playerIds.includes(player)) fail(`Invalid analysis: unknown player ${player}`);
+  }
+  for (const game of analysis.games) {
+    if (game.longest !== null && !rallies.has(game.longest)) fail(`Invalid analysis: unknown longest rally ${game.longest}`);
+    if (game.winner !== null && !playerIds.includes(game.winner)) fail(`Invalid analysis: unknown game winner ${game.winner}`);
+  }
+  for (const side of Object.values(analysis.patterns ?? {})) {
+    for (const player of Object.keys(side)) if (!playerIds.includes(player)) fail(`Invalid analysis: unknown player ${player} in patterns`);
   }
   return analysis;
 }
