@@ -57,6 +57,7 @@ export function qualityNote(shot: Shot) {
       unrecovered: "the shuttle couldn’t be tracked through the flight",
       high_reprojection_error: "the 3D fit doesn’t match the video closely",
       out_of_bounds: "the reconstructed flight leaves the court area",
+      below_net: "the reconstructed flight passes under the net",
       invalid_fit: "the 3D fit failed",
     }[issue])).filter(Boolean);
     return `Not measured reliably${reasons.length ? `: ${[...new Set(reasons)].join("; ")}` : ""}. Left out of player summaries.`;
