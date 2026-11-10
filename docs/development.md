@@ -19,9 +19,12 @@ pnpm build
 
 The app is a single package at the repository root. The backend is maintained separately.
 
-## Match link form
+## Hero actions
 
-The hero form validates HTTP/HTTPS URL syntax locally. It does not verify that a link is a BWF match, fetch the URL, enqueue a job, or claim a view was generated. A valid submission explains that no processing job has been created. No default development helper text is displayed below the form. Automatic processing is not connected.
+The hero's main action, **Try the demo**, opens the first available local match
+(or the library when none is configured). The match-link field below it is
+disabled and labelled "Coming soon": processing a new match from its link is not
+implemented, so the page must not accept a link or suggest a job was created.
 
 ## Preview data
 

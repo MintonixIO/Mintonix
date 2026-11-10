@@ -34,7 +34,7 @@ pnpm start
 
 The app is a single Next.js package at the repository root. Feature code is grouped under `components/` (`rally-player`, `home`, `blog`, `site`, `ui`); routes in `app/` assemble those components.
 
-The homepage provides a match-link form and explains the viewer components. The form validates URL syntax locally but does not submit a processing job. Published matches are committed under `content/matches` and served at `/watch/[matchId]`; set `MINTONIX_LOCAL_MATCHES_DIR` in `.env.local` to read another directory instead (see `docs/development.md`). The published sample is `dl1` (reviewed rallies and shot data from the Engine). There is no upload, account, or cloud integration in the website yet.
+The homepage's main action opens the demo match and explains the viewer components. The match-link field is disabled and labelled as coming soon; no processing job can be submitted. Published matches are committed under `content/matches` and served at `/watch/[matchId]`; set `MINTONIX_LOCAL_MATCHES_DIR` in `.env.local` to read another directory instead (see `docs/development.md`). The published sample is `dl1` (reviewed rallies and shot data from the Engine). There is no upload, account, or cloud integration in the website yet.
 
 The technical blog is available at `/blog`. Each article is a simple `.md` file under `content/blog`; see `docs/blogging.md` for frontmatter and authoring instructions.
 

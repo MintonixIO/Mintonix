@@ -1,14 +1,25 @@
+import { Suspense } from "react";
+import { io } from "next/cache";
 import Link from "next/link";
+import { listLocalMatches } from "@/components/rally-player/local-match";
 import { Brand } from "@/components/ui/brand";
 import styles from "./site.module.css";
 
-export function SiteFooter() {
+/** Opens the demo match in the viewer; the library stands in while none is available. */
+async function ViewerLink() {
+  await io();
+  const [match] = await listLocalMatches();
+  return <Link href={match ? `/watch/${match.matchId}` : "/library"}>Rally viewer</Link>;
+}
+
+/** `wide` follows the match viewer's full-width shell instead of the site column. */
+export function SiteFooter({ wide = false }: { wide?: boolean }) {
   return (
-    <footer className={styles.footer}>
+    <footer className={styles.footer} data-wide={wide || undefined}>
       <div className={styles.footerTop}>
         <div className={styles.footerIdentity}>
           <Brand />
-          <p>Transforming Your<br /><span>Badminton Experience</span></p>
+          <p>Watch the rally.<br /><span>Read the game.</span></p>
           <span className={styles.footerDescription}>A closer look at the game, one rally at a time.</span>
           <div className={styles.socials} role="group" aria-label="Social profiles, coming soon">
             {(["X", "Threads", "YouTube", "Instagram"] as const).map((platform) => (
@@ -16,16 +27,11 @@ export function SiteFooter() {
             ))}
           </div>
         </div>
-        <nav className={styles.footerLinks} aria-labelledby="footer-tools">
-          <h2 id="footer-tools">Tools</h2>
-          <Link href="/#generate">Rally viewer</Link>
+        <nav className={styles.footerLinks} aria-labelledby="footer-explore">
+          <h2 id="footer-explore">Explore</h2>
+          <Suspense fallback={<Link href="/library">Rally viewer</Link>}><ViewerLink /></Suspense>
           <Link href="/library">Library</Link>
-        </nav>
-        <nav className={styles.footerLinks} aria-labelledby="footer-notes">
-          <h2 id="footer-notes">Deep dives</h2>
           <Link href="/blog">Blog</Link>
-          <Link href="/blog/entertainment">Entertainment</Link>
-          <Link href="/blog/technical">Technical</Link>
         </nav>
       </div>
       <div className={styles.footerBottom}>

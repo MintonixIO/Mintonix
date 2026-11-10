@@ -4,8 +4,8 @@ import { formatPostDate, getPosts } from "@/components/blog/posts";
 import styles from "@/components/blog/blog.module.css";
 
 export const metadata: Metadata = {
-  title: "Blogs",
-  description: "Finding rally boundaries, handling broadcast replays, and getting the player to jump to the right point.",
+  title: "Blog",
+  description: "Notes on what Mintonix does today and where it is going.",
 };
 
 export default function BlogPage() {
@@ -14,7 +14,7 @@ export default function BlogPage() {
     <main id="main" className={styles.blog}>
       <header className={styles.blogHeading}>
         <h1>Building Mintonix</h1>
-        <p>Finding rally boundaries, handling broadcast replays, and getting the player to jump to the right point.</p>
+        <p>Notes on what Mintonix does today and where it is going.</p>
       </header>
       <div className={styles.postList}>
         {posts.map((post) => (

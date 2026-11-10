@@ -1,86 +1,89 @@
 ---
-title: "Product Vision: The Revolution"
-description: "What we can do for viewers, players, and coaches"
+title: "What Mintonix does today, and where I'm taking it"
+description: "What you can use right now, and what I want to build for people who watch, play, and coach badminton."
 date: "2026-11-04"
 category: "Product"
 ---
 
-A match contains more than the final score. There are repeated replies,
-successful combinations, short lifts, and small changes in approach that are easy
-to miss while watching live.
+I started Mintonix because I wanted to watch badminton better. A broadcast gives
+you the whole evening: the walk-ons, the towel breaks, the replays. I wanted the
+rallies, and then a closer look at the shots inside them.
 
-Mintonix Technical is our planned experience for studying those details. Coaches
-and players would use the same tools to analyze themselves, an athlete, or an
-opponent. These analysis features are not available in the current rally viewer;
-the homepage trajectory illustration is schematic, not a measured match report.
+This note is where things stand. I'll be clear about which parts you can use
+today and which are still plans, because I'd rather you know than guess.
 
-## Discover the patterns behind points
+## What you can use today
 
-A useful starting question is specific:
+There is one match in the [library](/library) for now, a men's singles
+semifinal. Open it and you'll find two views.
+
+**Watch** gives you the match without the waiting. It plays the original video
+from YouTube and moves from rally to rally, skipping replays, other camera
+angles, and dead time. You can also pick any point by its score and go straight
+to it. For the demo match, that turns a broadcast of 1 hour 25 minutes into
+about 27 minutes of play.
+
+**Analyze** is for looking closer. It lists every rally and the shots in it.
+Pick a shot and you can replay it in 3D, turn the court, and slow it down. You'll
+see its speed, its height, how far it cleared the net, and where it ended. Each
+shot is named by stroke type and set against the same player's other shots of
+that type.
+
+It also shows a few patterns from the match: what a player tends to answer a
+given shot with, what the opponent tends to reply, and how often that stroke
+ends the rally. A match summary puts the rallies, each player's shots, where
+they ended, and the mix of strokes on one page.
+
+## How much to trust the numbers
+
+Please treat them as estimates. Everything is reconstructed automatically from
+one broadcast camera, and the stroke types are a model's best reading of the
+players and the shuttle. Nobody has checked them by hand.
+
+So I show how many shots sit behind each number, and I don't state a pattern
+unless it happened at least eight times. A pattern from one match is also just
+that: one match. And the flight-path drawing on the homepage is a sketch, not a
+measurement.
+
+## What I'm building next
+
+- **Your own match.** You'll paste a link and get the same views for it. This
+  isn't available yet, which is why the field on the homepage is switched off.
+- **Rally search.** Ask for something like "long rallies with a crosscourt
+  finish" and get those rallies back.
+- **Saving and sharing.** Keep the rallies worth revisiting, and send one to
+  someone with its context.
+- **More matches** in the library.
+
+## Where I'd like this to go for players and coaches
+
+The questions I care about are specific ones:
 
 > What do they usually play after a deep backhand clear?
 
-Playing-style and tendency profiles would connect a situation to the shots that
-follow. Shot-sequence discovery could surface recurring combinations, such as a
-clear, a drop, a lift, and an attack, together with their outcomes.
+One match can hint at an answer. Many matches could give a real one, and could
+show whether a tendency changes at close scores, late in a game, or against a
+different opponent.
 
-Setup-shot analysis would look beyond the final winner to find shots that often
-precede weak replies. A separate serve-and-return view would examine placement,
-return choice, and the opening shots of a rally.
+I'd also like to look past the winning shot to the one that set it up, and to
+give the serve and the return their own view, since so many rallies are decided
+in the first few shots.
 
-Every finding should lead back to its video examples. Seeing a pattern is more
-useful when you can inspect the exchanges that produced it.
+Comparing shots is only fair in similar situations. A lift played under pressure
+and a lift played with time are different problems. And a professional's shot is
+an example to learn from, not a target everyone should copy.
 
-## Study the shape of a shot
+For coaches, I picture collections: the clips behind a recurring weakness or an
+opponent's habit, gathered so you can walk a player through them before training
+or a match.
 
-Shuttle reconstruction can support comparisons of flight paths: clear depth,
-lift height, net clearance, smash angle, and the spread of landing locations.
-Consistency matters alongside a single impressive shot.
+None of this exists yet. I'm writing it down so you know the direction.
 
-Comparisons should use similar situations. A pressured defensive lift and a lift
-played with time are different problems. Professional reference examples could
-help a player explore alternatives, without presenting a professional's
-trajectory as a universal target or a diagnosis of stroke technique.
+## What I'll keep doing
 
-## Prepare for the opponent and the situation
+Every finding should lead back to the video, so you can see the rallies behind
+it and judge for yourself. I'll keep showing the sample sizes. And I won't
+claim that a pattern won the point just because it showed up before one.
 
-Predictability feedback could reveal repeated shot choices or directions.
-Context-dependent analysis could then ask whether those tendencies change at
-close scores, late in a game, or against different opponents.
-
-Tactical change detection would highlight shifts within a match: more lifts,
-flatter exchanges, or a new placement target. A point-outcome view would separate
-winners, errors, and sequences associated with won or lost points.
-
-The aim is a game plan supported by examples: target a particular corner,
-anticipate a frequent reply, and prepare an alternative when the pattern changes.
-
-## Take an insight into practice
-
-Annotated collections could bring together examples of a recurring weakness,
-an opponent's tendency, or a successful combination. A coach could use them to
-explain an adjustment; a player could revisit them before training or a match.
-
-Practice recommendations would turn a finding into a drill, such as working on
-lift depth under pressure. Progress goals would track that specific skill across
-comparable matches, showing the number of examples behind each result.
-
-Video-based decision practice could pause before contact, ask the player to
-choose a response, and then reveal the continuation. That creates a concrete
-starting point for discussing alternatives with a coach.
-
-## Keep the evidence visible
-
-Reliable analysis needs more than a shuttle path. Shot sequences require shot
-boundaries, shot types, and player attribution. Score-aware comparisons need
-score metadata; point-outcome reports need reliable outcome labels. Footwork,
-player positioning, contact height, and doubles formations require additional
-player or racket tracking.
-
-Reports should show sample sizes and uncertainty. A sequence associated with a
-winning point does not establish that the sequence caused the win. Video and 3D
-views should help coaches and players assess the evidence and decide what to
-try next.
-
-For the fan-focused side of the same rally library, explore
-[Entertainment](/blog/entertainment).
+If you watch a lot of badminton, try the demo match. It's the best way to see
+what I mean.

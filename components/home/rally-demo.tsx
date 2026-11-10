@@ -37,6 +37,7 @@ export function RallyDemo() {
   const [railWidth, setRailWidth] = useState(560);
   const [current, setCurrent] = useState(0);
   const [jump, setJump] = useState<{ from: number; to: number; id: number } | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
   const labels = labelled(current, railWidth);
 
   useEffect(() => {
@@ -110,13 +111,19 @@ export function RallyDemo() {
       prepare = prepareRally;
       const style = getComputedStyle(canvas);
       const color = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback;
-      scene = new Scene(canvas, {
-        a: color("--player-a", "#3693ff"),
-        b: color("--player-b", "#8b9cff"),
-        court: color("--ink-100", "#c4c7ce"),
-        shuttle: color("--text-strong", "#f3f4f6"),
-        background: color("--bg-base", "#0b0c0e"),
-      }, { drift: !reduced });
+      try {
+        scene = new Scene(canvas, {
+          a: color("--player-a", "#3693ff"),
+          b: color("--player-b", "#8b9cff"),
+          court: color("--ink-100", "#c4c7ce"),
+          shuttle: color("--text-strong", "#f3f4f6"),
+          background: color("--bg-base", "#0b0c0e"),
+        }, { drift: !reduced });
+      } catch {
+        // No WebGL (older device, or graphics acceleration off): say so instead of an empty stage.
+        if (!disposed) setUnavailable(true);
+        return;
+      }
       scene.resize(canvas.clientWidth, canvas.clientHeight);
       // Reduced motion: a still frame from the middle of the rally; dragging still works.
       if (reduced) state.frame = Math.floor(rallies[state.index].frames / 2);
@@ -148,7 +155,8 @@ export function RallyDemo() {
       <div className={styles.stage}>
         <canvas ref={canvasRef} className={styles.canvas} aria-label="3D court, drag to rotate" />
         <span className={styles.note}>3D preview</span>
-        <span className={styles.hint} aria-hidden="true">
+        {unavailable && <p className={styles.unavailable}>This browser can’t draw the 3D preview. The demo match still plays.</p>}
+        <span className={styles.hint} aria-hidden="true" hidden={unavailable}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 4 0 0 0 15.5 2.8M21 12a9 4 0 0 0-15.5-2.8" /><path d="m16 13 2.6 1.9L20 12M8 11 5.4 9.1 4 12" /></svg>
           Drag to rotate
         </span>

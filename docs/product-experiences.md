@@ -109,6 +109,5 @@ in [rally-playback-benchmark.md](rally-playback-benchmark.md): 1:25:20 of video,
 27:29 of verified play, and 27:38 of detector output. Keep the benchmark separate
 from the library match; do not calculate the headline from its boundaries.
 
-Reserve `/blog/entertainment` and `/blog/technical` for detailed breakdowns reached
-through the footer. Those links replace Playback design and Detection notes; the
-playback design post remains available in the blog. Do not add a closing CTA.
+`/blog/technical` holds the product-vision breakdown reached through the footer.
+Link `/blog/entertainment` only once that post exists. Do not add a closing CTA.

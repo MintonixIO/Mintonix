@@ -9,6 +9,8 @@
 .canvas:active { cursor: grabbing; }
 
 /* Overlays never block the drag. */
+.unavailable { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; padding: 0 12%; color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.6; text-align: center; }
+.hint[hidden] { display: none; }
 .note, .hint { position: absolute; pointer-events: none; }
 .note { right: 6%; top: 9%; color: var(--text-secondary); font-size: var(--text-xs); }
 .hint { right: 6%; bottom: 7%; display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: var(--text-xs); }

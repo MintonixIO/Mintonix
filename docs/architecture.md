@@ -10,7 +10,7 @@ The original video's timestamps remain authoritative. Do not assume the broadcas
 
 This repository contains the Next.js app configured for deployment on Vercel, including the website, match reader, score list, and custom video controls. Backend implementation and deployment are maintained separately.
 
-Local watch pages validate v3 match files and embed the match's YouTube source. An optional analysis file carries per-shot data for the planned analysis view. The library lists configured local matches. Mintonix never re-hosts broadcast video. The match-link form validates URL syntax locally; public processing is not connected.
+Local watch pages validate v3 match files and embed the match's YouTube source. An optional analysis file carries per-shot data for the Analyze view. The library lists configured local matches. Mintonix never re-hosts broadcast video. The homepage's match-link field is disabled and labelled as coming soon; public processing is not connected.
 
 ## Playback model
 

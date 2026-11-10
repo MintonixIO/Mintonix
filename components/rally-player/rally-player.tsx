@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Match } from "./contract";
 import { formatTime, normalizeMediaTime, playableSegments, rallyIndexAt, rallyPlaybackPosition, rallySeconds, rallyStart } from "./timeline";
@@ -8,6 +8,7 @@ import { cuePaused, describeYouTubeError, isSeekPending, loadYouTubeApi, PlayerS
 import { AnalysisDeck, useAnalysis } from "./analysis/analysis-views";
 import { MatchRail } from "./analysis/match-level";
 import { activeShotIndex, formatShotParam, resolveShot, SHOT_LEAD_SECONDS, shotCueTime, type ShotRef } from "./analysis/shots";
+import { missingPointsBefore, missingPointsLabel, missingPointsReason } from "./coverage";
 import { setOpenShot, useOpenShot, useView } from "./view";
 import styles from "./rally-player.module.css";
 
@@ -51,6 +52,8 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
   const listRef = useRef<HTMLDivElement>(null);
   const rallies = match.rallies;
   const segments = useMemo(() => playableSegments(rallies), [rallies]);
+  const missingBefore = useMemo(() => missingPointsBefore(rallies), [rallies]);
+  const missingTotal = missingBefore.reduce((sum, count) => sum + count, 0);
   const [sourceTime, setSourceTime] = useState(rallyStart(rallies[0]));
   const [isPlaying, setIsPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -372,7 +375,9 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
                     const isSelected = selectedIndex === index;
                     const score = rally.scoreBefore && [rally.scoreBefore[scoreFirst], rally.scoreBefore[scoreSecond]];
                     return (
-                      <li key={rally.id}>
+                      <Fragment key={rally.id}>
+                      {missingBefore[index] > 0 && <li className={styles.gapRow}>{missingPointsLabel(missingBefore[index], match.review)}</li>}
+                      <li>
                         <button type="button" disabled={!ready} data-selected={isSelected || undefined} className={styles.rallyRow} aria-current={isSelected ? "true" : undefined} aria-label={`Rally ${index + 1}, game ${rally.game}, ${score ? `score ${score.join(" to ")}` : "score unknown"}, ${formatTime(rallyStart(rally))} in original video`} onClick={() => selectRally(index)}>
                           <span className={styles.rallyNumber}>{isSelected && isPlaying ? <span className={styles.equalizer} aria-hidden="true"><i /><i /><i /></span> : String(index + 1).padStart(2, "0")}</span>
                           <span className={styles.rallyScore}>{score ? <><span>{score[0]}</span><span className={styles.scoreDash}>–</span><span>{score[1]}</span></> : <span className={styles.scoreDash}>No score</span>}</span>
@@ -380,6 +385,7 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
                           <span className={styles.rallyDuration}>{Math.round(rallySeconds(rally))}s</span>
                         </button>
                       </li>
+                      </Fragment>
                     );
                   })}
                 </ol>
@@ -393,6 +399,11 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
         <AnalysisDeck deck={deck} openShot={open ? { shot: open.shot, index: open.ref.index } : null} match={match} analysis={analysis}
           rally={focusRally} rallyIndex={focusIndex} shots={shots} activeIndex={activeShot} time={sourceTime}
           onSelectRally={showRally} onSelectShot={openFocusShot} />
+      )}
+      {missingTotal > 0 && (
+        <p className={styles.previewNotice}>
+          {missingTotal} of {rallies.length + missingTotal} points {missingPointsReason(match.review)}. Gaps are marked in the list.
+        </p>
       )}
       {match.review === "automatic" && <p className={styles.previewNotice}>Rally boundaries and scores were detected automatically and haven’t been reviewed by hand.</p>}
     </section>

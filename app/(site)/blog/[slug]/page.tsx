@@ -39,7 +39,7 @@ async function ArticleContent({ params }: Props) {
         <p className={styles.eyebrow}>{post.category}</p>
         <h1>{post.title}</h1>
         <p className={styles.articleDescription}>{post.description}</p>
-        <p className={styles.postMeta}>Mintonix Engineering, <time dateTime={post.date}>{formatPostDate(post.date)}</time>, {post.readingMinutes} min read</p>
+        <p className={styles.postMeta}>From the founder, <time dateTime={post.date}>{formatPostDate(post.date)}</time>, {post.readingMinutes} min read</p>
       </header>
       <div className={styles.prose}><Markdown skipHtml>{post.body}</Markdown></div>
     </article>

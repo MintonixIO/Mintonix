@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { io } from "next/cache";
 import { listLocalMatches } from "@/components/rally-player/local-match";
-import { formatTime, rallySeconds } from "@/components/rally-player/timeline";
+import { formatPlayTime } from "@/components/rally-player/coverage";
+import { formatTime } from "@/components/rally-player/timeline";
 import styles from "@/app/(site)/home.module.css";
 
 // User-supplied dl1 measurements. This full-broadcast benchmark is independent
@@ -18,7 +19,7 @@ function RallyBenchmark() {
     <figure className={styles.timeComparison}>
       <div className={styles.comparisonLabel}><span>Full broadcast</span><strong>{formatTime(benchmark.broadcastSeconds)}</strong></div>
       <div className={styles.broadcastBar} aria-hidden="true"><span /></div>
-      <div className={styles.comparisonLabel}><span>Verified live play</span><strong>{formatTime(Math.round(benchmark.verifiedSeconds))}</strong></div>
+      <div className={styles.comparisonLabel}><span>Verified play</span><strong>{formatTime(Math.round(benchmark.verifiedSeconds))}</strong></div>
       <div className={styles.compactBar} data-feature-motion="measure" aria-hidden="true"><span style={{ width: `${playPercent}%` }} /></div>
     </figure>
     <p className={styles.sampleCaveat}>Main-camera play only. Excludes replays, other camera angles, and dead time.</p>
@@ -30,20 +31,19 @@ async function AvailableMatch() {
   await io();
   const [match] = await listLocalMatches();
   if (!match) return <EmptySample />;
-  const playSeconds = match.rallies.reduce((total, rally) => total + rallySeconds(rally), 0);
   const [playerA, playerB] = match.players.map((player) => player.name);
   const detected = match.review === "automatic" ? "detected " : "";
 
   return <Link className={styles.sampleCard} href={`/watch/${match.matchId}`} aria-label={`Watch rallies: ${playerA} vs ${playerB}`}>
       <div className={styles.sampleImage}>
         <Image src={`https://i.ytimg.com/vi/${match.source.videoId}/hqdefault.jpg`} alt="" fill sizes="(max-width: 760px) 100vw, 45vw" />
-        <span className={styles.sampleBadge}>Try the viewer</span>
+        <span className={styles.sampleBadge}>Try the demo</span>
         <span className={styles.samplePlay} aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7L8 5Z" /></svg></span>
       </div>
       <div className={styles.sampleDetails}>
         <p className={styles.sampleEvent}>{match.title}</p>
         <h4>{playerA} <span>vs</span> {playerB}</h4>
-        <p className={styles.sampleMeta}>{match.rallies.length} {detected}{match.rallies.length === 1 ? "rally" : "rallies"} <span aria-hidden="true">·</span> {formatTime(Math.round(playSeconds))} rally playback</p>
+        <p className={styles.sampleMeta}>{match.rallies.length} {detected}{match.rallies.length === 1 ? "rally" : "rallies"} <span aria-hidden="true">·</span> {formatPlayTime(match.rallies)} of play</p>
         <span className={styles.sampleAction}>Watch rallies <span aria-hidden="true">→</span></span>
       </div>
     </Link>;

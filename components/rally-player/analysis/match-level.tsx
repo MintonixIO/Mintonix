@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import type { Match, MatchAnalysis } from "../contract";
+import { missingPointsBefore, missingPointsLabel } from "../coverage";
 import { rallySeconds } from "../timeline";
 import { PlacementMap } from "./court-drawing";
 import { METRICS, playerTools } from "./players";
@@ -40,6 +41,15 @@ export function RangeRow({ label, unit, scale, digits, domain, stats, mark, mark
       </span>
       <span className={styles.rangeN} aria-hidden="true">{marked ? "" : stats.n}</span>
     </div>
+  );
+}
+
+/** Beside any measured value: what kind of number it is. */
+export function EstimateNote() {
+  return (
+    <p className={styles.estimateNote}>
+      <strong>Estimates, not verified measurements.</strong> Reconstructed from one broadcast camera and not checked by hand.
+    </p>
   );
 }
 
@@ -85,6 +95,7 @@ function ShotMixSection({ match, analysis }: { match: Match; analysis: MatchAnal
       </div>
       <table className={styles.mixTable}>
         <caption className={styles.srOnly}>Shots by stroke type for each player, as a share of their shots with a type</caption>
+        <colgroup><col className={styles.mixLabel} />{match.players.map((player) => <col key={player.id} />)}</colgroup>
         <thead className={styles.srOnly}>
           <tr><th scope="col">Stroke type</th>{match.players.map((player) => <th key={player.id} scope="col">{player.name}</th>)}</tr>
         </thead>
@@ -125,6 +136,7 @@ function PlayerProfiles({ match, analysis }: { match: Match; analysis: MatchAnal
           Bars span the middle 80% of each player’s shots, with the median marked. Built from the {analysis.quality.ok} of {analysis.quality.shots} shots measured
           reliably; the small number is the sample size.
         </p>
+        <EstimateNote />
       </div>
       <div className={styles.profileGrid}>
         {match.players.map((player, index) => {
@@ -290,6 +302,7 @@ export function MatchRail({
   const counts = match.rallies.map((rally) => analysis?.rallies[rally.id]?.shots.length ?? 0);
   const max = Math.max(1, ...counts);
   const games = groupByGame(match);
+  const missingBefore = missingPointsBefore(match.rallies);
   const focus = expanded ?? current;
   useEffect(() => {
     const list = listRef.current;
@@ -319,7 +332,9 @@ export function MatchRail({
                 const open = index === expanded;
                 const shots = analysis?.rallies[rally.id]?.shots ?? [];
                 return (
-                  <li key={rally.id}>
+                  <Fragment key={rally.id}>
+                  {missingBefore[index] > 0 && <li className={styles.gapRow}>{missingPointsLabel(missingBefore[index], match.review)}</li>}
+                  <li>
                     <button type="button" className={styles.matchRow} disabled={!ready} data-rally={index}
                       aria-current={selected ? "true" : undefined} aria-expanded={open}
                       aria-label={`Rally ${index + 1}, ${rally.scoreBefore ? `score ${rally.scoreBefore[a.id]} to ${rally.scoreBefore[b.id]}` : "score unknown"}, ${analysis ? `${counts[index]} shots, ` : ""}${Math.round(rallySeconds(rally))} seconds${rally.winner ? `, point to ${players.name(rally.winner)}` : ""}. ${open ? "Hide shots." : "Show shots."}`}
@@ -353,6 +368,7 @@ export function MatchRail({
                       </div>
                     )}
                   </li>
+                  </Fragment>
                 );
               })}
             </ol>

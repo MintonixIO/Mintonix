@@ -61,6 +61,8 @@
 .equalizer i:nth-child(3) { height: 9px; animation-delay: -600ms; }
 @keyframes eq { from { transform: scaleY(.45); } to { transform: scaleY(1); } }
 .viewer[data-playing] .rallyRow[data-selected] { border-color: var(--live-ring); background: var(--live-soft); }
+.gapRow { display: flex; align-items: center; gap: 10px; padding: 5px 9px; color: var(--text-muted); font-size: var(--text-2xs); line-height: 1.4; }
+.gapRow::before, .gapRow::after { content: ""; flex: 1; border-top: 1px dashed var(--border-strong); }
 .previewNotice { margin: 0; padding: 10px 14px; color: var(--text-muted); font-size: var(--text-2xs); line-height: var(--leading-normal); }
 
 @media (max-width: 800px) {

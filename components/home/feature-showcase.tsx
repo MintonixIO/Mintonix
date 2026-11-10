@@ -13,19 +13,25 @@ const searchSegments = [
 ];
 const searchLetters = searchSegments.flatMap(segment => Array.from(segment.text, letter => ({ letter, match: segment.match })));
 
-const searchTags = ["Player", "Opponent", "Shot", "Score", "Rally length", "Court zone", "Tournament", "Round"];
-
 const sharedFeatures = [
   { kind: "collections", title: "Saved collections", caption: "Keep the rallies worth revisiting." },
   { kind: "sharing", title: "Rally sharing", caption: "Send a moment with its context." },
 ] satisfies { kind: FeatureKind; title: string; caption: string }[];
 
 const viewerFeatures = [
-  { title: "Rally detection", caption: "Get straight to the play.", status: "In development" },
-  { title: "Replay filtering", caption: "Skip the broadcast repeats.", status: "In development" },
-  { title: "Score navigation", caption: "Choose a score. Revisit the exchange.", status: "In the viewer" },
-  { title: "Match timeline", caption: "Keep every point in context.", status: "In the viewer" },
+  { title: "Rally detection", caption: "Get straight to the play." },
+  { title: "Replay filtering", caption: "Skip the broadcast repeats." },
+  { title: "Score navigation", caption: "Choose a score. Revisit the exchange." },
+  { title: "Match timeline", caption: "Keep every point in context." },
 ];
+
+// A real tendency from the dl1 demo match (analysis.patterns.followUps[opponent].lift):
+// what each player played next when the other lifted. Shares are of the lifts faced.
+const liftAnswers = [
+  { tone: "a", name: "Shi Yu Qi", faced: 108, replies: [["Smash", 51], ["Drop", 33], ["Clear", 10], ["Other", 6]] },
+  { tone: "b", name: "Viktor Axelsen", faced: 82, replies: [["Smash", 59], ["Drop", 22], ["Clear", 11], ["Other", 9]] },
+] as const;
+const topShare = Math.max(...liftAnswers.flatMap(player => player.replies.map(([, share]) => share)));
 
 export function FeatureShowcase({ viewer }: { viewer: ReactNode }) {
   return <FeatureMotion>
@@ -40,7 +46,7 @@ export function FeatureShowcase({ viewer }: { viewer: ReactNode }) {
           <p className={styles.featureStatement}>A whole new<br />point of view.</p>
           <p className={styles.description}>Explore the height, depth, and angle of every shot.</p>
           <FlightIllustration />
-          <ul className={styles.keyBenefits}><li>Rotate the court</li><li>Slow the exchange</li><li>Follow the flight</li></ul>
+          <ul className={styles.keyBenefits}><li>Rotate the court</li><li>Slow the shot</li><li>Follow the flight</li></ul>
         </article>
         <div className={styles.sharedRail}>
           <article className={`${styles.feature} ${styles.search}`}>
@@ -55,7 +61,6 @@ export function FeatureShowcase({ viewer }: { viewer: ReactNode }) {
                   ))}
                 </span>
               </p>
-              <div className={styles.searchTags} aria-hidden="true">{searchTags.map(tag => <span key={tag}>{tag}</span>)}</div>
             </div>
           </article>
           <div className={styles.sharedUtilities}>
@@ -74,15 +79,23 @@ export function FeatureShowcase({ viewer }: { viewer: ReactNode }) {
       <div className={styles.playerTools}>
         <article className={`${styles.feature} ${styles.patterns}`}>
           <div className={styles.featureName}><FeatureIcon kind="patterns" /><h4>Shot patterns</h4></div>
-          <p className={styles.description}>See the setup behind the winning shot.</p>
-          <div className={styles.patternExample} data-feature-motion="sequence">
-            <span className={styles.exampleLabel}>An illustrative exchange</span>
-            <ol>
-              <li><span>01</span><strong>Tight net shot</strong><small>Create pressure</small></li>
-              <li><span>02</span><strong>Short lift</strong><small>Find the opening</small></li>
-              <li><span>03</span><strong>Attacking finish</strong><small>Take the point</small></li>
-            </ol>
-          </div>
+          <p className={styles.description}>One rally shows what happened. A whole match shows what a player tends to do: the reply they favor, the shot that draws it, and how often it ends the rally.</p>
+          <figure className={styles.patternExample} data-feature-motion="measure">
+            <figcaption className={styles.exampleLabel}>From the demo match: what each player played when the other lifted</figcaption>
+            <div className={styles.patternPlayers}>
+              {liftAnswers.map(player => <div key={player.name} data-tone={player.tone}>
+                <p className={styles.patternPlayer}><strong>{player.name}</strong><span>{player.faced} lifts faced</span></p>
+                <ul>
+                  {player.replies.map(([reply, share]) => <li key={reply}>
+                    <span>{reply}</span>
+                    <span className={styles.patternBar} aria-hidden="true"><i style={{ width: `${share / topShare * 100}%` }} /></span>
+                    <b>{share}%</b>
+                  </li>)}
+                </ul>
+              </div>)}
+            </div>
+            <p className={styles.patternReading}>Both attack a lift at least half the time. Shi Yu Qi mixes in the drop on one lift in three; Axelsen goes for the smash more often.</p>
+          </figure>
         </article>
       </div>
     </section>
@@ -96,7 +109,7 @@ export function FeatureShowcase({ viewer }: { viewer: ReactNode }) {
       {viewer}
       <div id="experience" className={styles.viewerDetails}>
         {viewerFeatures.map(feature => <article key={feature.title}>
-          <h4>{feature.title}</h4><p>{feature.caption}</p><span>{feature.status}</span>
+          <h4>{feature.title}</h4><p>{feature.caption}</p>
         </article>)}
       </div>
     </section>

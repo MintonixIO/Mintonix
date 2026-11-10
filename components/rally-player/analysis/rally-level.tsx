@@ -2,7 +2,7 @@
 
 import type { Match, MatchAnalysis, Rally, RallyRecords, ReplyTally, Shot, ShotTypeName } from "../contract";
 import { formatTime, rallySeconds } from "../timeline";
-import { metricDomain, RangeRow } from "./match-level";
+import { EstimateNote, metricDomain, RangeRow } from "./match-level";
 import { METRICS, playerTools, value } from "./players";
 import { MIN_PATTERN_SAMPLE, MIN_TYPE_SAMPLE, plural, tendency, withArticle } from "./patterns";
 import { correctionNote, percent, SHOT_TYPE_NAMES, shotNoun, shotTypeConfidence, shotTypeView } from "./shot-types";
@@ -86,6 +86,7 @@ export function ShotDetail({ match, shot, index, count, onStep }: {
         {endLabel(shot)} <span>{formatTime(shot.startSeconds)}, from the {shot.hitterEnd === "near" ? "camera" : "far"} end</span>
       </p>
       {rows.length > 0 && <dl>{rows.map(([term, text]) => <div key={term}><dt>{term}</dt><dd>{text}</dd></div>)}</dl>}
+      {rows.length > 0 && <EstimateNote />}
       {correctionNote(shot) && <p className={styles.detailNote}>{correctionNote(shot)}</p>}
       {note && <p className={styles.detailNote}>{note}</p>}
     </div>

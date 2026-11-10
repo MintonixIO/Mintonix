@@ -5,6 +5,7 @@
 .sharedStage { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-1); }
 .feature { min-width: 0; }
 .featureName { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; }
+.featureName { flex-wrap: wrap; }
 .featureName > svg { flex-shrink: 0; color: var(--text-secondary); }
 .feature h4 { margin: 0; color: var(--text-strong); font: var(--fw-medium) var(--text-lg)/1.35 var(--font-display); letter-spacing: var(--tracking-tight); }
 .description { position: relative; z-index: 1; margin: 14px 0 0; color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.7; }
@@ -21,12 +22,10 @@
 .blueFill { fill: var(--blue-300); }
 .purpleFill { fill: var(--player-b); }
 .sharedRail { display: flex; flex-direction: column; border-left: 1px solid var(--border); }
-.search { flex: 1; padding: 32px; }
-.searchExample { margin-top: 24px; }
+.search { display: flex; flex: 1; flex-direction: column; padding: 32px; }
+.searchExample { display: flex; flex: 1; flex-direction: column; justify-content: center; padding: 24px 0 8px; }
 .exampleLabel { color: var(--text-secondary); font-size: var(--text-xs); }
-.searchExample > p { max-width: 22em; margin: 10px 0 20px; color: var(--text-primary); font: var(--fw-regular) var(--text-xl)/1.4 var(--font-display); letter-spacing: var(--tracking-tight); }
-.searchTags { display: flex; flex-wrap: wrap; gap: 7px; }
-.searchTags > span { padding: 5px 9px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: var(--text-xs); }
+.searchExample > p { max-width: 18em; margin: 12px 0 0; color: var(--text-primary); font: var(--fw-regular) clamp(24px, 2.3vw, 32px)/1.35 var(--font-display); letter-spacing: var(--tracking-tight); }
 .sharedUtilities { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--border); }
 .sharedUtilities > article + article { border-left: 1px solid var(--border); }
 .smallFeature { display: flex; flex-direction: column; align-items: center; min-width: 0; padding: 26px 18px; text-align: center; }
@@ -38,20 +37,26 @@
 .chapterTitle > span { color: var(--text-secondary); }
 .playerTools { min-width: 0; }
 .patterns { padding: 28px 32px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-1); }
-.patternExample { margin-top: 26px; }
-.patternExample ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; margin: 16px 0 0; padding: 0; list-style: none; }
-.patternExample li { position: relative; display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
-.patternExample li > span { position: relative; z-index: 1; display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--border-strong); border-radius: 50%; background: var(--surface-1); color: var(--text-secondary); font: 10px var(--font-mono); }
-.patternExample li:not(:last-child)::after { content: ''; position: absolute; top: 14px; left: 38px; right: -12px; height: 1px; background: var(--border-strong); }
-.patternExample strong { margin-top: 14px; color: var(--text-primary); font-size: var(--text-sm); font-weight: var(--fw-medium); }
-.patternExample small { margin-top: 5px; color: var(--text-secondary); font-size: var(--text-xs); }
+.patterns .description { max-width: 56ch; }
+.patternExample { margin: 28px 0 0; padding-top: 22px; border-top: 1px solid var(--border-subtle); }
+.patternPlayers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 48px; margin-top: 20px; }
+.patternPlayers > [data-tone="a"] { --tone: var(--player-a); }
+.patternPlayers > [data-tone="b"] { --tone: var(--player-b); }
+.patternPlayer { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 12px; margin: 0 0 12px; color: var(--text-secondary); font-size: var(--text-xs); }
+.patternPlayer strong { display: inline-flex; align-items: center; gap: 9px; color: var(--text-strong); font: var(--fw-medium) var(--text-base)/1.4 var(--font-display); }
+.patternPlayer strong::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--tone); }
+.patternPlayers ul { margin: 0; padding: 0; list-style: none; }
+.patternPlayers li { display: grid; grid-template-columns: 52px minmax(0, 1fr) 40px; align-items: center; gap: 12px; min-height: 32px; border-top: 1px solid var(--border-subtle); color: var(--text-secondary); font-size: var(--text-xs); }
+.patternBar { height: 10px; border-radius: var(--radius-pill); background: var(--surface-2); overflow: hidden; }
+.patternBar i { display: block; height: 100%; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--tone) 70%, transparent); transform-origin: left center; }
+.patternPlayers li b { color: var(--text-strong); font: var(--text-xs) var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+.patternReading { max-width: 60ch; margin: 22px 0 0; color: var(--text-primary); font-size: var(--text-sm); line-height: 1.6; }
 .viewerChapter { padding-top: 48px; border-top: 1px solid var(--border); }
 .viewerIntro { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; margin-bottom: 36px; }
 .viewerDetails { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; margin-top: 40px; }
 .viewerDetails > article { padding: 8px 0 8px 18px; border-left: 1px solid var(--border); }
 .viewerDetails h4 { margin: 0; color: var(--text-primary); font: var(--fw-medium) var(--text-base)/1.4 var(--font-display); }
-.viewerDetails p { margin: 10px 0; color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.6; }
-.viewerDetails article > span { color: var(--text-secondary); font-size: var(--text-xs); }
+.viewerDetails p { margin: 10px 0 0; color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.6; }
 
 /* The full sentence sets the line breaks and stays available to screen readers. */
 .query { position: relative; }
@@ -64,9 +69,10 @@
   .query[data-playing] .typedText { display: block; }
   .query[data-playing] .typedText > span { animation: typeLetter 1ms step-end backwards; }
   .flightVisual[data-playing] .flightTrace { animation: followFlight 1600ms ease-in-out; }
-  .patternExample[data-playing] li > span { animation: markShot 720ms ease-in-out; }
-  .patternExample[data-playing] li:nth-child(2) > span { animation-delay: 480ms; }
-  .patternExample[data-playing] li:nth-child(3) > span { animation-delay: 960ms; }
+  .patternExample[data-playing] .patternBar i { animation: growBar 900ms var(--ease-out) backwards; }
+  .patternExample[data-playing] li:nth-child(2) i { animation-delay: 90ms; }
+  .patternExample[data-playing] li:nth-child(3) i { animation-delay: 180ms; }
+  .patternExample[data-playing] li:nth-child(4) i { animation-delay: 270ms; }
 }
 @keyframes typeLetter {
   from { opacity: 0; }
@@ -77,9 +83,7 @@
   12%, 84% { opacity: 1; }
   to { stroke-dashoffset: -1; opacity: 0; }
 }
-@keyframes markShot {
-  45% { color: var(--player-b); border-color: var(--player-b); background: var(--player-b-soft); }
-}
+@keyframes growBar { from { transform: scaleX(0); } }
 @media (max-width: 1100px) {
   .heading { align-items: flex-start; flex-direction: column; gap: 14px; margin-bottom: 32px; }
   .sharedStage { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
@@ -89,7 +93,6 @@
   .search { padding: 28px; }
   .playerChapter { grid-template-columns: minmax(0, .8fr) minmax(0, 1.6fr); gap: 28px; }
   .patterns { padding: 26px; }
-  .patternExample ol { gap: 14px; }
   .viewerIntro { gap: 20px; }
 }
 @media (max-width: 760px) {
@@ -117,12 +120,7 @@
   .smallFeature h4 { font-size: var(--text-sm); }
   .smallFeature p { font-size: var(--text-xs); }
   .patterns { padding: 24px; }
-  .patternExample ol { grid-template-columns: 1fr; gap: 20px; }
-  .patternExample li { display: grid; grid-template-columns: 28px 1fr; gap: 4px 14px; }
-  .patternExample li > span { grid-row: span 2; align-self: center; }
-  .patternExample strong { margin: 0; }
-  .patternExample small { margin: 0; }
-  .patternExample li:not(:last-child)::after { top: 39px; bottom: -15px; left: 14px; right: auto; width: 1px; height: auto; }
+  .patternPlayers { grid-template-columns: 1fr; }
   .viewerChapter { padding-top: 36px; }
   .viewerDetails { gap: 24px 18px; margin-top: 30px; }
   .viewerDetails > article { padding-left: 12px; }
