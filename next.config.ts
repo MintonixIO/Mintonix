@@ -4,6 +4,8 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   cacheComponents: true,
   partialPrefetching: true,
+  // Published matches are read from disk at request time, so ship them with the server routes.
+  outputFileTracingIncludes: { "/*": ["./content/matches/**/*.json"] },
   images: {
     remotePatterns: [{ protocol: "https", hostname: "i.ytimg.com", pathname: "/vi/**/hqdefault.jpg", search: "" }],
   },

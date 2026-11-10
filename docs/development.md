@@ -17,7 +17,7 @@ pnpm build
 
 `pnpm dev` serves the web app on port 3000 by default. `pnpm start` serves an existing production build. The test command uses Node's built-in TypeScript support and test runner, so it requires Node 24+.
 
-There is one pnpm workspace and one lockfile for the web app. The backend is maintained separately.
+The app is a single package at the repository root. The backend is maintained separately.
 
 ## Match link form
 
@@ -25,11 +25,14 @@ The hero form validates HTTP/HTTPS URL syntax locally. It does not verify that a
 
 ## Preview data
 
-Synthetic match data lives in `apps/web/components/rally-player/test-fixtures.ts` for contract and domain tests. Local watch pages read configured match files instead.
+Synthetic match data lives in `components/rally-player/test-fixtures.ts` for contract and domain tests. Watch pages read match files instead.
 
-## Local match viewer
+## Matches
 
-Set `MINTONIX_LOCAL_MATCHES_DIR` to an absolute directory in `apps/web/.env.local`.
+Published matches are committed under `content/matches/<matchId>/` and deployed
+with the app. To read a different set while developing, set
+`MINTONIX_LOCAL_MATCHES_DIR` to an absolute directory in `.env.local`; it
+replaces the published set.
 The server reads `<directory>/<matchId>/match.json` and, when present,
 `analysis.json` (see `contracts/README.md`). No video
 is read or served: `/watch/<matchId>` embeds the match's YouTube source with
@@ -37,7 +40,6 @@ the YouTube IFrame Player API and drives it for rally selection, scrubbing,
 fullscreen, and gap skipping. YouTube's embed policy does not allow drawing over
 the player, so the score and rally readouts sit in the controls below it.
 Match IDs are restricted; server filesystem paths are never sent to the client.
-With no configured directory, the library is empty.
 
 Write match folders from the Engine:
 
@@ -52,13 +54,16 @@ python util/export_match.py --video dl1 --match-id dl1 \
 `--rallies annotations` exports the hand-reviewed rallies (`review: reviewed`);
 the default exports the engine's own (`review: automatic`).
 
-The local sample, `/watch/dl1`, plays the BWF TV upload of the VICTOR Denmark Open 2025 semifinal, Shi Yu Qi vs Viktor Axelsen (YouTube `9WVwZSzixh0`), with reviewed rallies and shot data.
+To publish a match, commit its `match.json` (and `analysis.json`) under
+`content/matches/<matchId>/`. The tests validate every published match.
 
-Keep all media, match files generated from real footage, and `.env.local` outside Git.
+The published sample, `/watch/dl1`, plays the BWF TV upload of the VICTOR Denmark Open 2025 semifinal, Shi Yu Qi vs Viktor Axelsen (YouTube `9WVwZSzixh0`), with reviewed rallies and shot data.
+
+Keep all media, unpublished match files, and `.env.local` outside Git.
 
 ## Technical blog
 
-Visit `/blog`. Add one `.md` file per article under `apps/web/content/blog/`; the filename is the slug. See `docs/blogging.md` for the required frontmatter. No CMS or database is needed.
+Visit `/blog`. Add one `.md` file per article under `content/blog/`; the filename is the slug. See `docs/blogging.md` for the required frontmatter. No CMS or database is needed.
 
 ## Checks
 
@@ -67,9 +72,9 @@ CI installs with the frozen lockfile, then checks lint, TypeScript, domain tests
 ## Vercel
 
 - Connect the canonical Git repository.
-- Select `apps/web` as the Root Directory and Next.js as the framework.
-- Use the repository's pnpm lockfile. The app build command is `pnpm build` when run from `apps/web`.
-- Leave environment variables empty for the scaffold.
-- Contract changes affect the website even though they are outside the JavaScript workspace. Do not enable an ignore rule that skips `contracts/**` changes. Automatic workspace-only deployment skipping may treat them as global changes; this is acceptable initially.
+- Select Next.js as the framework and leave the Root Directory at the repository root.
+- Use the repository's pnpm lockfile. The build command is `pnpm build`.
+- Leave environment variables empty: matches come from `content/matches`.
+- Published matches are read from disk at request time. `outputFileTracingIncludes` in `next.config.ts` ships `content/matches` with the server routes; keep it when moving that directory.
 
-No Vercel project is created or deployed by this scaffold. There is no Git remote configured.
+No Vercel project is created or deployed by this scaffold.

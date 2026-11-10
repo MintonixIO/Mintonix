@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { listLocalMatches, readLocalAnalysis, readLocalMatch } from "./local-match.ts";
+import { hasLocalAnalysis, listLocalMatches, readLocalAnalysis, readLocalMatch } from "./local-match.ts";
 import { analysisFixture, matchFixture } from "./test-fixtures.ts";
 
 async function withMatchesDirectory(run: (directory: string) => Promise<void>) {
@@ -24,7 +24,7 @@ async function writeMatch(directory: string, folder: string, match: unknown, ana
   if (analysis !== undefined) await writeFile(join(directory, folder, "analysis.json"), JSON.stringify(analysis));
 }
 
-test("local match loading is opt-in, validates match files, and restricts match IDs", () => withMatchesDirectory(async (directory) => {
+test("match loading validates match files and restricts match IDs", () => withMatchesDirectory(async (directory) => {
   delete process.env.MINTONIX_LOCAL_MATCHES_DIR;
   assert.equal(await readLocalMatch("illustrative-match"), null);
   process.env.MINTONIX_LOCAL_MATCHES_DIR = directory;
@@ -50,8 +50,6 @@ test("analysis is optional and validated against its match", () => withMatchesDi
 }));
 
 test("the library lists all valid matches and excludes invalid entries", () => withMatchesDirectory(async (directory) => {
-  delete process.env.MINTONIX_LOCAL_MATCHES_DIR;
-  assert.deepEqual(await listLocalMatches(), []);
   process.env.MINTONIX_LOCAL_MATCHES_DIR = join(directory, "missing");
   assert.deepEqual(await listLocalMatches(), []);
   process.env.MINTONIX_LOCAL_MATCHES_DIR = directory;
@@ -68,4 +66,15 @@ test("the library lists all valid matches and excludes invalid entries", () => w
   assert.equal(matches[0].title, "Match match-a");
   process.env.MINTONIX_LOCAL_MATCHES_DIR = "relative/path";
   await assert.rejects(listLocalMatches(), /absolute path/);
+}));
+
+test("without a configured directory, the published matches in content/matches load and validate", () => withMatchesDirectory(async () => {
+  delete process.env.MINTONIX_LOCAL_MATCHES_DIR;
+  const matches = await listLocalMatches();
+  assert.ok(matches.some((match) => match.matchId === "dl1"));
+  for (const match of matches) {
+    assert.equal((await readLocalMatch(match.matchId))?.matchId, match.matchId);
+    if (await hasLocalAnalysis(match)) assert.equal((await readLocalAnalysis(match))?.matchId, match.matchId);
+  }
+  assert.equal(await hasLocalAnalysis(matches.find((match) => match.matchId === "dl1")!), true);
 }));

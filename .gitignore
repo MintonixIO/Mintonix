@@ -1,11 +1,17 @@
 node_modules/
 .next/
 out/
+build/
+coverage/
 .vercel/
 .env*
 !.env.example
 .DS_Store
+*.pem
 *.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+.pnpm-debug.log*
 /data/
 /models/
 *.mp4

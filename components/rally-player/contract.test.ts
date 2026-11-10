@@ -92,6 +92,6 @@ test("shot types are optional, racket-only and need their model named", () => {
 
 test("contracts/ matches the schemas in contract.ts (run pnpm contracts after changing them)", async () => {
   for (const [name, text] of Object.entries(contractFiles())) {
-    assert.equal(await readFile(join(import.meta.dirname, "../../../../contracts", name), "utf8"), text, name);
+    assert.equal(await readFile(join(import.meta.dirname, "../../contracts", name), "utf8"), text, name);
   }
 });

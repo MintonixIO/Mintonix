@@ -1,10 +1,10 @@
 # Technical blog
 
-Each article is one Markdown file in `apps/web/content/blog/`. There is no CMS, database, or MDX runtime.
+Each article is one Markdown file in `content/blog/`. There is no CMS, database, or MDX runtime.
 
 ## Add an article
 
-Create a file such as `apps/web/content/blog/my-article.md`:
+Create a file such as `content/blog/my-article.md`:
 
 ```md
 ---

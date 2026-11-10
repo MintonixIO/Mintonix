@@ -27,16 +27,19 @@ pnpm start
 
 | Directory | Purpose | Status |
 | --- | --- | --- |
-| `apps/web` | Next.js website and custom rally viewer | Local match playback |
+| `app`, `components`, `styles`, `public` | Next.js website and custom rally viewer | Match playback |
+| `content` | Blog articles (`content/blog`) and published matches (`content/matches`) | Implemented |
 | `contracts` | Match and shot-analysis schemas (generated from the app's zod contract) | Implemented |
 | `docs` | Scope, architecture, brand, and deployment guidance | Implemented |
 
-The homepage provides a match-link form and explains the viewer components. The form validates URL syntax locally but does not submit a processing job. Local matches can be viewed at `/watch/[matchId]` with `MINTONIX_LOCAL_MATCHES_DIR` configured in `apps/web/.env.local`; see `docs/development.md`. The local sample is `dl1` (reviewed rallies and shot data from the Engine). There is no upload, account, or cloud integration in the website yet.
+The app is a single Next.js package at the repository root. Feature code is grouped under `components/` (`rally-player`, `home`, `blog`, `site`, `ui`); routes in `app/` assemble those components.
 
-The technical blog is available at `/blog`. Each article is a simple `.md` file under `apps/web/content/blog`; see `docs/blogging.md` for frontmatter and authoring instructions.
+The homepage provides a match-link form and explains the viewer components. The form validates URL syntax locally but does not submit a processing job. Published matches are committed under `content/matches` and served at `/watch/[matchId]`; set `MINTONIX_LOCAL_MATCHES_DIR` in `.env.local` to read another directory instead (see `docs/development.md`). The published sample is `dl1` (reviewed rallies and shot data from the Engine). There is no upload, account, or cloud integration in the website yet.
+
+The technical blog is available at `/blog`. Each article is a simple `.md` file under `content/blog`; see `docs/blogging.md` for frontmatter and authoring instructions.
 
 ## First deployment
 
-Import this repository into Vercel, select **Next.js**, and set the project's **Root Directory** to `apps/web`. Keep the repository-root pnpm workspace and lockfile. No credentials are required for this preview. See `docs/development.md`.
+Import this repository into Vercel and select **Next.js**. The app is at the repository root, so no Root Directory setting is needed. No credentials or environment variables are required for this preview. See `docs/development.md`.
 
 See `docs/architecture.md` for the app architecture and playback model.

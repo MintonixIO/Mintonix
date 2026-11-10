@@ -5,15 +5,17 @@ import { isAbsolute, join } from "node:path";
 import { parseAnalysis, parseMatch, type Match, type MatchAnalysis } from "./contract.ts";
 
 /**
- * Local match bundles: `$MINTONIX_LOCAL_MATCHES_DIR/<matchId>/match.json`
- * (required) and `analysis.json` (optional shot data). Both stay outside Git
- * and the client bundle; no media is read or served.
+ * Match bundles: `<directory>/<matchId>/match.json` (required) and
+ * `analysis.json` (optional shot data). The directory is the published set in
+ * `content/matches` (committed, deployed with the app) unless
+ * `MINTONIX_LOCAL_MATCHES_DIR` points somewhere else. Neither file reaches the
+ * client bundle; no media is read or served.
  */
 const matchIdPattern = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 
 function matchesDirectory() {
   const directory = process.env.MINTONIX_LOCAL_MATCHES_DIR;
-  if (!directory) return null;
+  if (!directory) return join(process.cwd(), "content/matches");
   if (!isAbsolute(directory)) throw new Error("MINTONIX_LOCAL_MATCHES_DIR must be an absolute path");
   return directory;
 }
@@ -30,7 +32,6 @@ async function readJson(path: string): Promise<unknown | null> {
 /** Only publish matches with a valid match file. Video plays from its YouTube source. */
 export async function listLocalMatches(): Promise<Match[]> {
   const directory = matchesDirectory();
-  if (!directory) return [];
   let entries;
   try {
     entries = await readdir(/*turbopackIgnore: true*/ directory, { withFileTypes: true });
@@ -46,8 +47,8 @@ export async function listLocalMatches(): Promise<Match[]> {
 }
 
 export async function readLocalMatch(matchId: string): Promise<Match | null> {
+  if (!matchIdPattern.test(matchId)) return null;
   const directory = matchesDirectory();
-  if (!directory || !matchIdPattern.test(matchId)) return null;
   const input = await readJson(join(directory, matchId, "match.json"));
   if (input === null) return null;
   const match = parseMatch(input);
@@ -58,7 +59,6 @@ export async function readLocalMatch(matchId: string): Promise<Match | null> {
 /** Shot data for a match, or null when the match has none. */
 export async function readLocalAnalysis(match: Match): Promise<MatchAnalysis | null> {
   const directory = matchesDirectory();
-  if (!directory) return null;
   const input = await readJson(join(directory, match.matchId, "analysis.json"));
   return input === null ? null : parseAnalysis(input, match);
 }
@@ -66,7 +66,6 @@ export async function readLocalAnalysis(match: Match): Promise<MatchAnalysis | n
 /** Whether a match has an analysis file, without reading it. */
 export async function hasLocalAnalysis(match: Match) {
   const directory = matchesDirectory();
-  if (!directory) return false;
   try {
     await access(/*turbopackIgnore: true*/ join(directory, match.matchId, "analysis.json"));
     return true;

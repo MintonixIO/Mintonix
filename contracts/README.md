@@ -7,8 +7,8 @@ A match is a folder `<matchId>/` with two files:
 | `match.json` | [`match.schema.json`](match.schema.json) (v3) | yes |
 | `analysis.json` | [`match-analysis.schema.json`](match-analysis.schema.json) (v1) | no |
 
-Both schemas are **generated** from `apps/web/components/rally-player/contract.ts`
-(zod). Edit that file, then run `pnpm --filter @mintonix/web contracts`. A
+Both schemas are **generated** from `components/rally-player/contract.ts`
+(zod). Edit that file, then run `pnpm contracts`. A
 test fails when the files here are out of date. The Mintonix Engine writes
 both files with `util/export_match.py`.
 

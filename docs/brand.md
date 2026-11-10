@@ -2,9 +2,9 @@
 
 Preserved from the archived original Mintonix web application:
 
-- `apps/web/public/brand/logomark.png`: original blue shuttle mark, unchanged.
-- `apps/web/public/brand/logo-full.png`: original full logo asset, unchanged.
-- `apps/web/styles/tokens/{colors,typography,spacing,effects}.css`: original design tokens, unchanged.
+- `public/brand/logomark.png`: original blue shuttle mark, unchanged.
+- `public/brand/logo-full.png`: original full logo asset, unchanged.
+- `styles/tokens/{colors,typography,spacing,effects}.css`: original design tokens, unchanged.
 
 The original source was `/Users/kouyang/PycharmProjects/Mintonix-Archive/Mintonix/apps/web` at scaffold creation. The new project is self-contained and does not depend on that location.
 
