@@ -13,7 +13,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "node --conditions=react-server --test components/rally-player/*.test.ts components/rally-player/analysis/*.test.ts",
+    "test": "node --conditions=react-server --test components/rally-player/*.test.ts components/rally-player/analysis/*.test.ts components/rally-player/search/*.test.ts",
     "contracts": "node scripts/generate-contracts.ts"
   },
   "dependencies": {

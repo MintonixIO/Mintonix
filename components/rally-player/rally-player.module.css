@@ -18,8 +18,11 @@
 .rallyPosition > span { color: var(--text-secondary); }
 .dockDivider { height: 20px; width: 1px; margin-inline: 3px; background: var(--border-strong); }
 
+/* Search spans the row under the video and the rally list; on a phone it sits between them. */
+.searchArea { grid-column: 1 / -1; min-width: 0; border-top: 1px solid var(--border); background: var(--bg-base); }
+
 /* A full sidebar in the page becomes an on-demand overlay in fullscreen. */
-.rallyPanel { contain: size; min-width: 0; display: flex; flex-direction: column; overflow: hidden; border-left: 1px solid var(--border); background: var(--bg-base); }
+.rallyPanel { grid-area: 1 / 2; contain: size; min-width: 0; display: flex; flex-direction: column; overflow: hidden; border-left: 1px solid var(--border); background: var(--bg-base); }
 .rallyPanel[hidden] { display: none; }
 .panelHeader { flex-shrink: 0; padding: 12px 16px 0; border-bottom: 1px solid var(--border); }
 .panelTitle { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -67,7 +70,7 @@
 
 @media (max-width: 800px) {
   .workspace { grid-template-columns: 1fr; }
-  .rallyPanel { contain: none; max-height: 460px; border-left: 0; border-top: 1px solid var(--border); }
+  .rallyPanel { grid-area: auto; contain: none; max-height: 460px; border-left: 0; border-top: 1px solid var(--border); }
 }
 @media (max-width: 640px) {
   .stage { max-height: none; }
@@ -81,6 +84,7 @@
 .viewer:fullscreen .workspace { flex: 1; display: block; width: 100%; height: 100%; }
 .viewer:fullscreen .stage { flex: 1; width: 100%; height: 100%; max-height: none; min-height: 0; aspect-ratio: auto; }
 .viewer:fullscreen .previewNotice { display: none; }
+.viewer:fullscreen .searchArea { display: none; }
 .viewer:fullscreen .rallyPanel { contain: none; position: absolute; inset: auto 16px 124px auto; z-index: 4; width: 320px; max-width: calc(100% - 32px); max-height: min(520px, calc(100% - 144px)); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--frost-bg-scrolled); backdrop-filter: blur(var(--frost-blur)); box-shadow: var(--shadow-xl); }
 @media (max-height: 440px) and (min-width: 641px) {
   .viewer:fullscreen .rallyPanel { bottom: 72px; max-height: calc(100% - 84px); }

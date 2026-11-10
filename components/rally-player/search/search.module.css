@@ -1,0 +1,88 @@
+/* Search sits directly under the video. Idle, it is one row; results open beneath it. */
+.search { padding: 12px 16px 14px; }
+.form { display: flex; align-items: center; gap: 8px; }
+.field { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: var(--control-lg); padding: 0 14px; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--surface-1); color: var(--text-secondary); cursor: text; transition: border-color var(--dur-fast), box-shadow var(--dur-fast); }
+.field:focus-within { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--brand-subtle); }
+.field svg { flex-shrink: 0; }
+.field input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--text-strong); font-size: var(--text-base); outline: none; appearance: none; }
+.field input::placeholder { color: var(--text-muted); }
+.field input::-webkit-search-cancel-button, .field input::-webkit-search-decoration { -webkit-appearance: none; }
+
+.targets { display: flex; flex-shrink: 0; height: var(--control-lg); padding: 3px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-sunken); }
+.targets button { padding: 0 13px; border: 0; border-radius: calc(var(--radius-md) - 3px); background: transparent; color: var(--text-secondary); font-size: var(--text-sm); transition: background var(--dur-fast), color var(--dur-fast); }
+.targets button:hover { color: var(--text-strong); }
+.targets button[aria-pressed="true"] { background: var(--surface-3); color: var(--text-strong); }
+.submit { flex-shrink: 0; height: var(--control-lg); min-width: 96px; padding: 0 18px; border: 0; border-radius: var(--radius-md); background: var(--brand); color: var(--text-on-blue); font-size: var(--text-sm); font-weight: var(--fw-semibold); transition: background var(--dur-fast); }
+.submit:not(:disabled):hover { background: var(--brand-hover); }
+.submit:disabled { opacity: .45; }
+.targets button:focus-visible, .submit:focus-visible, .examples button:focus-visible, .summary button:focus-visible, .result:focus-visible { outline-offset: -2px; }
+.submit:focus-visible { outline-color: var(--white); }
+
+.examples { display: flex; align-items: center; gap: 8px; margin-top: 10px; color: var(--text-muted); font-size: var(--text-xs); }
+.examples ul { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.examples button { min-height: 30px; padding: 0 11px; border: 1px solid var(--border); border-radius: var(--radius-pill); background: transparent; color: var(--text-secondary); font-size: inherit; transition: background var(--dur-fast), color var(--dur-fast); }
+.examples button:hover { background: var(--surface-2); color: var(--text-strong); }
+
+.error { margin: 12px 0 0; color: var(--danger-400); font-size: var(--text-sm); }
+.response { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.summary { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.summary p { max-width: 70ch; margin: 0; color: var(--text-primary); font-size: var(--text-sm); line-height: var(--leading-normal); }
+.summary button { flex-shrink: 0; min-height: 30px; margin-top: -5px; padding: 0 11px; border: 1px solid var(--border); border-radius: var(--radius-md); background: transparent; color: var(--text-secondary); font-size: var(--text-xs); transition: background var(--dur-fast), color var(--dur-fast); }
+.summary button:hover { background: var(--surface-2); color: var(--text-strong); }
+.response .note { max-width: 80ch; margin: 4px 0 0; color: var(--text-muted); font-size: var(--text-xs); line-height: var(--leading-normal); }
+
+.results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0 12px; padding: 0; list-style: none; }
+.results li { min-width: 0; }
+.result { display: flex; align-items: flex-start; gap: 14px; width: 100%; height: 100%; padding: 12px 14px 12px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-1); color: var(--text-secondary); font-size: var(--text-xs); line-height: var(--leading-normal); text-align: left; transition: background var(--dur-fast), border-color var(--dur-fast); }
+.result:hover { border-color: var(--border-strong); background: var(--surface-2); }
+.result:active { background: var(--surface-hover); }
+
+/* The one drawn element: the shot itself, to scale on the court. */
+.court { flex-shrink: 0; width: 116px; margin-top: 2px; overflow: visible; }
+.court rect { fill: var(--bg-sunken); stroke: var(--border-strong); stroke-width: .08; }
+.court path { fill: none; stroke: var(--border-strong); stroke-width: .06; }
+.court .net { stroke: var(--text-secondary); stroke-width: .09; }
+.court .flight { fill: none; stroke: var(--live); stroke-width: .16; stroke-linecap: round; stroke-linejoin: round; }
+.court .flight:nth-of-type(even) { stroke: var(--player-b); }
+.court .contact { fill: var(--white); }
+.court[data-empty] { opacity: .45; }
+
+.body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.title { min-width: 0; color: var(--text-strong); font-size: var(--text-base); font-weight: var(--fw-medium); line-height: var(--leading-snug); }
+.title span { color: var(--text-secondary); font-size: var(--text-sm); font-weight: var(--fw-regular); }
+.percent { flex-shrink: 0; color: var(--text-strong); font: var(--fw-medium) var(--text-sm) var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.percent span { color: var(--text-muted); font: var(--text-2xs) var(--font-sans); }
+.result[data-near] .percent { color: var(--text-secondary); }
+.meta { display: flex; flex-wrap: wrap; gap: 0 7px; font-variant-numeric: tabular-nums; }
+/* The separator trails its item, so a wrapped line never starts with one. */
+.meta > span:not(:last-child)::after { content: "·"; margin-left: 7px; color: var(--text-faint); }
+.sequence { color: var(--text-primary); overflow-wrap: anywhere; }
+.detail { color: var(--text-muted); }
+.reasons { display: flex; flex-wrap: wrap; gap: 0 12px; }
+.reasons > span::before { content: "✓"; margin-right: 5px; color: var(--success-500); }
+.warning { color: var(--warning-400); }
+.open { margin-top: 3px; color: var(--text-link); }
+
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+@media (max-width: 1000px) { .results { grid-template-columns: 1fr; } }
+@media (max-width: 560px) {
+  .search { padding: 10px; }
+  .form { flex-wrap: wrap; }
+  .field { flex-basis: 100%; }
+  .targets { flex: 1; }
+  .targets button { flex: 1; padding: 0; }
+  .result { gap: 12px; padding: 12px; }
+  .court { width: 84px; }
+  .top { flex-wrap: wrap; gap: 0 12px; }
+}
+/* iOS zooms the page when a focused field's text is under 16px; touch targets stay 44px. */
+@media (pointer: coarse) {
+  .field input { font-size: 16px; }
+  .field, .targets, .submit { height: 50px; }
+  .targets { padding: 2px; }
+  .examples button, .summary button { min-height: 44px; }
+  .examples button { padding: 0 14px; }
+  .summary button { margin-top: -8px; }
+}

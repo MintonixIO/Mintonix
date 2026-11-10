@@ -10,6 +10,8 @@ import { MatchRail } from "./analysis/match-level";
 import { activeShotIndex, formatShotParam, resolveShot, SHOT_LEAD_SECONDS, shotCueTime, type ShotRef } from "./analysis/shots";
 import { missingPointsBefore, missingPointsLabel, missingPointsReason } from "./coverage";
 import { setOpenShot, useOpenShot, useView } from "./view";
+import { SearchPanel } from "./search/search-panel";
+import type { SearchResult } from "./search/rank";
 import styles from "./rally-player.module.css";
 
 // three.js is only fetched when a shot is first opened.
@@ -43,6 +45,8 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
   const mountRef = useRef<HTMLDivElement>(null);
   const youtubeRef = useRef<YouTubePlayer | null>(null);
   const pendingSeekRef = useRef<PendingSeek | null>(null);
+  // A rally picked from search before the player is ready, cued once it is.
+  const searchCueRef = useRef<number | null>(null);
   // While a shot replay hides the video, it must never play (or be heard) behind it.
   const shotOpenRef = useRef(false);
   const viewerRef = useRef<HTMLElement>(null);
@@ -225,6 +229,15 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cueKey]);
 
+  useEffect(() => {
+    const time = searchCueRef.current;
+    searchCueRef.current = null;
+    // A shot opened since then cues the video itself.
+    if (ready && time !== null && !openRef) seek(time, true);
+    // Only the player becoming ready applies a waiting cue.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
+
   function seek(time: number, paused = false) {
     const player = youtubeRef.current;
     if (!player || !ready) return;
@@ -242,6 +255,16 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
 
   function openShot(ref: ShotRef) {
     setOpenShot(ref);
+  }
+
+  function openSearchResult(result: SearchResult) {
+    if (result.kind === "shot" && result.shotIndex !== null) setOpenShot({ rallyId: result.rallyId, index: result.shotIndex });
+    else {
+      showRally(result.rallyIndex);
+      if (!ready) searchCueRef.current = rallyStart(rallies[result.rallyIndex]);
+    }
+    // Results sit below the video; bring what was picked back into view.
+    viewerRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
   }
 
   /** Back to the video, with focus returned to the closed shot's row in the rail. */
@@ -347,6 +370,7 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
         )}
         {pendingShot && <div className={styles.stageLoading} role="status">Loading 3D replay…</div>}
         </div>
+        <div className={styles.searchArea}><SearchPanel matchId={match.matchId} onSelect={openSearchResult} /></div>
         <aside ref={panelRef} id={panelId} className={styles.rallyPanel} hidden={isFullscreen && !panelOpen} role={isFullscreen ? "dialog" : undefined} aria-labelledby={analyzing ? undefined : `${panelId}-heading`} aria-label={analyzing ? "Analysis" : undefined}>
           {analyzing ? (
             <MatchRail match={match} analysis={analysis} analysisError={analysisError} current={focusIndex} playing={isPlaying} ready={ready}

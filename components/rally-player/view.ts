@@ -34,9 +34,12 @@ export function setView(view: View) {
   });
 }
 
+/** A shot only shows in the analyze view, so opening one switches to it in the same history entry. */
 export function setOpenShot(ref: ShotRef | null) {
   pushParams((params) => {
-    if (ref) params.set("shot", formatShotParam(ref));
-    else params.delete("shot");
+    if (ref) {
+      params.set("view", "analyze");
+      params.set("shot", formatShotParam(ref));
+    } else params.delete("shot");
   });
 }

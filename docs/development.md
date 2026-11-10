@@ -77,10 +77,22 @@ CI installs with the frozen lockfile, then checks lint, TypeScript, domain tests
 - Connect the canonical Git repository.
 - Select Next.js as the framework and leave the Root Directory at the repository root.
 - Use the repository's pnpm lockfile. The build command is `pnpm build`.
-- Leave environment variables empty: matches come from `content/matches`.
+- Matches come from `content/matches`. Set the server-only `OPENROUTER_API_KEY`
+  to enable natural-language search; without it, local keyword suggestions work.
+  Optionally override `OPENROUTER_SEARCH_MODEL` (see `.env.example`).
 - Published matches are read from disk at request time. `outputFileTracingIncludes` in `next.config.ts` ships `content/matches` with the server routes; keep it when moving that directory.
 
 No Vercel project is created or deployed by this scaffold.
+
+## Rally and shot search
+
+The match viewer searches the current match using local JSON and OpenRouter;
+there is no database or ingestion job. Copy `.env.example` to `.env.local` and
+set `OPENROUTER_API_KEY` for full language understanding. Never use a
+`NEXT_PUBLIC_` prefix. The key is read only by the server search route.
+
+See [search design and benchmark](natural-language-search.md) for the decision
+scorer, subjective terms, limitations, caching, and the reproducible live benchmark.
 
 ## Search and link previews
 
