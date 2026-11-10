@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
+import { indexable, site } from "@/components/site/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "Mintonix — Watch the rally. Read the game.", template: "%s · Mintonix" },
-  description: "Watch badminton with less waiting. Skip between detected rallies, jump to points by score, and revisit exchanges in the original match video.",
+  metadataBase: new URL(site.url),
+  title: { default: site.title, template: `%s · ${site.name}` },
+  description: site.description,
+  applicationName: site.name,
   icons: { icon: "/brand/logomark.png", apple: "/brand/logomark.png" },
+  openGraph: { title: site.title, description: site.description, siteName: site.name, locale: "en_US", type: "website" },
+  twitter: { card: "summary_large_image", title: site.title, description: site.description },
+  robots: indexable ? { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 } } : { index: false, follow: false },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

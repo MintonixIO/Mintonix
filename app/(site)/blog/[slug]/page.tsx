@@ -4,6 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Markdown from "react-markdown";
 import { formatPostDate, getPost, getPosts } from "@/components/blog/posts";
+import { JsonLd } from "@/components/site/json-ld";
+import { absoluteUrl, pageMetadata, site } from "@/components/site/site";
 import styles from "@/components/blog/blog.module.css";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -15,7 +17,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = getPost((await params).slug);
   if (!post) notFound();
-  return { title: post.title, description: post.description };
+  return pageMetadata({ title: post.title, description: post.description, path: `/blog/${post.slug}`, publishedTime: post.date });
 }
 
 export default function BlogPostPage({ params }: Props) {
@@ -33,8 +35,11 @@ async function ArticleContent({ params }: Props) {
   const { slug } = await params;
   const post = getPost(slug);
   if (!post) notFound();
+  const url = absoluteUrl(`/blog/${post.slug}`);
+  const publisher = { "@type": "Organization", name: site.name, url: absoluteUrl("/"), logo: absoluteUrl(site.logo) };
   return (
     <article>
+      <JsonLd data={{ "@type": "BlogPosting", headline: post.title, description: post.description, datePublished: post.date, articleSection: post.category, inLanguage: "en", url, mainEntityOfPage: url, author: publisher, publisher }} />
       <header className={styles.articleHeading}>
         <p className={styles.eyebrow}>{post.category}</p>
         <h1>{post.title}</h1>

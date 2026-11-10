@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { formatPostDate, getPosts } from "@/components/blog/posts";
+import { pageMetadata } from "@/components/site/site";
 import styles from "@/components/blog/blog.module.css";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Blog",
-  description: "Notes on what Mintonix does today and where it is going.",
-};
+  description: "Notes on what Mintonix does today and where it is going: badminton rally detection, shot analysis and the viewer built on them.",
+  path: "/blog",
+});
 
 export default function BlogPage() {
   const posts = getPosts();

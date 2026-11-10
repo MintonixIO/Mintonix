@@ -81,3 +81,14 @@ CI installs with the frozen lockfile, then checks lint, TypeScript, domain tests
 - Published matches are read from disk at request time. `outputFileTracingIncludes` in `next.config.ts` ships `content/matches` with the server routes; keep it when moving that directory.
 
 No Vercel project is created or deployed by this scaffold.
+
+## Search and link previews
+
+`components/site/site.ts` holds the site name, default description and public
+origin (`https://mintonix.io`, or `SITE_URL` when set). Give each new page its
+metadata with `pageMetadata({ title, description, path })`, which sets the
+canonical link and the share-preview tags, and add the page to `app/sitemap.ts`
+unless it is an article or a match (those are listed automatically).
+`app/robots.ts` keeps Vercel preview deployments out of search results; only
+the production deployment is indexable. Link-preview cards are drawn by
+`components/site/share-image.tsx`; articles and matches get their own.

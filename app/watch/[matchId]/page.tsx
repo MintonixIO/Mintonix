@@ -7,6 +7,7 @@ import { RallyPlayer } from "@/components/rally-player/rally-player";
 import { hasLocalAnalysis, readLocalMatch } from "@/components/rally-player/local-match";
 import { ViewSwitch } from "@/components/rally-player/view-switch";
 import { formatPlayTime, matchResult, pointCoverage } from "@/components/rally-player/coverage";
+import { pageMetadata } from "@/components/site/site";
 import styles from "./watch.module.css";
 
 type Props = { params: Promise<{ matchId: string }> };
@@ -14,9 +15,15 @@ type Props = { params: Promise<{ matchId: string }> };
 /** Name the tab after the match being watched. */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const match = await readLocalMatch((await params).matchId);
-  if (!match) return { title: "Rally viewer" };
+  if (!match) return { title: "Rally viewer", robots: { index: false } };
   const [a, b] = match.players;
-  return { title: `${a.name} vs ${b.name}`, description: `${match.title}. Watch every rally, point by point.` };
+  const rallies = `${match.rallies.length} ${match.review === "automatic" ? "detected " : ""}${match.rallies.length === 1 ? "rally" : "rallies"}`;
+  const analysis = await hasLocalAnalysis(match) ? ", with shot analysis and 3D replays" : "";
+  return pageMetadata({
+    title: `${a.name} vs ${b.name}`,
+    description: `${a.name} vs ${b.name}, ${match.title}. Watch ${rallies} point by point, without the time between them${analysis}.`,
+    path: `/watch/${match.matchId}`,
+  });
 }
 
 async function Match({ params }: Props) {

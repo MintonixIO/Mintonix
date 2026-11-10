@@ -6,12 +6,14 @@ import Image from "next/image";
 import { formatPlayTime, matchResult } from "@/components/rally-player/coverage";
 import { hasLocalAnalysis, listLocalMatches } from "@/components/rally-player/local-match";
 import { formatTime } from "@/components/rally-player/timeline";
+import { pageMetadata } from "@/components/site/site";
 import styles from "./library.module.css";
 
-export const metadata: Metadata = {
-  title: "Library",
-  description: "Watch the demo match rally by rally, with shot analysis and 3D replays.",
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Badminton match library",
+  description: "Badminton matches to watch rally by rally, with shot analysis and 3D replays. One demo match for now; more will be added.",
+  path: "/library",
+});
 
 async function MatchLibrary() {
   await io();
