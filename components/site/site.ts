@@ -13,7 +13,16 @@ export const site = {
   tagline: "Watch the rally. Read the game.",
   description: "Watch badminton matches rally by rally. Skip the time between points, jump to any rally by score, and open a shot to see its speed, height and 3D flight.",
   logo: "/brand/logo-full.png",
+  /** Footer profile links, in display order. `brand` marks accounts that belong to Mintonix itself (listed as `sameAs` in structured data). */
+  socials: [
+    { platform: "X", url: "https://x.com/KaichengOuyang", brand: false },
+    { platform: "Threads", url: "https://www.threads.com/@petahohyung", brand: false },
+    { platform: "YouTube", url: "https://www.youtube.com/channel/UCgwjE0EdLT9Pd7P-dbCYApw", brand: true },
+    { platform: "Instagram", url: "https://www.instagram.com/mintonix.io/", brand: true },
+  ],
 } as const;
+
+export type SocialPlatform = (typeof site.socials)[number]["platform"];
 
 /** Only the production deployment is indexed; preview deployments stay out of search results. */
 export const indexable = !process.env.VERCEL_ENV || process.env.VERCEL_ENV === "production";

@@ -10,7 +10,7 @@ import styles from "./home.module.css";
 
 export const metadata = pageMetadata({ description: site.description, path: "/" });
 
-const organization = { "@type": "Organization", "@id": absoluteUrl("/#organization"), name: site.name, url: absoluteUrl("/"), logo: absoluteUrl(site.logo) };
+const organization = { "@type": "Organization", "@id": absoluteUrl("/#organization"), name: site.name, url: absoluteUrl("/"), logo: absoluteUrl(site.logo), sameAs: site.socials.filter((s) => s.brand).map((s) => s.url) };
 const website = { "@type": "WebSite", "@id": absoluteUrl("/#website"), name: site.name, url: absoluteUrl("/"), description: site.description, inLanguage: "en", publisher: { "@id": organization["@id"] } };
 
 export default function Home() {
