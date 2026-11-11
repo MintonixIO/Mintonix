@@ -289,3 +289,64 @@
   .backButton { margin-left: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .segmented button, .replayButton, .backButton { transition: none; } }
+
+/* ---- Shot explorer: one player's strokes, filtered by where they were hit, and where they went ---- */
+.exploreControls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 14px; }
+.exploreDot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--tone); vertical-align: 1px; }
+.exploreTypes { display: flex; flex-wrap: wrap; gap: 6px; }
+.exploreTypes button { min-height: 28px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-pill); background: transparent; color: var(--text-secondary); font-size: var(--text-2xs); white-space: nowrap; transition: background var(--dur-fast), color var(--dur-fast); }
+.exploreTypes button span { margin-left: 3px; color: var(--text-faint); font-family: var(--font-mono); }
+.exploreTypes button:not(:disabled):hover { color: var(--text-strong); background: var(--surface-2); }
+.exploreTypes button[aria-pressed="true"] { border-color: var(--brand-ring); background: var(--brand-subtle); color: var(--text-strong); }
+.exploreTypes button[aria-pressed="true"] span { color: var(--text-secondary); }
+.exploreTypes button:disabled { opacity: .4; cursor: not-allowed; }
+.exploreTypes button:focus-visible { outline-offset: 2px; }
+
+.exploreBody { display: grid; grid-template-columns: minmax(0, 640px) minmax(240px, 1fr); align-items: start; gap: 16px 28px; margin-top: 16px; }
+.exploreFigure { margin: 0; }
+.exploreCourt { display: block; width: 100%; height: auto; overflow: visible; }
+.exploreCourt .viewText text { font-size: 12px; fill: var(--text-muted); }
+.exploreZone { cursor: pointer; outline: none; }
+.exploreZone rect { fill: transparent; transition: fill var(--dur-fast); }
+.exploreZone text { fill: var(--text-faint); font: 13px var(--font-mono); pointer-events: none; }
+.exploreZone:hover rect { fill: color-mix(in srgb, var(--tone) 10%, transparent); }
+.exploreZone:focus-visible rect { stroke: var(--brand); stroke-width: 2; }
+.exploreZone[aria-pressed="true"] rect { fill: color-mix(in srgb, var(--tone) 24%, transparent); }
+.exploreZone[aria-pressed="true"] text { fill: var(--text-strong); }
+.exploreMarks > g { cursor: pointer; outline: none; }
+.exploreHit { fill: transparent; }
+.exploreWinner { fill: var(--tone); stroke: var(--bg-base); stroke-width: 1.5; }
+.exploreReturned { fill: none; stroke: var(--tone); stroke-width: 1.5; stroke-opacity: .8; }
+.exploreReturned[data-outcome="unknown"] { stroke: var(--text-muted); }
+.exploreError { fill: none; stroke: var(--danger-400); stroke-width: 2; stroke-linecap: round; }
+.exploreMarks > g[data-hovered] .exploreHit, .exploreMarks > g:focus-visible .exploreHit { fill: color-mix(in srgb, var(--text-strong) 14%, transparent); stroke: var(--text-strong); stroke-width: 1.5; }
+.exploreFlight line { stroke: var(--text-secondary); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.exploreFlight circle { fill: var(--tone); stroke: var(--bg-base); stroke-width: 1.5; }
+
+.exploreLegend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin-top: 6px; color: var(--text-secondary); font-size: var(--text-2xs); }
+.exploreLegend span { display: inline-flex; align-items: center; gap: 7px; }
+.exploreLegend span::before { content: ""; width: 8px; height: 8px; border-radius: 50%; }
+.exploreLegend [data-outcome="winner"]::before { background: var(--tone); }
+.exploreLegend [data-outcome="returned"]::before { border: 1.5px solid var(--tone); width: 7px; height: 7px; }
+.exploreLegend [data-outcome="error"]::before { content: "×"; width: auto; height: auto; color: var(--danger-400); font-size: 15px; line-height: 8px; }
+
+.exploreSide { min-width: 0; }
+.exploreTally { display: grid; gap: 3px; margin: 0; color: var(--text-secondary); font-size: var(--text-xs); }
+.exploreTally strong { color: var(--text-strong); font-family: var(--font-display); font-size: var(--text-md); font-weight: var(--fw-medium); }
+.exploreTally span { color: var(--text-secondary); font: var(--text-2xs) var(--font-mono); font-variant-numeric: tabular-nums; }
+.exploreNote { margin: 8px 0 0; color: var(--text-muted); font-size: var(--text-2xs); line-height: var(--leading-normal); }
+.exploreList { max-height: 252px; margin: 12px 0 0; padding: 0; overflow-y: auto; list-style: none; border-top: 1px solid var(--border-subtle); scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.exploreList button { display: grid; grid-template-columns: 70px 52px minmax(0, 1fr) 64px; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 0 8px; border: 0; border-bottom: 1px solid var(--border-subtle); background: transparent; color: var(--text-primary); text-align: left; font: var(--text-2xs) var(--font-mono); font-variant-numeric: tabular-nums; transition: background var(--dur-fast); }
+.exploreList button > span:last-child { text-align: right; color: var(--text-secondary); }
+.exploreList button[data-hovered], .exploreList button:hover { background: var(--surface-2); }
+.exploreList button:focus-visible { outline-offset: -2px; }
+.exploreOutcome { font-family: var(--font-sans); color: var(--text-secondary); }
+.exploreList [data-outcome="winner"] .exploreOutcome { color: var(--tone); }
+.exploreList [data-outcome="error"] .exploreOutcome { color: var(--danger-400); }
+
+@media (max-width: 1000px) { .exploreBody { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) {
+  .exploreCourt .viewText text { font-size: 18px; }
+  .exploreZone text { font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { .exploreTypes button, .exploreZone rect, .exploreList button { transition: none; } }

@@ -6,6 +6,8 @@ import { missingPointsBefore, missingPointsLabel } from "../coverage";
 import { rallySeconds } from "../timeline";
 import { PlacementMap } from "./court-drawing";
 import { METRICS, playerTools } from "./players";
+import { ShotExplorer } from "./shot-explorer-view";
+import type { ExplorerFilter } from "./shot-explorer";
 import { ShotRow } from "./shot-row";
 import { hasShotTypes, percent, SHOT_TYPE_NAMES } from "./shot-types";
 import type { ShotRef } from "./shots";
@@ -222,8 +224,9 @@ function RallyChart({ match, counts, current, onSelect }: {
 }
 
 /** Match zoom, under the video: rally lengths, games, and each player's shot profile. */
-export function MatchOverview({ match, analysis, current, onSelectRally }: {
+export function MatchOverview({ match, analysis, current, onSelectRally, explorer, onExplorer, onOpenShot }: {
   match: Match; analysis?: MatchAnalysis; current: number; onSelectRally: (index: number) => void;
+  explorer: ExplorerFilter; onExplorer: (filter: ExplorerFilter) => void; onOpenShot: (ref: ShotRef) => void;
 }) {
   const players = playerTools(match);
   const [a, b] = match.players;
@@ -273,6 +276,7 @@ export function MatchOverview({ match, analysis, current, onSelectRally }: {
       </section>
       {analysis && <PlayerProfiles match={match} analysis={analysis} />}
       {analysis && <ShotMixSection match={match} analysis={analysis} />}
+      {analysis && <ShotExplorer match={match} analysis={analysis} filter={explorer} onFilter={onExplorer} onOpenShot={onOpenShot} />}
     </>
   );
 }
