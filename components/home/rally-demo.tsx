@@ -152,9 +152,9 @@ export function RallyDemo() {
 
   return (
     <figure className={styles.demo} aria-label="Preview of the rally viewer: a 3D reconstruction of each rally from a recorded match excerpt plays in turn, skipping the dead time between rallies, while the rally rail shows each rally's score and place in the match.">
+      <figcaption className={styles.caption}>A real rally from the demo match, rebuilt in 3D from the broadcast video.</figcaption>
       <div className={styles.stage}>
         <canvas ref={canvasRef} className={styles.canvas} aria-label="3D court, drag to rotate" />
-        <span className={styles.note}>3D preview</span>
         {unavailable && <p className={styles.unavailable}>This browser can’t draw the 3D preview. The demo match still plays.</p>}
         <span className={styles.hint} aria-hidden="true" hidden={unavailable}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 4 0 0 0 15.5 2.8M21 12a9 4 0 0 0-15.5-2.8" /><path d="m16 13 2.6 1.9L20 12M8 11 5.4 9.1 4 12" /></svg>
@@ -176,6 +176,7 @@ export function RallyDemo() {
         {jump && <span key={jump.id} className={styles.jumpArc} style={{ left: percent(jump.from), width: percent(jump.to - jump.from) }} aria-hidden="true" />}
         <span ref={playheadRef} className={styles.playhead} style={{ left: percent(rallies[0].start) }} aria-hidden="true" />
       </div>
+      <p className={styles.railCaption}>Each bar is a rally, labelled with its score. Playback jumps the gaps between them.</p>
     </figure>
   );
 }

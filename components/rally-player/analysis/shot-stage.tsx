@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import type { Match, Shot } from "../contract";
-import { playerTools } from "./players";
+import { playerTools, value } from "./players";
 import { CAMERA_PRESETS, flightBounds, REPLAY_SPEEDS, replayKeyAction, replayTime, type CameraPreset } from "./replay";
 import { createShotScene, WebGLUnavailableError, type ShotScene } from "./shot-scene";
 import { shotTypeView } from "./shot-types";
-import { qualityNote } from "./shots";
+import { kmh, netClearance, qualityNote } from "./shots";
 import styles from "./analysis.module.css";
 
 export type ShotStageProps = {
@@ -47,7 +47,8 @@ export default function ShotStage({ match, shot, index, count, onStep, onClose }
   const [time, setTime] = useState(reducedMotion ? bounds.end : bounds.start);
   const [shownShot, setShownShot] = useState(shot);
   const hasPath = shot.path.length > 0;
-  const tone = playerTools(match).tone(shot.hitter);
+  const players = playerTools(match);
+  const tone = players.tone(shot.hitter);
   const note = qualityNote(shot);
   const type = shotTypeView(shot);
 
@@ -166,6 +167,8 @@ export default function ShotStage({ match, shot, index, count, onStep, onClose }
   }
 
   const live = hasPath && !failed;
+  const approx = shot.quality === "guessed" ? "≈" : "";
+  const clearance = netClearance(shot);
   return (
     <div ref={rootRef} className={styles.replay} tabIndex={-1} onKeyDown={handleKeyDown} role="region" aria-label={`3D replay of shot ${index + 1} of ${count}`}>
       <div className={styles.replayView}>
@@ -177,6 +180,23 @@ export default function ShotStage({ match, shot, index, count, onStep, onClose }
           {type?.name && <span className={styles.replayBadge}>{type.confident ? type.label : `${type.label}?`} · {type.corrected ? "corrected by flight" : `model ${Math.round(type.probability * 100)}%`}</span>}
           {note && <span className={styles.replayNote} data-quality={shot.quality}>{note}</span>}
         </div>
+      </div>
+      {/* Phones only: who hit it and its headline numbers, without scrolling to the full table. */}
+      <p className={styles.replayHitter} data-tone={tone}>
+        {players.name(shot.hitter)}
+        {type && <span>{type.confident ? type.label : type.name ? `${type.label}?` : "Stroke type unclear"}</span>}
+      </p>
+      <div className={styles.replayFacts}>
+        {shot.quality !== "unreliable" && (
+          <dl>
+            <div><dt>Launch speed</dt><dd>{approx}{value(kmh(shot.speed))} <span>km/h</span></dd></div>
+            <div><dt>Highest point</dt><dd>{approx}{value(shot.apex, 1)} <span>m</span></dd></div>
+            <div><dt>Over the net</dt><dd>{shot.netClearance === null ? "–" : clearance === null ? "Uncertain" : <>{approx}{value(clearance, 0, 100)} <span>cm</span></>}</dd></div>
+          </dl>
+        )}
+        <p className={styles.replayFactsNote}>
+          {shot.quality === "unreliable" ? "This shot wasn’t measured reliably, so its numbers aren’t shown." : "Estimates from one broadcast camera, not checked by hand. The stroke type is a model’s inference."}
+        </p>
       </div>
       <div className={styles.replayControls}>
         <div className={styles.replayGroup}>

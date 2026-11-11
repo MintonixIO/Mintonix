@@ -5,8 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RallyPlayer } from "@/components/rally-player/rally-player";
 import { hasLocalAnalysis, readLocalMatch } from "@/components/rally-player/local-match";
-import { ViewSwitch } from "@/components/rally-player/view-switch";
-import { formatPlayTime, matchResult, pointCoverage } from "@/components/rally-player/coverage";
+import { formatPlayTime, matchResult } from "@/components/rally-player/coverage";
 import { pageMetadata } from "@/components/site/site";
 import styles from "./watch.module.css";
 
@@ -33,41 +32,39 @@ async function Match({ params }: Props) {
   const [a, b] = match.players;
   const { rallies, source } = match;
   const result = matchResult(match);
-  const coverage = pointCoverage(rallies);
   const detected = match.review === "automatic" ? "detected " : "";
   const hasAnalysis = await hasLocalAnalysis(match);
   return (
     <>
       <header className={styles.heading}>
-        <div className={styles.matchDetails}>
-          <p className={styles.event}>{match.title}</p>
-          <h1>
-            <span className={styles.playerA}>{a.name}{result.winner === a.id && <span className={styles.won}>Won {result.gamesWon[a.id]}–{result.gamesWon[b.id]}</span>}</span>
-            <span className={styles.versus}>vs</span>
-            <span className={styles.playerB}>{b.name}{result.winner === b.id && <span className={styles.won}>Won {result.gamesWon[b.id]}–{result.gamesWon[a.id]}</span>}</span>
-          </h1>
-          {result.games.length > 0 && (
-            <ol className={styles.scoreline} aria-label="Game scores">
-              {result.games.map((game) => (
-                <li key={game.game}>
-                  <span className={styles.srOnly}>Game {game.game}: </span>
-                  <b data-tone="a" data-won={game.winner === a.id || undefined}>{game.score[a.id]}</b>
-                  <span aria-hidden="true">–</span><span className={styles.srOnly}> to </span>
-                  <b data-tone="b" data-won={game.winner === b.id || undefined}>{game.score[b.id]}</b>
-                </li>
-              ))}
-            </ol>
-          )}
-          <p className={styles.matchSummary}>
-            <span>{rallies.length} {detected}{rallies.length === 1 ? "rally" : "rallies"}</span>
-            {coverage.missing > 0 && <span>{coverage.missing} not shown</span>}
-            <span>{formatPlayTime(rallies)} of play</span>
-          </p>
-        </div>
-        <div className={styles.headerActions}>
-        {hasAnalysis && <ViewSwitch />}
-        <a className={styles.sourceLink} href={`https://www.youtube.com/watch?v=${source.videoId}`} target="_blank" rel="noopener noreferrer">Watch on YouTube <span aria-hidden="true">↗</span></a>
-        </div>
+        <h1 className={styles.srOnly}>{a.name} vs {b.name}</h1>
+        <p className={styles.event}>{match.title}</p>
+        {/* Read like a courtside scoreboard: a row per player, a column per game. */}
+        <table className={styles.scoreboard}>
+          <caption className={styles.srOnly}>Result by game</caption>
+          <thead className={styles.srOnly}>
+            <tr><th scope="col">Player</th>{result.games.map((game) => <th key={game.game} scope="col">Game {game.game}</th>)}</tr>
+          </thead>
+          <tbody>
+            {[a, b].map((player, index) => (
+              <tr key={player.id} data-tone={index === 0 ? "a" : "b"} data-result={result.winner === null ? undefined : result.winner === player.id ? "won" : "lost"}>
+                <th scope="row">
+                  <span className={styles.playerName}>{player.name}</span>
+                  {result.winner === player.id && <span className={styles.won}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>Won</span>}
+                </th>
+                {result.games.map((game) => (
+                  <td key={game.game} data-won={game.winner === player.id || undefined}>
+                    {game.score[player.id]}<span className={styles.srOnly}>{game.winner === player.id ? ", won" : ", lost"}</span>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className={styles.matchSummary}>
+          <span>{rallies.length} {detected}{rallies.length === 1 ? "rally" : "rallies"}, {formatPlayTime(rallies)} of play</span>
+          <a className={styles.sourceLink} href={`https://www.youtube.com/watch?v=${source.videoId}`} target="_blank" rel="noopener noreferrer">Watch on YouTube <span aria-hidden="true">↗</span></a>
+        </p>
       </header>
       <RallyPlayer key={matchId} match={match} hasAnalysis={hasAnalysis} />
     </>

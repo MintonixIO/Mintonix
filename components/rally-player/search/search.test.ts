@@ -263,3 +263,20 @@ test("API searches a match without a key and reports unavailable matches", () =>
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.equal((await handleSearchRequest(request({ query: "smash" }), "missing-match")).status, 404);
 }));
+
+test("search-as-you-type never spends a language request, even with a key", () => withFixtureMatch(async () => {
+  process.env.OPENROUTER_API_KEY = "test-key";
+  const realFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = (async () => { calls++; return new Response("{}", { status: 500 }); }) as typeof fetch;
+  try {
+    const response = await handleSearchRequest(request({ query: "fast smashes", instant: true }), MATCH);
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).mode, "local");
+    assert.equal(calls, 0);
+    assert.equal((await handleSearchRequest(request({ query: "smash", instant: "yes" }), MATCH)).status, 400);
+  } finally {
+    globalThis.fetch = realFetch;
+    delete process.env.OPENROUTER_API_KEY;
+  }
+}));

@@ -7,14 +7,14 @@
 .rail [data-tone="none"], .deck [data-tone="none"] { --tone: var(--steel-400); }
 
 /* ---- View switch (match header) ---- */
-.viewSwitch { display: inline-flex; padding: 3px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-sunken); }
-.viewSwitch button { min-height: 32px; padding: 0 14px; border: 0; border-radius: calc(var(--radius-md) - 3px); background: transparent; color: var(--text-secondary); font-size: var(--text-xs); transition: background var(--dur-fast), color var(--dur-fast); }
+.viewSwitch { display: flex; flex-shrink: 0; height: 44px; padding: 3px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-sunken); }
+.viewSwitch button { flex: 1; padding: 0 18px; border: 0; border-radius: calc(var(--radius-md) - 3px); background: transparent; color: var(--text-secondary); font-size: var(--text-sm); transition: background var(--dur-fast), color var(--dur-fast); }
 .viewSwitch button:hover { color: var(--text-strong); }
 .viewSwitch button[aria-pressed="true"] { background: var(--surface-3); color: var(--text-strong); }
 .viewSwitch button:focus-visible { outline-offset: -2px; }
 
 /* ---- Match rail: every rally ---- */
-.matchColumns, .matchRow { display: grid; grid-template-columns: 24px 50px minmax(0, 1fr) 64px; align-items: center; gap: 8px; }
+.matchColumns, .matchRow { display: grid; grid-template-columns: 68px minmax(0, 1fr) 64px; align-items: center; gap: 8px; }
 .matchColumns { flex-shrink: 0; padding: 8px 18px; border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); font-size: var(--text-2xs); }
 .matchRow { width: 100%; min-height: 34px; padding: 0 11px; border: 1px solid transparent; border-radius: var(--radius-md); background: transparent; color: var(--text-primary); text-align: left; font: var(--text-2xs) var(--font-mono); font-variant-numeric: tabular-nums; transition: background var(--dur-fast); }
 .matchRow:not(:disabled):hover { background: var(--surface-2); }
@@ -43,6 +43,7 @@
 .navButton:disabled { color: var(--text-faint); cursor: not-allowed; }
 .railScore { font: var(--fw-medium) var(--text-sm) var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-faint); }
 .railScore b { color: var(--tone); font-weight: inherit; }
+.railScore .liveDot { display: inline-block; margin-left: 8px; vertical-align: 1px; }
 .shotRow { display: grid; grid-template-columns: 22px minmax(0, 1fr) 42px 48px; align-items: center; gap: 6px; }
 .shotRow[data-typed] { grid-template-columns: 22px minmax(0, .85fr) minmax(0, 1.15fr) 40px 40px; }
 .shotType { min-width: 0; overflow: hidden; color: var(--text-muted); font-family: var(--font-sans); font-size: var(--text-xs); white-space: nowrap; text-overflow: ellipsis; }
@@ -262,6 +263,25 @@
 .segmented button:focus-visible, .replayButton:focus-visible, .backButton:focus-visible { outline-offset: -2px; }
 .backButton { margin-left: auto; min-height: 30px; padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: transparent; color: var(--text-primary); font-size: var(--text-xs); white-space: nowrap; transition: background var(--dur-fast); }
 .backButton:hover { background: var(--surface-2); }
+/* The shot's headline numbers, directly under the replay on a phone (the full table follows below). */
+.replayFacts, .replayHitter { display: none; margin: 0; }
+@media (max-width: 800px) {
+  .replayFacts { display: block; border-top: 1px solid var(--border); background: var(--bg-base); }
+  .replayFacts dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; }
+  .replayFacts dl > div { min-width: 0; padding: 10px 12px; }
+  .replayFacts dl > div + div { border-left: 1px solid var(--border-subtle); }
+  .replayFacts dt { color: var(--text-secondary); font-size: var(--text-2xs); }
+  .replayFacts dd { margin: 2px 0 0; color: var(--text-strong); font: var(--fw-medium) var(--text-md) var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .replayFacts dd span { color: var(--text-secondary); font: var(--text-2xs) var(--font-sans); }
+  .replayFactsNote { margin: 0; padding: 0 12px 10px; color: var(--text-muted); font-size: var(--text-2xs); line-height: var(--leading-normal); }
+  .replayHitter { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; margin: 0; padding: 10px 12px 0; border-top: 1px solid var(--border); background: var(--bg-base); color: var(--text-strong); font: var(--fw-medium) var(--text-base) var(--font-display); }
+  .replayHitter::before { content: ""; align-self: center; width: 8px; height: 8px; border-radius: 50%; background: var(--tone); }
+  .replayHitter[data-tone="a"] { --tone: var(--player-a); }
+  .replayHitter[data-tone="b"] { --tone: var(--player-b); }
+  .replayHitter[data-tone="none"] { --tone: var(--steel-400); }
+  .replayHitter span { color: var(--text-secondary); font: var(--text-xs) var(--font-sans); }
+  .replayHitter + .replayFacts { border-top: 0; }
+}
 @media (max-width: 640px) {
   .replayView { max-height: none; }
   .replayControls { padding: 8px; }

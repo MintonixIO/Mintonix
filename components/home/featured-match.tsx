@@ -15,14 +15,14 @@ function RallyBenchmark() {
   const playPercent = benchmark.verifiedSeconds / benchmark.broadcastSeconds * 100;
   return <article className={styles.comparison} aria-labelledby="benchmark-heading">
     <p className={styles.eyebrow}>Measured on one full broadcast</p>
-    <h4 id="benchmark-heading" className={styles.benchmarkHeadline}><strong>{Math.round(100 - playPercent)}<span>%</span></strong><span>less footage.<br />All the verified play.</span></h4>
+    <h4 id="benchmark-heading" className={styles.benchmarkHeadline}><strong>{Math.round(100 - playPercent)}<span>%</span></strong><span>less footage.<br />Only actual play.</span></h4>
     <figure className={styles.timeComparison}>
       <div className={styles.comparisonLabel}><span>Full broadcast</span><strong>{formatTime(benchmark.broadcastSeconds)}</strong></div>
       <div className={styles.broadcastBar} aria-hidden="true"><span /></div>
-      <div className={styles.comparisonLabel}><span>Verified play</span><strong>{formatTime(Math.round(benchmark.verifiedSeconds))}</strong></div>
+      <div className={styles.comparisonLabel}><span>Actual playing time</span><strong>{formatTime(Math.round(benchmark.verifiedSeconds))}</strong></div>
       <div className={styles.compactBar} data-feature-motion="measure" aria-hidden="true"><span style={{ width: `${playPercent}%` }} /></div>
     </figure>
-    <p className={styles.sampleCaveat}>Main-camera play only. Excludes replays, other camera angles, and dead time.</p>
+    <p className={styles.sampleCaveat}>Actual playing time is the rallies as shown live on the main camera. Replays, other camera angles, and the time between points are left out.</p>
   </article>;
 }
 

@@ -8,7 +8,7 @@ import { buildSearchIndex, rankSearch, type SearchIndex, type SearchResponse } f
 export const LANGUAGE_TIMEOUT_MS = 2200;
 export const DEFAULT_MODEL = "google/gemini-2.5-flash-lite";
 const MAX_BODY_BYTES = 4096;
-const requestSchema = z.object({ query: z.string().trim().min(2).max(400), target: z.enum(TARGETS).default("all") }).strict();
+const requestSchema = z.object({ query: z.string().trim().min(2).max(400), target: z.enum(TARGETS).default("all"), instant: z.boolean().default(false) }).strict();
 const outputSchema = z.toJSONSchema(intentSchema, { target: "draft-7" });
 const indexes = new Map<string, { expires: number; promise: Promise<SearchIndex | null> }>();
 const intents = new Map<string, { expires: number; intent: SearchIntent }>();
@@ -83,10 +83,11 @@ async function languageIntent(query: string, index: SearchIndex) {
   return intent;
 }
 
-export async function searchMatch(matchId: string, query: string, target: SearchTarget): Promise<SearchResponse | null> {
+/** `instant` is search-as-you-type: keyword parsing only, so a half-typed query never spends a language request. */
+export async function searchMatch(matchId: string, query: string, target: SearchTarget, instant = false): Promise<SearchResponse | null> {
   const index = await getIndex(matchId);
   if (!index) return null;
-  const interpreted = await languageIntent(query, index);
+  const interpreted = instant ? null : await languageIntent(query, index);
   const intent = interpreted ?? parseLocally(query, index.match);
   return { ...rankSearch(index, intent, target, interpreted !== null), mode: interpreted ? "language" : "local" };
 }
@@ -111,7 +112,7 @@ export async function handleSearchRequest(request: Request, matchId: string): Pr
   const parsed = requestSchema.safeParse(input);
   if (!parsed.success) return json({ error: "Use 2–400 characters and choose rallies, shots, or both." }, 400);
   try {
-    const result = await searchMatch(matchId, parsed.data.query, parsed.data.target);
+    const result = await searchMatch(matchId, parsed.data.query, parsed.data.target, parsed.data.instant);
     return result ? json(result) : json({ error: "Match not found." }, 404);
   } catch { return json({ error: "This match could not be searched. Please try again." }, 503); }
 }

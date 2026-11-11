@@ -43,7 +43,7 @@ export function FeatureShowcase({ viewer }: { viewer: ReactNode }) {
       <div className={styles.sharedStage}>
         <article className={`${styles.feature} ${styles.reconstruction}`}>
           <div className={styles.featureName}><FeatureIcon kind="flight" /><h4>3D shuttle reconstruction</h4></div>
-          <p className={styles.featureStatement}>A whole new<br />point of view.</p>
+          <p className={`${styles.featureStatement} ${styles.quote}`}>“How high was that clear, really?”</p>
           <p className={styles.description}>Explore the height, depth, and angle of every shot.</p>
           <FlightIllustration />
           <ul className={styles.keyBenefits}><li>Rotate the court</li><li>Slow the shot</li><li>Follow the flight</li></ul>
@@ -74,7 +74,7 @@ export function FeatureShowcase({ viewer }: { viewer: ReactNode }) {
 
     <section id="player-features" className={styles.playerChapter}>
       <div className={styles.chapterIntro}>
-        <p className={styles.chapterTitle}>Read the pattern.<br /><span>Find your edge.</span></p>
+        <p className={`${styles.chapterTitle} ${styles.quote}`}>“What does he play when I lift?”</p>
       </div>
       <div className={styles.playerTools}>
         <article className={`${styles.feature} ${styles.patterns}`}>
@@ -103,7 +103,7 @@ export function FeatureShowcase({ viewer }: { viewer: ReactNode }) {
     <section id="viewer-features" className={styles.viewerChapter}>
       <div className={styles.viewerIntro}>
         <div className={styles.chapterIntro}>
-          <p className={styles.chapterTitle}>Your time.<br /><span>More badminton.</span></p>
+          <p className={`${styles.chapterTitle} ${styles.quote}`}>“Skip the waiting. Show me only the rallies.”</p>
         </div>
       </div>
       {viewer}

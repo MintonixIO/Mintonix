@@ -14,13 +14,22 @@
 .reconstruction .description { max-width: 19em; }
 .keyBenefits { position: absolute; bottom: 25px; left: 32px; right: 24px; z-index: 1; display: flex; flex-wrap: wrap; gap: 12px 22px; margin: 0; padding: 0; list-style: none; color: var(--text-secondary); font-size: var(--text-xs); }
 .keyBenefits li::before { content: '↗'; margin-right: 6px; color: var(--steel-300); }
-.flightVisual { position: absolute; right: -40px; bottom: 54px; display: block; width: 76%; height: auto; }
-.courtSurface { fill: var(--steel-soft); stroke: var(--steel-300); stroke-width: 1.25; }
-.courtLines { stroke: var(--steel-400); stroke-width: 1; opacity: .65; }
-.blueLine { stroke: var(--blue-300); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 1; }
-.purpleLine { stroke: var(--player-b); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 1; opacity: .7; }
-.blueFill { fill: var(--blue-300); }
-.purpleFill { fill: var(--player-b); }
+/* Side view of one real clear: floor, net, metre lines, and the flight with its highest point marked. */
+.flightVisual { position: absolute; right: 8px; bottom: 58px; width: 66%; margin: 0; }
+.flightVisual svg { display: block; width: 100%; height: auto; overflow: visible; }
+.flightVisual figcaption { margin: 4px 40px 0 40px; color: var(--text-muted); font-size: var(--text-2xs); line-height: 1.5; text-align: right; }
+.heightLines line { stroke: var(--border); stroke-width: 1; stroke-dasharray: 2 5; }
+.heightLines text, .netLabel { fill: var(--text-muted); font: 12px var(--font-sans); }
+.floor { stroke: var(--steel-400); stroke-width: 1.5; }
+.courtTicks { stroke: var(--steel-500); stroke-width: 1.25; }
+.netPost { stroke: var(--steel-300); stroke-width: 2; stroke-linecap: round; }
+.netMesh { fill: var(--steel-soft); }
+.apexDrop { stroke: var(--blue-300); stroke-width: 1; stroke-dasharray: 3 4; opacity: .7; }
+.clearLine { stroke: var(--player-b); stroke-width: 2.5; stroke-linecap: round; }
+.contactDot { fill: var(--player-b); }
+.returnDot { fill: var(--surface-1); stroke: var(--player-b); stroke-width: 2; }
+.apexDot { fill: var(--surface-1); stroke: var(--blue-200); stroke-width: 2; }
+.apexLabel { fill: var(--text-strong); font: var(--fw-medium) 20px var(--font-display); letter-spacing: -.02em; }
 .sharedRail { display: flex; flex-direction: column; border-left: 1px solid var(--border); }
 .search { display: flex; flex: 1; flex-direction: column; padding: 32px; }
 .searchExample { display: flex; flex: 1; flex-direction: column; justify-content: center; padding: 24px 0 8px; }
@@ -32,9 +41,13 @@
 .smallFeature > svg { margin-bottom: 14px; flex-shrink: 0; color: var(--text-secondary); }
 .smallFeature h4 { margin: 0; color: var(--text-primary); font: var(--fw-medium) var(--text-base)/1.4 var(--font-display); }
 .smallFeature p { max-width: 24em; margin: 8px 0 0; color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.6; }
-.playerChapter { display: grid; grid-template-columns: minmax(0, .72fr) minmax(0, 1.65fr); gap: 56px; padding: 72px 0; }
+/* Quote above its card, as in the viewer chapter, so the card spans the page instead of leaving a column empty. */
+.playerChapter { display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; padding: 72px 0; }
 .chapterTitle { margin: 0; color: var(--text-strong); font: var(--fw-medium) clamp(30px, 3.2vw, 44px)/1.12 var(--font-display); letter-spacing: -.035em; }
 .chapterTitle > span { color: var(--text-secondary); }
+/* Headings in a viewer's own words; the opening mark hangs outside the text edge. */
+.quote { max-width: 18em; font-size: clamp(21px, 2.1vw, 28px); line-height: 1.25; letter-spacing: var(--tracking-tighter); text-indent: -.42em; text-wrap: balance; }
+.reconstruction .quote { max-width: 12em; }
 .playerTools { min-width: 0; }
 .patterns { padding: 28px 32px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-1); }
 .patterns .description { max-width: 56ch; }
@@ -88,17 +101,20 @@
   .heading { align-items: flex-start; flex-direction: column; gap: 14px; margin-bottom: 32px; }
   .sharedStage { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
   .reconstruction { padding: 28px; min-height: 480px; }
-  .flightVisual { width: 100%; right: -30px; bottom: 74px; }
+  .flightVisual { width: 92%; right: 4px; bottom: 74px; }
   .keyBenefits { left: 28px; gap: 8px 16px; }
   .search { padding: 28px; }
-  .playerChapter { grid-template-columns: minmax(0, .8fr) minmax(0, 1.6fr); gap: 28px; }
+  .playerChapter { gap: 28px; }
   .patterns { padding: 26px; }
   .viewerIntro { gap: 20px; }
 }
 @media (max-width: 760px) {
   .sharedStage { grid-template-columns: 1fr; }
-  .reconstruction { min-height: 400px; }
-  .flightVisual { width: 68%; right: -12px; bottom: 54px; }
+  /* Narrow: the drawing and its notes follow the text in flow instead of sitting under it. */
+  .reconstruction { min-height: 0; }
+  .flightVisual { position: static; width: 100%; margin: 24px 0 0; }
+  .flightVisual figcaption { margin-inline: 0; text-align: left; }
+  .keyBenefits { position: static; margin-top: 18px; }
   .sharedRail { border-left: 0; border-top: 1px solid var(--border); }
   .searchExample > p { max-width: none; }
   .playerChapter { grid-template-columns: 1fr; gap: 28px; padding-block: 48px; }
@@ -108,12 +124,15 @@
 @media (max-width: 480px) {
   .showcase { padding: 48px 0; }
   .heading { gap: 16px; }
-  .reconstruction { min-height: 440px; padding: 24px; }
+  .reconstruction { padding: 24px; }
   .reconstruction h4 { font-size: var(--text-md); }
   .featureStatement { margin-top: 22px; }
   .reconstruction .description { max-width: 23em; }
-  .flightVisual { width: 95%; right: -18px; bottom: 46px; }
-  .keyBenefits { left: 24px; right: 24px; bottom: 22px; gap: 8px 14px; }
+  .flightVisual svg { width: calc(100% - 30px); }
+  /* The drawing is about half size here; keep its labels readable. */
+  .heightLines text, .netLabel { font-size: 22px; }
+  .apexLabel { font-size: 30px; }
+  .keyBenefits { gap: 8px 14px; }
   .search { padding: 24px; }
   .searchExample > p { font-size: var(--text-lg); }
   .smallFeature { padding: 24px 12px; }

@@ -30,7 +30,9 @@ opens; the Watch view never downloads it.
 
 The side panel always lists every rally with its shot count and winner, and a
 "Match summary" button. Picking a rally seeks to it and expands its shots in place;
-picking it again collapses it.
+picking it again collapses it. On a phone, a picked rally's or shot's detail sits
+directly under the video, ahead of the rally list, and the 3D replay shows the
+shot's launch speed, highest point and net clearance right beneath it.
 
 - **Under the video** is the match overview by default (shots per rally coloured
   by point winner, each game's score and longest rally, each player's shot

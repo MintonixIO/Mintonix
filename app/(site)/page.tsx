@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MatchLinkForm } from "@/components/match-link/match-link-form";
 import { DemoAction } from "@/components/home/demo-action";
 import { RallyDemo } from "@/components/home/rally-demo";
@@ -30,6 +31,11 @@ export default function Home() {
       </section>
 
       <FeatureShowcase viewer={<FeaturedMatch />} />
+
+      <section className={styles.closing} aria-labelledby="closing-heading">
+        <h2 id="closing-heading">Pick a match and start watching.</h2>
+        <Link className={styles.demoButton} href="/library">Browse the library</Link>
+      </section>
     </main>
   );
 }

@@ -1,6 +1,9 @@
-.viewer { position: relative; scroll-margin-top: 12px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-sunken); }
-.workspace { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 320px; overflow: hidden; border-radius: inherit; }
-.stage { position: relative; width: 100%; aspect-ratio: 16 / 9; max-height: calc(100svh - 180px); min-height: 200px; overflow: hidden; border-radius: inherit; background: #000; }
+.viewer { position: relative; scroll-margin-top: 12px; overflow: clip; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-sunken); }
+/* Above the video: the view switch, then search. Suggestions open in flow and push the video down. */
+.toolbar { display: flex; align-items: flex-start; gap: 10px; padding: 10px; border-bottom: 1px solid var(--border); background: var(--bg-base); }
+.toolbar > :last-child { flex: 1; }
+.workspace { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 320px; overflow: hidden; }
+.stage { position: relative; width: 100%; aspect-ratio: 16 / 9; max-height: calc(100svh - 180px); min-height: 200px; overflow: hidden; background: #000; }
 .embed { position: absolute; inset: 0; }
 .embed iframe { display: block; width: 100%; height: 100%; border: 0; }
 .mediaError { position: absolute; z-index: 3; left: 16px; right: 16px; top: 16px; margin: 0; padding: 12px 16px; border: 1px solid var(--danger-500); border-radius: var(--radius-md); background: var(--surface-1); color: var(--danger-400); font-size: var(--text-sm); }
@@ -13,13 +16,12 @@
 .iconButton:focus-visible, .ralliesButton:focus-visible { outline-offset: -2px; }
 .ralliesButton { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 40px; padding: 0 10px; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--text-primary); font-size: var(--text-sm); white-space: nowrap; transition: background var(--dur-fast); }
 .ralliesButton:hover, .ralliesButton[aria-expanded="true"] { background: var(--surface-3); }
-.viewer:not(:fullscreen) .rallyDock { display: none; }
+.viewer:not([data-fullscreen]) .rallyDock { display: none; }
 .rallyPosition { color: var(--text-strong); font: var(--text-xs) var(--font-mono); font-variant-numeric: tabular-nums; }
 .rallyPosition > span { color: var(--text-secondary); }
 .dockDivider { height: 20px; width: 1px; margin-inline: 3px; background: var(--border-strong); }
 
-/* Search spans the row under the video and the rally list; on a phone it sits between them. */
-.searchArea { grid-column: 1 / -1; min-width: 0; border-top: 1px solid var(--border); background: var(--bg-base); }
+.deckArea { grid-column: 1 / -1; min-width: 0; }
 
 /* A full sidebar in the page becomes an on-demand overlay in fullscreen. */
 .rallyPanel { grid-area: 1 / 2; contain: size; min-width: 0; display: flex; flex-direction: column; overflow: hidden; border-left: 1px solid var(--border); background: var(--bg-base); }
@@ -38,22 +40,22 @@
 .gapToggle input:checked + .switch { background: var(--brand); }
 .gapToggle input:checked + .switch::after { transform: translateX(12px); background: var(--white); }
 .gapToggle input:focus-visible + .switch { outline: 2px solid var(--brand); outline-offset: 3px; }
-.columnLabels { display: grid; grid-template-columns: 24px minmax(0, 1fr) 44px 36px; align-items: center; gap: 8px; margin-top: 10px; padding-bottom: 10px; color: var(--text-secondary); font-size: var(--text-2xs); }
-.columnLabels > span:nth-child(2) { text-align: center; }
-.columnLabels > span:nth-child(n+3) { text-align: right; }
+.columnLabels { display: grid; grid-template-columns: minmax(0, 1fr) 44px 36px; align-items: center; gap: 8px; margin-top: 10px; padding-bottom: 10px; color: var(--text-secondary); font-size: var(--text-2xs); }
+.columnLabels > span:nth-child(n+2) { text-align: right; }
 .listScroll { position: relative; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 6px 10px; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
 .gameHeading { position: sticky; top: 0; z-index: 1; display: flex; justify-content: space-between; gap: 12px; margin: 0; padding: 12px 10px 8px; background: var(--bg-base); color: var(--text-secondary); font-size: var(--text-xs); font-weight: var(--fw-medium); }
 .gameHeading > span:last-child { color: var(--text-muted); font-size: var(--text-2xs); font-weight: var(--fw-regular); }
 .rallyList { margin: 0; padding: 0; list-style: none; }
-.rallyRow { display: grid; grid-template-columns: 24px minmax(0, 1fr) 44px 36px; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 9px; border: 1px solid transparent; border-radius: var(--radius-md); color: var(--text-secondary); background: transparent; text-align: left; transition: background var(--dur-fast), border-color var(--dur-fast); }
+.rallyRow { display: grid; grid-template-columns: minmax(0, 1fr) 44px 36px; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 9px; border: 1px solid transparent; border-radius: var(--radius-md); color: var(--text-secondary); background: transparent; text-align: left; transition: background var(--dur-fast), border-color var(--dur-fast); }
 .rallyRow:not(:disabled):hover { background: var(--surface-2); }
 .rallyRow:focus-visible { outline-offset: -2px; }
 .rallyRow[data-selected] { background: var(--brand-subtle); border-color: var(--brand-ring); color: var(--text-strong); }
-.rallyNumber { display: flex; align-items: center; color: var(--text-muted); font: var(--text-xs) var(--font-mono); font-variant-numeric: tabular-nums; }
-.rallyRow[data-selected] .rallyNumber { color: var(--brand); }
-.rallyScore { display: flex; justify-content: center; align-items: center; gap: 10px; font: var(--fw-medium) var(--text-base) var(--font-mono); font-variant-numeric: tabular-nums; }
+.rallyScore { display: flex; align-items: center; gap: 8px; font: var(--fw-medium) var(--text-base) var(--font-mono); font-variant-numeric: tabular-nums; }
 .rallyRow[data-selected] .rallyScore > span:first-child { color: var(--player-a); }
-.rallyRow[data-selected] .rallyScore > span:last-child { color: var(--player-b); }
+.rallyRow[data-selected] .rallyScore > span:nth-child(3) { color: var(--player-b); }
+.rallyScore > span:not(.scoreDash, .equalizer) { min-width: 2ch; }
+.rallyScore > span:first-child:not(.scoreDash) { text-align: right; }
+.rallyScore .equalizer { margin-left: 6px; }
 .scoreDash { color: var(--text-faint); font-size: var(--text-xs); font-family: var(--font-sans); }
 .rallyStart, .rallyDuration { text-align: right; color: var(--text-secondary); font: var(--text-2xs) var(--font-mono); font-variant-numeric: tabular-nums; }
 .rallyDuration { color: var(--text-muted); }
@@ -70,9 +72,12 @@
 
 @media (max-width: 800px) {
   .workspace { grid-template-columns: 1fr; }
-  .rallyPanel { grid-area: auto; contain: none; max-height: 460px; border-left: 0; border-top: 1px solid var(--border); }
+  .rallyPanel { grid-area: auto; order: 2; contain: none; max-height: 460px; border-left: 0; border-top: 1px solid var(--border); }
+  .deckArea { order: 3; }
+  .deckArea[data-picked] { order: 1; }
 }
 @media (max-width: 640px) {
+  .toolbar { flex-direction: column; align-items: stretch; gap: 8px; padding: 8px; }
   .stage { max-height: none; }
   .rallyDock { right: 8px; bottom: 60px; }
   .ralliesButton { gap: 6px; padding-inline: 6px; font-size: var(--text-xs); }
@@ -80,14 +85,19 @@
   .dockDivider { margin-inline: 1px; }
   .previewNotice { padding-inline: 10px; }
 }
-.viewer:fullscreen { display: flex; width: 100%; height: 100%; border: 0; border-radius: 0; background: #000; }
-.viewer:fullscreen .workspace { flex: 1; display: block; width: 100%; height: 100%; }
-.viewer:fullscreen .stage { flex: 1; width: 100%; height: 100%; max-height: none; min-height: 0; aspect-ratio: auto; }
-.viewer:fullscreen .previewNotice { display: none; }
-.viewer:fullscreen .searchArea { display: none; }
-.viewer:fullscreen .rallyPanel { contain: none; position: absolute; inset: auto 16px 124px auto; z-index: 4; width: 320px; max-width: calc(100% - 32px); max-height: min(520px, calc(100% - 144px)); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--frost-bg-scrolled); backdrop-filter: blur(var(--frost-blur)); box-shadow: var(--shadow-xl); }
+.viewer[data-fullscreen] { display: flex; width: 100%; height: 100%; border: 0; border-radius: 0; background: #000; }
+.viewer[data-fullscreen] .workspace { flex: 1; display: block; width: 100%; height: 100%; }
+.viewer[data-fullscreen] .stage { flex: 1; width: 100%; height: 100%; max-height: none; min-height: 0; aspect-ratio: auto; }
+.viewer[data-fullscreen] .previewNotice { display: none; }
+.viewer[data-fullscreen] .toolbar { display: none; }
+/* No Fullscreen API for elements (iPhone): fill the window, and lie sideways on an upright phone. */
+.viewer[data-immersive] { position: fixed; inset: 0; z-index: 1000; }
+@media (orientation: portrait) and (max-width: 640px) {
+  .viewer[data-immersive] { inset: 0 auto auto 0; width: 100dvh; height: 100dvw; transform-origin: top left; transform: translateX(100dvw) rotate(90deg); }
+}
+.viewer[data-fullscreen] .rallyPanel { contain: none; position: absolute; inset: auto 16px 124px auto; z-index: 4; width: 320px; max-width: calc(100% - 32px); max-height: min(520px, calc(100% - 144px)); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--frost-bg-scrolled); backdrop-filter: blur(var(--frost-blur)); box-shadow: var(--shadow-xl); }
 @media (max-height: 440px) and (min-width: 641px) {
-  .viewer:fullscreen .rallyPanel { bottom: 72px; max-height: calc(100% - 84px); }
+  .viewer[data-fullscreen] .rallyPanel { bottom: 72px; max-height: calc(100% - 84px); }
   .rallyDock { bottom: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .equalizer i { animation: none; } }
@@ -97,4 +107,4 @@
 .stageColumn { position: relative; min-width: 0; display: flex; flex-direction: column; }
 .stageColumn[data-replay] > .stage { position: absolute; inset: 0; z-index: 0; visibility: hidden; aspect-ratio: auto; max-height: none; min-height: 0; }
 .stageLoading { display: grid; place-items: center; width: 100%; aspect-ratio: 16 / 9; max-height: calc(100svh - 180px); min-height: 200px; background: var(--bg-sunken); color: var(--text-secondary); font-size: var(--text-sm); }
-.viewer:fullscreen .stageColumn { height: 100%; }
+.viewer[data-fullscreen] .stageColumn { height: 100%; }

@@ -320,7 +320,7 @@ export function MatchRail({
         <h2>Rallies <span>{match.rallies.length}</span></h2>
         <button type="button" className={styles.summaryButton} aria-pressed={matchSummaryActive} onClick={onMatchSummary}>Match summary</button>
       </div>
-      <div className={styles.matchColumns} aria-hidden="true"><span>#</span><span>Score</span><span>Shots</span><span>Point</span></div>
+      <div className={styles.matchColumns} aria-hidden="true"><span>Score</span><span>Shots</span><span>Point</span></div>
       <div ref={listRef} className={styles.shotScroll}>
         {games.map(({ game, indices }) => (
           <section key={game} aria-label={`Game ${game}`}>
@@ -337,10 +337,9 @@ export function MatchRail({
                   <li>
                     <button type="button" className={styles.matchRow} disabled={!ready} data-rally={index}
                       aria-current={selected ? "true" : undefined} aria-expanded={open}
-                      aria-label={`Rally ${index + 1}, ${rally.scoreBefore ? `score ${rally.scoreBefore[a.id]} to ${rally.scoreBefore[b.id]}` : "score unknown"}, ${analysis ? `${counts[index]} shots, ` : ""}${Math.round(rallySeconds(rally))} seconds${rally.winner ? `, point to ${players.name(rally.winner)}` : ""}. ${open ? "Hide shots." : "Show shots."}`}
+                      aria-label={`Game ${rally.game}, ${rally.scoreBefore ? `score ${rally.scoreBefore[a.id]} to ${rally.scoreBefore[b.id]}` : "score unknown"}, ${analysis ? `${counts[index]} shots, ` : ""}${Math.round(rallySeconds(rally))} seconds${rally.winner ? `, point to ${players.name(rally.winner)}` : ""}. ${open ? "Hide shots." : "Show shots."}`}
                       onClick={() => onToggleRally(index)}>
-                      <span className={styles.shotNumber}>{selected && playing ? <span className={styles.liveDot} aria-hidden="true" /> : index + 1}</span>
-                      <span className={styles.railScore}>{rally.scoreBefore ? <><b data-tone="a">{rally.scoreBefore[a.id]}</b>–<b data-tone="b">{rally.scoreBefore[b.id]}</b></> : "–"}</span>
+                      <span className={styles.railScore}>{rally.scoreBefore ? <><b data-tone="a">{rally.scoreBefore[a.id]}</b>–<b data-tone="b">{rally.scoreBefore[b.id]}</b></> : "–"}{selected && playing && <span className={styles.liveDot} aria-hidden="true" />}</span>
                       <span className={styles.shotBar} data-tone={players.tone(rally.winner)}>
                         <i style={{ width: `${(counts[index] / max) * 100}%` }} />
                         <span>{analysis ? counts[index] : ""}</span>

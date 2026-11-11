@@ -1,18 +1,23 @@
 # Natural-language rally and shot search
 
-Search sits directly under the video (between the video and the rally list on
-a phone) and is scoped to that match. Users can ask
+Search is one field above the video, under the Watch/Analyze switch, and is
+scoped to that match. Users can ask
 for an intense rally, fast smashes by a named player, a stroke sequence, or
-numeric duration/speed/stroke-count bounds. Results include a small measured
-flight diagram, stroke label and inference confidence, player, source timestamp,
-score, duration/count, match percentage, and the criteria that matched or could
-not be confirmed. A rally opens the existing video; a shot opens its 3D replay.
+numeric duration/speed/stroke-count bounds. Suggestions open beneath the field
+while typing, in the page flow (they push the video down; nothing is drawn over
+the player), and close when one is picked. Each shows a small measured flight
+diagram, stroke label (a "?" marks a low-confidence type), player, source
+timestamp, score, duration/count, and any criteria that could not be confirmed.
+A rally opens the existing video; a shot opens its 3D replay.
 No broadcast frames or media are downloaded or re-hosted.
 
 ## Architecture
 
-`POST /api/matches/:matchId/search` accepts `{query, target}` with a 2–400 character
-query and optional `all | rallies | shots` target. The provider translates a
+`POST /api/matches/:matchId/search` accepts `{query, target, instant}` with a 2–400 character
+query, an optional `all | rallies | shots` target (the page always sends the default, `all`)
+and an optional `instant` flag. Search-as-you-type sends `instant: true`, which uses only the
+local keyword parser, so half-typed queries never spend a provider request; submitting the
+field (the keyboard's search key, or an example) sends the full query to the provider. The provider translates a
 query into a validated intent schema. It sees only the query, schema and player
 names/IDs, not the match catalog. The server scores real records from `match.json`
 and optional `analysis.json`, then returns at most eight compact previews.

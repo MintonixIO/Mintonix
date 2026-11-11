@@ -10,6 +10,7 @@ import { MatchRail } from "./analysis/match-level";
 import { activeShotIndex, formatShotParam, resolveShot, SHOT_LEAD_SECONDS, shotCueTime, type ShotRef } from "./analysis/shots";
 import { missingPointsBefore, missingPointsLabel, missingPointsReason } from "./coverage";
 import { setOpenShot, useOpenShot, useView } from "./view";
+import { ViewSwitch } from "./view-switch";
 import { SearchPanel } from "./search/search-panel";
 import type { SearchResult } from "./search/rank";
 import styles from "./rally-player.module.css";
@@ -50,6 +51,7 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
   // While a shot replay hides the video, it must never play (or be heard) behind it.
   const shotOpenRef = useRef(false);
   const viewerRef = useRef<HTMLElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
@@ -64,7 +66,10 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
   const [ready, setReady] = useState(false);
   const [skipGaps, setSkipGaps] = useState(true);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [nativeFullscreen, setNativeFullscreen] = useState(false);
+  // Where the Fullscreen API can't take an element (iPhone Safari), the viewer fills the window instead.
+  const [immersive, setImmersive] = useState(false);
+  const isFullscreen = nativeFullscreen || immersive;
   const [mediaError, setMediaError] = useState("");
   const selectedIndex = rallyIndexAt(rallies, sourceTime);
   const selected = rallies[selectedIndex];
@@ -116,12 +121,28 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
 
   useEffect(() => {
     const syncFullscreen = () => {
-      setIsFullscreen(document.fullscreenElement === viewerRef.current);
+      setNativeFullscreen(document.fullscreenElement === viewerRef.current);
       setPanelOpen(false);
     };
     document.addEventListener("fullscreenchange", syncFullscreen);
     return () => document.removeEventListener("fullscreenchange", syncFullscreen);
   }, []);
+
+  // Window-filling fallback: the page behind must not scroll, and Escape leaves it like real fullscreen.
+  useEffect(() => {
+    if (!immersive) return;
+    const root = document.documentElement;
+    const previous = root.style.overflow;
+    root.style.overflow = "hidden";
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !panelOpen) setImmersive(false);
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      root.style.overflow = previous;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [immersive, panelOpen]);
 
   useEffect(() => {
     if (!isFullscreen || !panelOpen) return;
@@ -253,6 +274,23 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
     if (rally) seek(rallyStart(rally));
   }
 
+  /** After picking something from a list below the video, bring the video back into view. */
+  function revealStage() {
+    // Next frame: the pick may also change the layout above the video (search suggestions closing).
+    requestAnimationFrame(() => {
+      const stage = stageRef.current;
+      if (!stage || viewerRef.current?.hasAttribute("data-fullscreen")) return;
+      const { top, bottom } = stage.getBoundingClientRect();
+      if (top >= 0 && bottom <= window.innerHeight) return;
+      window.scrollTo({ top: window.scrollY + top - 8, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    });
+  }
+
+  function playRally(index: number) {
+    selectRally(index);
+    revealStage();
+  }
+
   function openShot(ref: ShotRef) {
     setOpenShot(ref);
   }
@@ -263,8 +301,7 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
       showRally(result.rallyIndex);
       if (!ready) searchCueRef.current = rallyStart(rallies[result.rallyIndex]);
     }
-    // Results sit below the video; bring what was picked back into view.
-    viewerRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    revealStage();
   }
 
   /** Back to the video, with focus returned to the closed shot's row in the rail. */
@@ -292,7 +329,7 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
     if (openRef) setOpenShot(null);
     setExpanded(index);
     setDeck("rally");
-    selectRally(index);
+    playRally(index);
   }
 
   function showMatchSummary() {
@@ -329,12 +366,28 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
   }
 
   async function toggleFullscreen() {
-    try {
-      if (document.fullscreenElement === viewerRef.current) await document.exitFullscreen();
-      else await viewerRef.current?.requestFullscreen();
-    } catch {
-      setMediaError("Fullscreen is unavailable in this browser.");
+    const viewer = viewerRef.current;
+    if (!viewer) return;
+    if (immersive) {
+      setImmersive(false);
+      setPanelOpen(false);
+      return;
     }
+    if (document.fullscreenElement === viewer) {
+      await document.exitFullscreen().catch(() => {});
+      return;
+    }
+    if (typeof viewer.requestFullscreen === "function") {
+      try {
+        await viewer.requestFullscreen();
+        // A match is wider than it is tall: turn a phone sideways where the browser allows it.
+        const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: string) => Promise<void> };
+        orientation?.lock?.("landscape").catch(() => {});
+        return;
+      } catch { /* fall through to the window-filling view */ }
+    }
+    setPanelOpen(false);
+    setImmersive(true);
   }
 
   const games = rallies.reduce<{ game: number; indices: number[] }[]>((groups, rally, index) => {
@@ -345,9 +398,14 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
   }, []);
 
   return (
-    <section ref={viewerRef} id="viewer" className={styles.viewer} aria-label="Match viewer" data-playing={isPlaying || undefined}>
+    <section ref={viewerRef} id="viewer" className={styles.viewer} aria-label="Match viewer" data-playing={isPlaying || undefined}
+      data-fullscreen={isFullscreen || undefined} data-immersive={immersive || undefined}>
+      <div className={styles.toolbar}>
+        {hasAnalysis && <ViewSwitch />}
+        <SearchPanel matchId={match.matchId} onSelect={openSearchResult} />
+      </div>
       <div className={styles.workspace}>
-        <div className={styles.stageColumn} data-replay={open || pendingShot ? true : undefined}>
+        <div ref={stageRef} className={styles.stageColumn} data-replay={open || pendingShot ? true : undefined}>
         <div className={styles.stage}>
           <div ref={mountRef} className={styles.embed} title={match.title} />
           {mediaError && <p className={styles.mediaError} role="alert">{mediaError}</p>}
@@ -370,7 +428,6 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
         )}
         {pendingShot && <div className={styles.stageLoading} role="status">Loading 3D replay…</div>}
         </div>
-        <div className={styles.searchArea}><SearchPanel matchId={match.matchId} onSelect={openSearchResult} /></div>
         <aside ref={panelRef} id={panelId} className={styles.rallyPanel} hidden={isFullscreen && !panelOpen} role={isFullscreen ? "dialog" : undefined} aria-labelledby={analyzing ? undefined : `${panelId}-heading`} aria-label={analyzing ? "Analysis" : undefined}>
           {analyzing ? (
             <MatchRail match={match} analysis={analysis} analysisError={analysisError} current={focusIndex} playing={isPlaying} ready={ready}
@@ -387,7 +444,7 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
               </div>
             </div>
             <label className={styles.gapToggle} title="Automatically skip the time between detected rallies"><span>Skip gaps</span><input type="checkbox" role="switch" checked={skipGaps} onChange={(event) => setSkipGaps(event.target.checked)} /><span className={styles.switch} aria-hidden="true" /></label>
-            <div className={styles.columnLabels} aria-hidden="true"><span>#</span><span>Score before</span><span>Start</span><span>Length</span></div>
+            <div className={styles.columnLabels} aria-hidden="true"><span>Score before</span><span>Start</span><span>Length</span></div>
           </div>
           <div ref={listRef} className={styles.listScroll}>
             {games.map(({ game, indices }) => (
@@ -402,9 +459,8 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
                       <Fragment key={rally.id}>
                       {missingBefore[index] > 0 && <li className={styles.gapRow}>{missingPointsLabel(missingBefore[index], match.review)}</li>}
                       <li>
-                        <button type="button" disabled={!ready} data-selected={isSelected || undefined} className={styles.rallyRow} aria-current={isSelected ? "true" : undefined} aria-label={`Rally ${index + 1}, game ${rally.game}, ${score ? `score ${score.join(" to ")}` : "score unknown"}, ${formatTime(rallyStart(rally))} in original video`} onClick={() => selectRally(index)}>
-                          <span className={styles.rallyNumber}>{isSelected && isPlaying ? <span className={styles.equalizer} aria-hidden="true"><i /><i /><i /></span> : String(index + 1).padStart(2, "0")}</span>
-                          <span className={styles.rallyScore}>{score ? <><span>{score[0]}</span><span className={styles.scoreDash}>–</span><span>{score[1]}</span></> : <span className={styles.scoreDash}>No score</span>}</span>
+                        <button type="button" disabled={!ready} data-selected={isSelected || undefined} className={styles.rallyRow} aria-current={isSelected ? "true" : undefined} aria-label={`Game ${rally.game}, ${score ? `score ${score.join(" to ")}` : "score unknown"}, ${formatTime(rallyStart(rally))} in original video`} onClick={() => playRally(index)}>
+                          <span className={styles.rallyScore}>{score ? <><span>{score[0]}</span><span className={styles.scoreDash}>–</span><span>{score[1]}</span></> : <span className={styles.scoreDash}>No score</span>}{isSelected && isPlaying && <span className={styles.equalizer} aria-hidden="true"><i /><i /><i /></span>}</span>
                           <span className={styles.rallyStart}>{formatTime(rallyStart(rally))}</span>
                           <span className={styles.rallyDuration}>{Math.round(rallySeconds(rally))}s</span>
                         </button>
@@ -418,12 +474,15 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
           </div>
           </>}
         </aside>
+        {/* On a phone, what was picked (a rally or a shot) reads directly under the video, ahead of the list. */}
+        {analyzing && (
+          <div className={styles.deckArea} data-picked={open || deck === "rally" ? true : undefined}>
+            <AnalysisDeck deck={deck} openShot={open ? { shot: open.shot, index: open.ref.index } : null} match={match} analysis={analysis}
+              rally={focusRally} rallyIndex={focusIndex} shots={shots} activeIndex={activeShot} time={sourceTime}
+              onSelectRally={showRally} onSelectShot={openFocusShot} />
+          </div>
+        )}
       </div>
-      {analyzing && (
-        <AnalysisDeck deck={deck} openShot={open ? { shot: open.shot, index: open.ref.index } : null} match={match} analysis={analysis}
-          rally={focusRally} rallyIndex={focusIndex} shots={shots} activeIndex={activeShot} time={sourceTime}
-          onSelectRally={showRally} onSelectShot={openFocusShot} />
-      )}
       {missingTotal > 0 && (
         <p className={styles.previewNotice}>
           {missingTotal} of {rallies.length + missingTotal} points {missingPointsReason(match.review)}. Gaps are marked in the list.
