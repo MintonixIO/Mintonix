@@ -12,8 +12,23 @@ const requestSchema = z.object({ query: z.string().trim().min(2).max(400), targe
 const outputSchema = z.toJSONSchema(intentSchema, { target: "draft-7" });
 const indexes = new Map<string, { expires: number; promise: Promise<SearchIndex | null> }>();
 const intents = new Map<string, { expires: number; intent: SearchIntent }>();
+const CLIENT_CALLS_PER_MINUTE = 10;
+const MAX_TRACKED_CLIENTS = 10_000;
 let windowStart = 0;
 let requestsInWindow = 0;
+const clientCalls = new Map<string, number>();
+
+/** On Vercel, x-real-ip / x-forwarded-for are set by the platform; elsewhere they are only as trustworthy as the proxy. */
+export function clientKey(request: Request) {
+  const ip = (request.headers.get("x-real-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0] ?? "").trim().toLowerCase();
+  if (!ip.includes(":")) return ip || "unknown";
+  // One IPv6 subscriber usually owns a whole /64, so count the network, not each address.
+  const [head, tail = ""] = ip.split("::");
+  const left = head ? head.split(":") : [];
+  const right = tail ? tail.split(":") : [];
+  const groups = ip.includes("::") ? [...left, ...Array(8 - left.length - right.length).fill("0"), ...right] : left;
+  return `${groups.slice(0, 4).map((g) => g.replace(/^0+(?=.)/, "")).join(":")}::/64`;
+}
 
 /** Parsed matches are reused for a minute. Misses are not kept, so only real matches occupy the cache. */
 async function getIndex(matchId: string) {
@@ -63,7 +78,7 @@ export async function interpretQuery(query: string, index: SearchIndex, options:
   finally { clearTimeout(timer); }
 }
 
-async function languageIntent(query: string, index: SearchIndex) {
+async function languageIntent(query: string, index: SearchIndex, client: string) {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
   const model = process.env.OPENROUTER_SEARCH_MODEL || DEFAULT_MODEL;
@@ -72,9 +87,12 @@ async function languageIntent(query: string, index: SearchIndex) {
   if (cached && cached.expires > Date.now()) return cached.intent;
   // A per-process budget for a public, account-free feature. It is not global across
   // server instances, so deployments also need a provider spend cap.
-  if (Date.now() - windowStart > 60_000) { windowStart = Date.now(); requestsInWindow = 0; }
-  if (requestsInWindow >= 30) return null;
+  // Each client also gets its own share, so one script cannot exhaust the budget for everyone.
+  if (Date.now() - windowStart > 60_000) { windowStart = Date.now(); requestsInWindow = 0; clientCalls.clear(); }
+  const used = clientCalls.get(client) ?? 0;
+  if (requestsInWindow >= 30 || used >= CLIENT_CALLS_PER_MINUTE || (!used && clientCalls.size >= MAX_TRACKED_CLIENTS)) return null;
   requestsInWindow++;
+  clientCalls.set(client, used + 1);
   const intent = await interpretQuery(query, index, { apiKey, model });
   if (intent) {
     if (intents.size >= 256) intents.delete(intents.keys().next().value!);
@@ -84,10 +102,10 @@ async function languageIntent(query: string, index: SearchIndex) {
 }
 
 /** `instant` is search-as-you-type: keyword parsing only, so a half-typed query never spends a language request. */
-export async function searchMatch(matchId: string, query: string, target: SearchTarget, instant = false): Promise<SearchResponse | null> {
+export async function searchMatch(matchId: string, query: string, target: SearchTarget, instant = false, client = "unknown"): Promise<SearchResponse | null> {
   const index = await getIndex(matchId);
   if (!index) return null;
-  const interpreted = instant ? null : await languageIntent(query, index);
+  const interpreted = instant ? null : await languageIntent(query, index, client);
   const intent = interpreted ?? parseLocally(query, index.match);
   return { ...rankSearch(index, intent, target, interpreted !== null), mode: interpreted ? "language" : "local" };
 }
@@ -112,7 +130,7 @@ export async function handleSearchRequest(request: Request, matchId: string): Pr
   const parsed = requestSchema.safeParse(input);
   if (!parsed.success) return json({ error: "Use 2–400 characters and choose rallies, shots, or both." }, 400);
   try {
-    const result = await searchMatch(matchId, parsed.data.query, parsed.data.target, parsed.data.instant);
+    const result = await searchMatch(matchId, parsed.data.query, parsed.data.target, parsed.data.instant, clientKey(request));
     return result ? json(result) : json({ error: "Match not found." }, 404);
   } catch { return json({ error: "This match could not be searched. Please try again." }, 503); }
 }

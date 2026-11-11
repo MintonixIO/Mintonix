@@ -89,8 +89,12 @@ The deadline bounds inference, not network transit or a server cold start.
 The public endpoint validates IDs/body shape, limits the body to 4 KiB, rejects
 cross-origin browser requests (the `Origin` host must equal the `Host` or
 `X-Forwarded-Host` header), and returns only generic errors. Each process allows
-30 new provider calls per minute; excess traffic falls back locally. This limit
-is deliberately in memory and is not global across server instances. Configure OpenRouter account spend limits for deployment.
+30 new provider calls per minute, and at most 10 of them per client (IPv4 address,
+or IPv6 /64 network, from `x-real-ip`/`x-forwarded-for`, which Vercel sets itself);
+excess traffic falls back locally, so one script cannot exhaust the budget for
+everyone. These limits are deliberately in memory and are not global across server
+instances; on Vercel, a WAF rate-limit rule on `POST /api/matches/*/search` caps
+raw requests per IP before they reach the function. Configure OpenRouter account spend limits for deployment.
 Credentials live in ignored `.env.local` or server environment variables.
 
 ## Decision models versus direct LLM retrieval
