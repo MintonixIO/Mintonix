@@ -90,6 +90,15 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
   // Below the video: the match overview, or the rally last picked in the sidebar.
   const [deck, setDeck] = useState<"match" | "rally">("match");
   const [expanded, setExpanded] = useState<number | null>(null);
+  // A shot opened from the match summary's explorer goes back to the summary when closed.
+  const [backToSummary, setBackToSummary] = useState(false);
+  // The explorer mark to focus once a shot opened from it has closed and the summary is back.
+  const explorerFocusRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (open || !explorerFocusRef.current) return;
+    document.querySelector<HTMLElement>(`[data-explorer-shot="${explorerFocusRef.current}"]`)?.focus({ preventScroll: true });
+    explorerFocusRef.current = null;
+  }, [open]);
   // A newly opened shot (including one from a shared link) expands its rally.
   const openKey = open ? formatShotParam(open.ref) : null;
   const [syncedShot, setSyncedShot] = useState<string | null>(null);
@@ -97,7 +106,7 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
     setSyncedShot(openKey);
     if (open) {
       setExpanded(openRallyIndex);
-      setDeck("rally");
+      if (!backToSummary) setDeck("rally");
     }
   }
   // Between rallies, analyze view keeps showing the rally that just ended.
@@ -292,11 +301,20 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
   }
 
   function openShot(ref: ShotRef) {
+    setBackToSummary(false);
     setOpenShot(ref);
   }
 
+  /** From the match summary: open the shot in the replay, and come back to the summary when it closes. */
+  function openSummaryShot(ref: ShotRef) {
+    setBackToSummary(true);
+    setDeck("match");
+    setOpenShot(ref);
+    revealStage();
+  }
+
   function openSearchResult(result: SearchResult) {
-    if (result.kind === "shot" && result.shotIndex !== null) setOpenShot({ rallyId: result.rallyId, index: result.shotIndex });
+    if (result.kind === "shot" && result.shotIndex !== null) openShot({ rallyId: result.rallyId, index: result.shotIndex });
     else {
       showRally(result.rallyIndex);
       if (!ready) searchCueRef.current = rallyStart(rallies[result.rallyIndex]);
@@ -308,11 +326,19 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
   function closeShot() {
     const ref = open?.ref ?? openRef;
     setOpenShot(null);
-    if (ref) panelRef.current?.querySelector<HTMLElement>(`[data-shot="${formatShotParam(ref)}"]`)?.focus({ preventScroll: true });
+    if (!ref) return;
+    if (backToSummary) {
+      // The summary renders again after this update; the effect above returns focus to the shot's mark.
+      setBackToSummary(false);
+      explorerFocusRef.current = formatShotParam(ref);
+      return;
+    }
+    panelRef.current?.querySelector<HTMLElement>(`[data-shot="${formatShotParam(ref)}"]`)?.focus({ preventScroll: true });
   }
 
+  /** Step to another shot of the open rally; Back still returns to wherever the first shot was opened from. */
   function openFocusShot(index: number) {
-    openShot({ rallyId: focusRally.id, index });
+    setOpenShot({ rallyId: focusRally.id, index });
   }
 
   /** Sidebar rally row: expand it and play from its start, or collapse it (closing any open shot). */
@@ -479,7 +505,7 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
           <div className={styles.deckArea} data-picked={open || deck === "rally" ? true : undefined}>
             <AnalysisDeck deck={deck} openShot={open ? { shot: open.shot, index: open.ref.index } : null} match={match} analysis={analysis}
               rally={focusRally} rallyIndex={focusIndex} shots={shots} activeIndex={activeShot} time={sourceTime}
-              onSelectRally={showRally} onSelectShot={openFocusShot} />
+              onSelectRally={showRally} onSelectShot={openFocusShot} onOpenSummaryShot={openSummaryShot} />
           </div>
         )}
       </div>

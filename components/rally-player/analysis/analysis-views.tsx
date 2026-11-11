@@ -5,8 +5,10 @@ import type { Match, MatchAnalysis, Rally, Shot } from "../contract";
 import { CourtDrawing } from "./court-drawing";
 import { MatchOverview } from "./match-level";
 import { playerTools } from "./players";
+import { defaultExplorerFilter } from "./shot-explorer-view";
+import type { ExplorerFilter } from "./shot-explorer";
 import { RallySequence, RallySummary, ShotComparison, ShotDetail } from "./rally-level";
-import { endLabel } from "./shots";
+import { endLabel, type ShotRef } from "./shots";
 import styles from "./analysis.module.css";
 
 /** Fetch shot data once, when the analyze view first opens. */
@@ -30,7 +32,7 @@ export function useAnalysis(matchId: string, enabled: boolean) {
 }
 
 /** Everything under the video in analyze view: one open shot, a rally, or the whole match. */
-export function AnalysisDeck({ deck, openShot, match, analysis, rally, rallyIndex, shots, activeIndex, time, onSelectRally, onSelectShot }: {
+export function AnalysisDeck({ deck, openShot, match, analysis, rally, rallyIndex, shots, activeIndex, time, onSelectRally, onSelectShot, onOpenSummaryShot }: {
   deck: "match" | "rally";
   openShot: { shot: Shot; index: number } | null;
   match: Match;
@@ -42,8 +44,12 @@ export function AnalysisDeck({ deck, openShot, match, analysis, rally, rallyInde
   time: number;
   onSelectRally: (index: number) => void;
   onSelectShot: (index: number) => void;
+  /** Open a shot picked in the match summary; closing it returns to the summary. */
+  onOpenSummaryShot: (ref: ShotRef) => void;
 }) {
   const players = playerTools(match);
+  // Kept here, not in the summary, so the explorer's filter survives opening a shot and coming back.
+  const [explorer, setExplorer] = useState<ExplorerFilter | null>(null);
   const heading = openShot ? `Shot ${openShot.index + 1} of rally ${rallyIndex + 1}` : deck === "rally" ? `Rally ${rallyIndex + 1}` : "The match";
   return (
     <div className={styles.deck} data-deck={openShot ? "shot" : deck}>
@@ -71,7 +77,8 @@ export function AnalysisDeck({ deck, openShot, match, analysis, rally, rallyInde
         <RallySequence match={match} rally={rally} shots={shots} activeIndex={activeIndex} onSelectShot={onSelectShot} />
         </>
       ) : (
-        <MatchOverview match={match} analysis={analysis} current={rallyIndex} onSelectRally={onSelectRally} />
+        <MatchOverview match={match} analysis={analysis} current={rallyIndex} onSelectRally={onSelectRally}
+          explorer={explorer ?? defaultExplorerFilter(match, analysis)} onExplorer={setExplorer} onOpenShot={onOpenSummaryShot} />
       )}
       <p className={styles.deckNotice}>
         Shot data is reconstructed automatically from the broadcast and hasn’t been checked by hand. Stroke types are inferred by a
