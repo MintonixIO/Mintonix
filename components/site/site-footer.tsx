@@ -3,6 +3,7 @@ import { io } from "next/cache";
 import Link from "next/link";
 import { listLocalMatches } from "@/components/rally-player/local-match";
 import { Brand } from "@/components/ui/brand";
+import { site, type SocialPlatform } from "./site";
 import styles from "./site.module.css";
 
 /** Opens the demo match in the viewer; the library stands in while none is available. */
@@ -21,11 +22,13 @@ export function SiteFooter({ wide = false }: { wide?: boolean }) {
           <Brand />
           <p>Watch the rally.<br /><span>Read the game.</span></p>
           <span className={styles.footerDescription}>A closer look at the game, one rally at a time.</span>
-          <div className={styles.socials} role="group" aria-label="Social profiles, coming soon">
-            {(["X", "Threads", "YouTube", "Instagram"] as const).map((platform) => (
-              <button key={platform} type="button" disabled aria-label={`${platform} (coming soon)`} title={`${platform} profile coming soon`}><SocialIcon platform={platform} /></button>
+          <ul className={styles.socials} aria-label="Social profiles">
+            {site.socials.map(({ platform, url }) => (
+              <li key={platform}>
+                <a href={url} target="_blank" rel="noopener noreferrer me" aria-label={`Mintonix on ${platform}`} title={platform}><SocialIcon platform={platform} /></a>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
         <nav className={styles.footerLinks} aria-labelledby="footer-explore">
           <h2 id="footer-explore">Explore</h2>
@@ -43,7 +46,7 @@ export function SiteFooter({ wide = false }: { wide?: boolean }) {
   );
 }
 
-function SocialIcon({ platform }: { platform: "X" | "Threads" | "YouTube" | "Instagram" }) {
+function SocialIcon({ platform }: { platform: SocialPlatform }) {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       {platform === "X" && <><path d="M5 4h4l10 16h-4L5 4Z" /><path d="M19 4 5 20" /></>}
