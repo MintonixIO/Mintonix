@@ -280,3 +280,26 @@ test("search-as-you-type never spends a language request, even with a key", () =
     delete process.env.OPENROUTER_API_KEY;
   }
 }));
+
+/** A provider that always understands the query, so `mode` shows whether the language path was used. */
+async function withLanguageProvider(run: () => Promise<void>) {
+  process.env.OPENROUTER_API_KEY = "test-key";
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async () => Response.json({ choices: [{ message: { content: JSON.stringify({ ...emptyIntent(), types: ["smash"], target: "shots" }) } }] })) as typeof fetch;
+  try { await run(); } finally {
+    globalThis.fetch = realFetch;
+    delete process.env.OPENROUTER_API_KEY;
+  }
+}
+const searchMode = async (query: string, ip: string) => (await (await handleSearchRequest(request({ query }, { "x-real-ip": ip }), MATCH)).json()).mode;
+
+test("one client cannot drain the shared language budget; other clients keep language search", () => withFixtureMatch(() => withLanguageProvider(async () => {
+  for (let i = 0; i < 10; i++) assert.equal(await searchMode(`smashes number ${i}`, "203.0.113.7"), "language");
+  assert.equal(await searchMode("smashes number 10", "203.0.113.7"), "local");
+  assert.equal(await searchMode("smashes number 11", "198.51.100.4"), "language");
+})));
+
+test("IPv6 clients are limited per /64, so rotating addresses inside one network does not reset the limit", () => withFixtureMatch(() => withLanguageProvider(async () => {
+  for (let i = 0; i < 10; i++) assert.equal(await searchMode(`lifts number ${i}`, `2001:db8:1:2::${i + 1}`), "language");
+  assert.equal(await searchMode("lifts number 10", "2001:db8:1:2:ffff::1"), "local");
+})));
