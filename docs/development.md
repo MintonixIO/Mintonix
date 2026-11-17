@@ -55,7 +55,9 @@ python util/export_match.py --video dl1 --match-id dl1 \
 ```
 
 `--rallies annotations` exports the hand-reviewed rallies (`review: reviewed`);
-the default exports the engine's own (`review: automatic`).
+the default exports the engine's own (`review: automatic`). When the Engine
+has `annotations/<stem>/hits.csv`, each exported rally starts at most 1 s
+before its first racket hit; `--no-trim-starts` keeps the stored starts.
 
 To publish a match, commit its `match.json` (and `analysis.json`) under
 `content/matches/<matchId>/`. The tests validate every published match.
