@@ -6,8 +6,8 @@ import { parseLocally, type SearchIntent } from "../components/rally-player/sear
 import { buildSearchIndex, rankSearch } from "../components/rally-player/search/rank.ts";
 import { DEFAULT_MODEL, interpretQuery } from "../components/rally-player/search/service.ts";
 
-const match = await readLocalMatch("dl1");
-if (!match) throw new Error("Benchmark requires the published dl1 match");
+const match = await readLocalMatch("denmark-open-2025-ms-sf");
+if (!match) throw new Error("Benchmark requires the published denmark-open-2025-ms-sf match");
 const index = buildSearchIndex(match, await readLocalAnalysis(match));
 const cases: { query: string; expected: (i: SearchIntent) => boolean }[] = [
   { query: "An intense rally", expected: (i) => i.target === "rallies" && i.vibes.includes("intense") },

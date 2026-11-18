@@ -48,7 +48,7 @@ Write match folders from the Engine:
 
 ```sh
 cd ../Engine
-python util/export_match.py --video dl1 --match-id dl1 \
+python util/export_match.py --video dl1 --match-id denmark-open-2025-ms-sf \
   --title "VICTOR Denmark Open 2025, men’s singles semifinal" \
   --player p1="Shi Yu Qi" --player p0="Viktor Axelsen" \
   --youtube 9WVwZSzixh0 --duration 5120.021 --rallies annotations
@@ -57,10 +57,17 @@ python util/export_match.py --video dl1 --match-id dl1 \
 `--rallies annotations` exports the hand-reviewed rallies (`review: reviewed`);
 the default exports the engine's own (`review: automatic`).
 
+Match ids follow `{tournament}-{year}-{event}-{round}`, all lowercase: the
+tournament name without its sponsor (`denmark-open`, `malaysia-open`), the
+year, the BWF event code (`ms`, `ws`, `md`, `wd`, `xd`) and the round (`r32`,
+`r16`, `qf`, `sf`, `f`), e.g. `malaysia-open-2025-ms-f`. Library order is
+alphabetical by id, and the first match is the homepage demo.
+
 To publish a match, commit its `match.json` (and `analysis.json`) under
 `content/matches/<matchId>/`. The tests validate every published match.
 
-The published sample, `/watch/dl1`, plays the BWF TV upload of the VICTOR Denmark Open 2025 semifinal, Shi Yu Qi vs Viktor Axelsen (YouTube `9WVwZSzixh0`), with reviewed rallies and shot data.
+The published sample, `/watch/denmark-open-2025-ms-sf` (formerly `/watch/dl1`, which redirects), plays the BWF TV upload of the VICTOR Denmark Open 2025 semifinal, Shi Yu Qi vs Viktor Axelsen (YouTube `9WVwZSzixh0`), with reviewed rallies and shot data.
+`/watch/malaysia-open-2025-ms-f` plays the PETRONAS Malaysia Open 2025 final, Shi Yu Qi vs Anders Antonsen (YouTube `eKPtHLGFxLE`), with engine-detected rallies (`review: automatic`) whose hits come from the BFMD dataset.
 
 Keep all media, unpublished match files, and `.env.local` outside Git.
 
