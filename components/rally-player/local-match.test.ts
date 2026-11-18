@@ -71,10 +71,10 @@ test("the library lists all valid matches and excludes invalid entries", () => w
 test("without a configured directory, the published matches in content/matches load and validate", () => withMatchesDirectory(async () => {
   delete process.env.MINTONIX_LOCAL_MATCHES_DIR;
   const matches = await listLocalMatches();
-  assert.ok(matches.some((match) => match.matchId === "dl1"));
+  assert.ok(matches.some((match) => match.matchId === "denmark-open-2025-ms-sf"));
   for (const match of matches) {
     assert.equal((await readLocalMatch(match.matchId))?.matchId, match.matchId);
     if (await hasLocalAnalysis(match)) assert.equal((await readLocalAnalysis(match))?.matchId, match.matchId);
   }
-  assert.equal(await hasLocalAnalysis(matches.find((match) => match.matchId === "dl1")!), true);
+  assert.equal(await hasLocalAnalysis(matches.find((match) => match.matchId === "denmark-open-2025-ms-sf")!), true);
 }));
