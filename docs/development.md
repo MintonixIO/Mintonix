@@ -66,7 +66,7 @@ alphabetical by id, and the first match is the homepage demo.
 To publish a match, commit its `match.json` (and `analysis.json`) under
 `content/matches/<matchId>/`. The tests validate every published match.
 
-The published sample, `/watch/denmark-open-2025-ms-sf` (formerly `/watch/dl1`, which redirects), plays the BWF TV upload of the VICTOR Denmark Open 2025 semifinal, Shi Yu Qi vs Viktor Axelsen (YouTube `9WVwZSzixh0`), with reviewed rallies and shot data.
+The published sample, `/watch/denmark-open-2025-ms-sf`, plays the BWF TV upload of the VICTOR Denmark Open 2025 semifinal, Shi Yu Qi vs Viktor Axelsen (YouTube `9WVwZSzixh0`), with reviewed rallies and shot data.
 `/watch/malaysia-open-2025-ms-f` plays the PETRONAS Malaysia Open 2025 final, Shi Yu Qi vs Anders Antonsen (YouTube `eKPtHLGFxLE`), with engine-detected rallies (`review: automatic`) whose hits come from the BFMD dataset.
 
 Keep all media, unpublished match files, and `.env.local` outside Git.

@@ -6,10 +6,6 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   // Published matches are read from disk at request time, so ship them with the server routes.
   outputFileTracingIncludes: { "/*": ["./content/matches/**/*.json"] },
-  // Match ids were renamed to the {tournament}-{year}-{event}-{round} slug (docs/development.md).
-  async redirects() {
-    return [{ source: "/watch/dl1", destination: "/watch/denmark-open-2025-ms-sf", permanent: true }];
-  },
   images: {
     remotePatterns: [{ protocol: "https", hostname: "i.ytimg.com", pathname: "/vi/**/hqdefault.jpg", search: "" }],
   },
