@@ -62,7 +62,8 @@ before its first racket hit; `--no-trim-starts` keeps the stored starts.
 Match ids follow `{tournament}-{year}-{event}-{round}`, all lowercase: the
 tournament name without its sponsor (`denmark-open`, `malaysia-open`), the
 year, the BWF event code (`ms`, `ws`, `md`, `wd`, `xd`) and the round (`r32`,
-`r16`, `qf`, `sf`, `f`), e.g. `malaysia-open-2025-ms-f`. Library order is
+`r16`, `qf`, `sf`, `f`; when a tournament has two semifinals in the set, `sf1` and
+`sf2` in BFMD's listing order), e.g. `malaysia-open-2025-ms-f`. Library order is
 alphabetical by id, and the first match is the homepage demo.
 
 To publish a match, commit its `match.json` (and `analysis.json`) under
@@ -70,6 +71,7 @@ To publish a match, commit its `match.json` (and `analysis.json`) under
 
 The published sample, `/watch/denmark-open-2025-ms-sf`, plays the BWF TV upload of the VICTOR Denmark Open 2025 semifinal, Shi Yu Qi vs Viktor Axelsen (YouTube `9WVwZSzixh0`), with reviewed rallies and shot data.
 `/watch/malaysia-open-2025-ms-f` plays the PETRONAS Malaysia Open 2025 final, Shi Yu Qi vs Anders Antonsen (YouTube `eKPtHLGFxLE`), with engine-detected rallies (`review: automatic`) whose hits come from the BFMD dataset.
+`/watch/indonesia-open-2025-ms-f` plays the KAPAL API Indonesia Open 2025 final, Chou Tien Chen vs Anders Antonsen (YouTube `PSEgVtdtLJ0`), the same way.
 
 Keep all media, unpublished match files, and `.env.local` outside Git.
 
