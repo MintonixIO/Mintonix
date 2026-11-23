@@ -1,0 +1,1319 @@
+{
+ "version": 3,
+ "matchId": "indonesia-open-2025-ms-sf1",
+ "title": "KAPAL API Indonesia Open 2025, men’s singles semifinal",
+ "players": [
+  {
+   "id": "p1",
+   "name": "Chou Tien Chen"
+  },
+  {
+   "id": "p0",
+   "name": "Kunlavut Vitidsarn"
+  }
+ ],
+ "source": {
+  "provider": "youtube",
+  "videoId": "ISFs9Gku1LA",
+  "durationSeconds": 4155.0
+ },
+ "review": "automatic",
+ "rallies": [
+  {
+   "id": "g1-0-0",
+   "game": 1,
+   "segments": [
+    [
+     368.7,
+     376.133
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 0,
+    "p0": 0
+   },
+   "server": "p0",
+   "winner": "p0"
+  },
+  {
+   "id": "g1-0-1",
+   "game": 1,
+   "segments": [
+    [
+     379.9,
+     384.5
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 0,
+    "p0": 1
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-1-1",
+   "game": 1,
+   "segments": [
+    [
+     395.5,
+     414.767
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 1,
+    "p0": 1
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g1-1-2",
+   "game": 1,
+   "segments": [
+    [
+     437.567,
+     447.067
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 1,
+    "p0": 2
+   },
+   "server": "p0",
+   "winner": "p0"
+  },
+  {
+   "id": "g1-1-3",
+   "game": 1,
+   "segments": [
+    [
+     462.267,
+     469.6
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 1,
+    "p0": 3
+   },
+   "server": "p0",
+   "winner": "p0"
+  },
+  {
+   "id": "g1-1-4",
+   "game": 1,
+   "segments": [
+    [
+     482.133,
+     487.067
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 1,
+    "p0": 4
+   },
+   "server": "p0",
+   "winner": "p0"
+  },
+  {
+   "id": "g1-1-5",
+   "game": 1,
+   "segments": [
+    [
+     496.1,
+     523.533
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 1,
+    "p0": 5
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-2-5",
+   "game": 1,
+   "segments": [
+    [
+     578.367,
+     588.167
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 2,
+    "p0": 5
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-3-5",
+   "game": 1,
+   "segments": [
+    [
+     601.1,
+     611.567
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 3,
+    "p0": 5
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-4-5",
+   "game": 1,
+   "segments": [
+    [
+     634.9,
+     637.667
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 4,
+    "p0": 5
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-5-5",
+   "game": 1,
+   "segments": [
+    [
+     647.1,
+     655.0
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 5,
+    "p0": 5
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g1-5-6",
+   "game": 1,
+   "segments": [
+    [
+     668.0,
+     680.933
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 5,
+    "p0": 6
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-6-6",
+   "game": 1,
+   "segments": [
+    [
+     699.267,
+     716.567
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 6,
+    "p0": 6
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-7-6",
+   "game": 1,
+   "segments": [
+    [
+     741.1,
+     746.7
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 7,
+    "p0": 6
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g1-7-7",
+   "game": 1,
+   "segments": [
+    [
+     801.933,
+     808.367
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 7,
+    "p0": 7
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-8-7",
+   "game": 1,
+   "segments": [
+    [
+     823.9,
+     836.0
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 8,
+    "p0": 7
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g1-8-8",
+   "game": 1,
+   "segments": [
+    [
+     862.567,
+     873.267
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 8,
+    "p0": 8
+   },
+   "server": "p0",
+   "winner": "p0"
+  },
+  {
+   "id": "g1-8-9",
+   "game": 1,
+   "segments": [
+    [
+     898.367,
+     905.933
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 8,
+    "p0": 9
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-9-9",
+   "game": 1,
+   "segments": [
+    [
+     924.733,
+     949.967
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 9,
+    "p0": 9
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g1-9-10",
+   "game": 1,
+   "segments": [
+    [
+     1015.333,
+     1024.067
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 9,
+    "p0": 10
+   },
+   "server": "p0",
+   "winner": "p0"
+  },
+  {
+   "id": "g1-9-11",
+   "game": 1,
+   "segments": [
+    [
+     1099.033,
+     1111.667
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 9,
+    "p0": 11
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-10-11",
+   "game": 1,
+   "segments": [
+    [
+     1133.2,
+     1140.933
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 10,
+    "p0": 11
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-11-11",
+   "game": 1,
+   "segments": [
+    [
+     1153.967,
+     1175.0
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 11,
+    "p0": 11
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-12-11",
+   "game": 1,
+   "segments": [
+    [
+     1203.567,
+     1215.867
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 12,
+    "p0": 11
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-13-11",
+   "game": 1,
+   "segments": [
+    [
+     1234.5,
+     1239.267
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 13,
+    "p0": 11
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-14-11",
+   "game": 1,
+   "segments": [
+    [
+     1257.767,
+     1262.8
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 14,
+    "p0": 11
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-15-11",
+   "game": 1,
+   "segments": [
+    [
+     1276.4,
+     1281.7
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 15,
+    "p0": 11
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-16-11",
+   "game": 1,
+   "segments": [
+    [
+     1290.7,
+     1294.4
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 16,
+    "p0": 11
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g1-16-12",
+   "game": 1,
+   "segments": [
+    [
+     1361.167,
+     1374.2
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 16,
+    "p0": 12
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-17-12",
+   "game": 1,
+   "segments": [
+    [
+     1385.9,
+     1398.733
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 17,
+    "p0": 12
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g1-17-13",
+   "game": 1,
+   "segments": [
+    [
+     1443.767,
+     1466.367
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 17,
+    "p0": 13
+   },
+   "server": "p0",
+   "winner": "p0"
+  },
+  {
+   "id": "g1-17-14",
+   "game": 1,
+   "segments": [
+    [
+     1485.933,
+     1501.9
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 17,
+    "p0": 14
+   },
+   "server": "p0",
+   "winner": "p0"
+  },
+  {
+   "id": "g1-17-15",
+   "game": 1,
+   "segments": [
+    [
+     1526.533,
+     1530.8
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 17,
+    "p0": 15
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-18-15",
+   "game": 1,
+   "segments": [
+    [
+     1545.5,
+     1550.767
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 18,
+    "p0": 15
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-19-15",
+   "game": 1,
+   "segments": [
+    [
+     1563.567,
+     1572.8
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 19,
+    "p0": 15
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g1-19-16",
+   "game": 1,
+   "segments": [
+    [
+     1647.2,
+     1654.8
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 19,
+    "p0": 16
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g1-20-16",
+   "game": 1,
+   "segments": [
+    [
+     1665.5,
+     1676.267
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 20,
+    "p0": 16
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-0-0",
+   "game": 2,
+   "segments": [
+    [
+     1812.733,
+     1824.4
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 0,
+    "p0": 0
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-0-1",
+   "game": 2,
+   "segments": [
+    [
+     1837.7,
+     1849.2
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 0,
+    "p0": 1
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-1-1",
+   "game": 2,
+   "segments": [
+    [
+     1869.8,
+     1876.933
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 1,
+    "p0": 1
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-1-2",
+   "game": 2,
+   "segments": [
+    [
+     1898.4,
+     1903.533
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 1,
+    "p0": 2
+   },
+   "server": "p0",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-1-3",
+   "game": 2,
+   "segments": [
+    [
+     1916.2,
+     1935.467
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 1,
+    "p0": 3
+   },
+   "server": "p0",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-1-4",
+   "game": 2,
+   "segments": [
+    [
+     1956.567,
+     1968.933
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 1,
+    "p0": 4
+   },
+   "server": "p0",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-1-5",
+   "game": 2,
+   "segments": [
+    [
+     1986.333,
+     2009.533
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 1,
+    "p0": 5
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-2-5",
+   "game": 2,
+   "segments": [
+    [
+     2059.333,
+     2064.5
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 2,
+    "p0": 5
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-2-6",
+   "game": 2,
+   "segments": [
+    [
+     2076.533,
+     2081.467
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 2,
+    "p0": 6
+   },
+   "server": "p0",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-2-7",
+   "game": 2,
+   "segments": [
+    [
+     2092.9,
+     2099.467
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 2,
+    "p0": 7
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-3-7",
+   "game": 2,
+   "segments": [
+    [
+     2118.933,
+     2124.1
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 3,
+    "p0": 7
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-4-7",
+   "game": 2,
+   "segments": [
+    [
+     2136.333,
+     2142.133
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 4,
+    "p0": 7
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-5-7",
+   "game": 2,
+   "segments": [
+    [
+     2154.3,
+     2164.967
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 5,
+    "p0": 7
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-6-7",
+   "game": 2,
+   "segments": [
+    [
+     2175.067,
+     2181.367
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 6,
+    "p0": 7
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-6-8",
+   "game": 2,
+   "segments": [
+    [
+     2201.1,
+     2237.767
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 6,
+    "p0": 8
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-7-8",
+   "game": 2,
+   "segments": [
+    [
+     2311.033,
+     2330.8
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 7,
+    "p0": 8
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-8-8",
+   "game": 2,
+   "segments": [
+    [
+     2354.9,
+     2375.133
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 8,
+    "p0": 8
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-8-9",
+   "game": 2,
+   "segments": [
+    [
+     2432.533,
+     2441.367
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 8,
+    "p0": 9
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-9-9",
+   "game": 2,
+   "segments": [
+    [
+     2449.8,
+     2476.933
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 9,
+    "p0": 9
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-9-10",
+   "game": 2,
+   "segments": [
+    [
+     2544.7,
+     2550.733
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 9,
+    "p0": 10
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-10-10",
+   "game": 2,
+   "segments": [
+    [
+     2562.067,
+     2589.4
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 10,
+    "p0": 10
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-10-11",
+   "game": 2,
+   "segments": [
+    [
+     2693.133,
+     2701.133
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 10,
+    "p0": 11
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-11-11",
+   "game": 2,
+   "segments": [
+    [
+     2714.2,
+     2730.367
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 11,
+    "p0": 11
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-12-11",
+   "game": 2,
+   "segments": [
+    [
+     2775.133,
+     2788.4
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 12,
+    "p0": 11
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-13-11",
+   "game": 2,
+   "segments": [
+    [
+     2851.333,
+     2880.967
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 13,
+    "p0": 11
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-13-12",
+   "game": 2,
+   "segments": [
+    [
+     2940.5,
+     2943.5
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 13,
+    "p0": 12
+   },
+   "server": "p0",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-13-13",
+   "game": 2,
+   "segments": [
+    [
+     2954.733,
+     2971.1
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 13,
+    "p0": 13
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-14-13",
+   "game": 2,
+   "segments": [
+    [
+     3025.0,
+     3043.1
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 14,
+    "p0": 13
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-14-14",
+   "game": 2,
+   "segments": [
+    [
+     3084.667,
+     3096.2
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 14,
+    "p0": 14
+   },
+   "server": "p0",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-14-15",
+   "game": 2,
+   "segments": [
+    [
+     3151.6,
+     3183.267
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 14,
+    "p0": 15
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-15-15",
+   "game": 2,
+   "segments": [
+    [
+     3200.0,
+     3208.567
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 15,
+    "p0": 15
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-15-16",
+   "game": 2,
+   "segments": [
+    [
+     3237.933,
+     3246.8
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 15,
+    "p0": 16
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-16-16",
+   "game": 2,
+   "segments": [
+    [
+     3259.267,
+     3267.967
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 16,
+    "p0": 16
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-17-16",
+   "game": 2,
+   "segments": [
+    [
+     3278.533,
+     3292.3
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 17,
+    "p0": 16
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-17-17",
+   "game": 2,
+   "segments": [
+    [
+     3311.933,
+     3327.767
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 17,
+    "p0": 17
+   },
+   "server": "p0",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-17-18",
+   "game": 2,
+   "segments": [
+    [
+     3403.7,
+     3419.4
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 17,
+    "p0": 18
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-18-18",
+   "game": 2,
+   "segments": [
+    [
+     3432.933,
+     3441.667
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 18,
+    "p0": 18
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-18-19",
+   "game": 2,
+   "segments": [
+    [
+     3506.167,
+     3544.733
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 18,
+    "p0": 19
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-19-19",
+   "game": 2,
+   "segments": [
+    [
+     3636.167,
+     3644.667
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 19,
+    "p0": 19
+   },
+   "server": "p1",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-20-19",
+   "game": 2,
+   "segments": [
+    [
+     3699.967,
+     3707.167
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 20,
+    "p0": 19
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-20-20",
+   "game": 2,
+   "segments": [
+    [
+     3730.933,
+     3754.367
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 20,
+    "p0": 20
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-21-20",
+   "game": 2,
+   "segments": [
+    [
+     3780.333,
+     3790.067
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 21,
+    "p0": 20
+   },
+   "server": "p1",
+   "winner": "p0"
+  },
+  {
+   "id": "g2-21-21",
+   "game": 2,
+   "segments": [
+    [
+     3856.667,
+     3883.267
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 21,
+    "p0": 21
+   },
+   "server": "p0",
+   "winner": "p1"
+  },
+  {
+   "id": "g2-22-21",
+   "game": 2,
+   "segments": [
+    [
+     3915.7,
+     3923.133
+    ]
+   ],
+   "scoreBefore": {
+    "p1": 22,
+    "p0": 21
+   },
+   "server": "p1",
+   "winner": "p1"
+  }
+ ]
+}
