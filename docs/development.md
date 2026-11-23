@@ -72,6 +72,7 @@ To publish a match, commit its `match.json` (and `analysis.json`) under
 The published sample, `/watch/denmark-open-2025-ms-sf`, plays the BWF TV upload of the VICTOR Denmark Open 2025 semifinal, Shi Yu Qi vs Viktor Axelsen (YouTube `9WVwZSzixh0`), with reviewed rallies and shot data.
 `/watch/malaysia-open-2025-ms-f` plays the PETRONAS Malaysia Open 2025 final, Shi Yu Qi vs Anders Antonsen (YouTube `eKPtHLGFxLE`), with engine-detected rallies (`review: automatic`) whose hits come from the BFMD dataset.
 `/watch/indonesia-open-2025-ms-f` plays the KAPAL API Indonesia Open 2025 final, Chou Tien Chen vs Anders Antonsen (YouTube `PSEgVtdtLJ0`), the same way.
+The other ten BFMD men's singles matches are published the same way, with BWF TV uploads: the Indonesia, Malaysia, China and All England Open 2025 semifinals (`-ms-sf1`, `-ms-sf2`) and the China and All England Open 2025 finals (`-ms-f`).
 
 Keep all media, unpublished match files, and `.env.local` outside Git.
 
