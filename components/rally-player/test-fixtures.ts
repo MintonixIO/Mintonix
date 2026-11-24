@@ -2,11 +2,10 @@
 // Synthetic match data for the rally-player tests only; contracts/ holds the generated schemas.
 export function matchFixture() {
   return {
-    version: 3,
     matchId: "illustrative-match",
     title: "Player A vs Player B",
     players: [{ id: "a", name: "Player A" }, { id: "b", name: "Player B" }],
-    source: { provider: "youtube", videoId: "AAAAAAAAAAA", durationSeconds: 910 },
+    source: { provider: "youtube", videoId: "AAAAAAAAAAA", durationSeconds: 910, fps: 30 },
     review: "automatic",
     rallies: [
       { id: "r1", game: 1, segments: [[34, 40], [42, 48]], scoreBefore: { a: 0, b: 0 }, server: "a", winner: "b" },
@@ -33,7 +32,7 @@ export function analysisFixture() {
     pointsWithKnownWinner: 1, serves: 1, pointsWonOnServe: 0,
   };
   return {
-    version: 2, matchId: "illustrative-match", quality: { shots: 2, ok: 2, guessed: 0, unreliable: 0 },
+    matchId: "illustrative-match", quality: { shots: 2, ok: 2, guessed: 0, unreliable: 0 },
     rallies: { r1: { shots: [shot(34.5, 35.3), shot(35.3, 36, "b")],
       summary: { shots: 2, unreliable: 0, byPlayer: { a: 1, b: 1 }, fastest: 0, highest: 0 } } },
     games: [
@@ -68,4 +67,42 @@ export function correctedAnalysisFixture() {
   const analysis = typedAnalysisFixture();
   analysis.rallies.r1.shots[1].shotType.correction = { from: "push", fromProbability: 0.55, reason: "high_deep_flight" };
   return analysis;
+}
+
+/** metadata.json for a match and its analysis fixture (as the Engine writes it). */
+export function metadataFixture(match = matchFixture(), analysis: Record<string, any> | null = analysisFixture()) {
+  const { rallies: shotsByRally, ...rest } = analysis ?? {};
+  const shotData = Object.fromEntries(Object.entries(rest).filter(([key]) => key !== "matchId"));
+  return {
+    version: 1,
+    ...match,
+    rallies: match.rallies.map((rally: Record<string, any>) => ({ ...rally, ...(shotsByRally?.[rally.id] ?? {}) })),
+    ...(analysis ? { analysis: shotData } : {}),
+  } as Record<string, any>;
+}
+
+/** One skeleton frame: 17 joints in court centimetres, a player standing at (x, y). */
+export function skeletonFrame(x: number, y: number): number[][] {
+  const offsets = [[0, 0, 0], [10, 0, 0], [10, 0, -45], [10, 0, -90], [-10, 0, 0], [-10, 0, -45], [-10, 0, -90],
+    [0, 0, 25], [0, 0, 50], [0, 0, 60], [0, 0, 80], [20, 0, 50], [30, 0, 30], [30, 0, 10], [-20, 0, 50], [-30, 0, 30], [-30, 0, 10]];
+  return offsets.map(([dx, dy, dz]) => [x + dx, y + dy, 95 + dz]);
+}
+
+/** Encode skeleton frames as the Engine does: hip track + hip-relative joints, frame-to-frame differences. */
+export function encodeRun(startFrame: number, frames: number[][][]) {
+  const root = frames.map((joints) => joints[0]);
+  const relative = frames.map((joints) => joints.slice(1).flatMap((joint) => joint.map((value, axis) => value - joints[0][axis])));
+  const deltas = (rows: number[][]) => rows.flatMap((row, i) => row.map((value, k) => value - (i ? rows[i - 1][k] : 0)));
+  return { startFrame, frames: frames.length, root: deltas(root), joints: deltas(relative) };
+}
+
+/** A rally file for r1 (segments 34–40 s and 42–48 s at 30 fps): player a walks 1 m along x, b stands still. */
+export function rallyMotionFixture() {
+  const walk = Array.from({ length: 11 }, (_, i) => skeletonFrame(200 + i * 10, 300));
+  const still = Array.from({ length: 4 }, () => skeletonFrame(300, 1000));
+  return {
+    version: 1, matchId: "illustrative-match", rallyId: "r1", fps: 30,
+    poses: { a: [encodeRun(1020, walk)], b: [encodeRun(1030, still), encodeRun(1260, still)] },
+    distance: { a: 1, b: 0 },
+  } as Record<string, any>;
 }

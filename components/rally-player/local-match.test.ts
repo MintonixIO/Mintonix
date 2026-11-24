@@ -4,7 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { hasLocalAnalysis, listLocalMatches, readLocalAnalysis, readLocalMatch } from "./local-match.ts";
-import { analysisFixture, matchFixture } from "./test-fixtures.ts";
+import { listLocalRallyMotion, readLocalRallyMotion } from "./local-rally-files.ts";
+import { analysisFixture, matchFixture, metadataFixture, rallyMotionFixture } from "./test-fixtures.ts";
 
 async function withMatchesDirectory(run: (directory: string) => Promise<void>) {
   const previous = process.env.MINTONIX_LOCAL_MATCHES_DIR;
@@ -18,10 +19,10 @@ async function withMatchesDirectory(run: (directory: string) => Promise<void>) {
   }
 }
 
-async function writeMatch(directory: string, folder: string, match: unknown, analysis?: unknown) {
+async function writeMatch(directory: string, folder: string, match: unknown, analysis: Record<string, unknown> | null = null) {
   await mkdir(join(directory, folder), { recursive: true });
-  await writeFile(join(directory, folder, "match.json"), typeof match === "string" ? match : JSON.stringify(match));
-  if (analysis !== undefined) await writeFile(join(directory, folder, "analysis.json"), JSON.stringify(analysis));
+  const metadata = typeof match === "string" ? match : JSON.stringify(metadataFixture(match as Record<string, unknown>, analysis));
+  await writeFile(join(directory, folder, "metadata.json"), metadata);
 }
 
 test("match loading validates match files and restricts match IDs", () => withMatchesDirectory(async (directory) => {
@@ -37,7 +38,7 @@ test("match loading validates match files and restricts match IDs", () => withMa
   await writeMatch(directory, "illustrative-match", { ...matchFixture(), matchId: "other" });
   await assert.rejects(readLocalMatch("illustrative-match"), /match ID/);
   await writeMatch(directory, "illustrative-match", { ...matchFixture(), rallies: [] });
-  await assert.rejects(readLocalMatch("illustrative-match"), /Invalid match/);
+  await assert.rejects(readLocalMatch("illustrative-match"), /Invalid (match|metadata)/);
 }));
 
 test("analysis is optional and validated against its match", () => withMatchesDirectory(async (directory) => {
@@ -45,8 +46,25 @@ test("analysis is optional and validated against its match", () => withMatchesDi
   await writeMatch(directory, "illustrative-match", matchFixture(), analysisFixture());
   const match = (await readLocalMatch("illustrative-match"))!;
   assert.equal((await readLocalAnalysis(match))?.rallies.r1.shots.length, 2);
-  await writeMatch(directory, "illustrative-match", matchFixture(), { ...analysisFixture(), matchId: "other" });
+  const broken = analysisFixture();
+  broken.rallies.r1.shots[0].hitter = "c";
+  await writeMatch(directory, "illustrative-match", matchFixture(), broken);
   await assert.rejects(readLocalAnalysis(match), /Invalid analysis/);
+}));
+
+test("rally files are optional, validated, and only read for the match's rallies", () => withMatchesDirectory(async (directory) => {
+  process.env.MINTONIX_LOCAL_MATCHES_DIR = directory;
+  await writeMatch(directory, "illustrative-match", matchFixture(), analysisFixture());
+  const match = (await readLocalMatch("illustrative-match"))!;
+  assert.deepEqual(await listLocalRallyMotion(match), []);
+  assert.equal(await readLocalRallyMotion(match, "r1"), null);
+  await writeFile(join(directory, "illustrative-match", "r1.json"), JSON.stringify(rallyMotionFixture()));
+  await writeFile(join(directory, "illustrative-match", "r9.json"), JSON.stringify(rallyMotionFixture()));
+  assert.deepEqual(await listLocalRallyMotion(match), ["r1"]);
+  assert.equal((await readLocalRallyMotion(match, "r1"))?.distance.a, 1);
+  for (const id of ["r9", "metadata", "../r1", ""]) assert.equal(await readLocalRallyMotion(match, id), null);
+  await writeFile(join(directory, "illustrative-match", "r1.json"), JSON.stringify({ ...rallyMotionFixture(), fps: 25 }));
+  await assert.rejects(readLocalRallyMotion(match, "r1"), /Invalid rally motion/);
 }));
 
 test("the library lists all valid matches and excludes invalid entries", () => withMatchesDirectory(async (directory) => {
@@ -58,7 +76,8 @@ test("the library lists all valid matches and excludes invalid entries", () => w
     await writeMatch(directory, id, { ...matchFixture(), matchId: id === "wrong-id" ? "other" : id, title: `Match ${id}` });
   }
   await writeMatch(directory, "invalid", "{}");
-  await writeMatch(directory, "v2-manifest", { ...matchFixture(), matchId: "v2-manifest", version: 2 });
+  await mkdir(join(directory, "old-layout"));
+  await writeFile(join(directory, "old-layout", "match.json"), JSON.stringify({ ...matchFixture(), matchId: "old-layout", version: 3 }));
   await mkdir(join(directory, "unfinished"));
   await writeFile(join(directory, "notes.txt"), "Not a match");
   const matches = await listLocalMatches();
@@ -75,6 +94,8 @@ test("without a configured directory, the published matches in content/matches l
   for (const match of matches) {
     assert.equal((await readLocalMatch(match.matchId))?.matchId, match.matchId);
     if (await hasLocalAnalysis(match)) assert.equal((await readLocalAnalysis(match))?.matchId, match.matchId);
+    // Every published rally file parses against its match.
+    for (const rallyId of await listLocalRallyMotion(match)) assert.equal((await readLocalRallyMotion(match, rallyId))?.rallyId, rallyId);
   }
   assert.equal(await hasLocalAnalysis(matches.find((match) => match.matchId === "denmark-open-2025-ms-sf")!), true);
 }));

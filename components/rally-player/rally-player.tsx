@@ -21,6 +21,9 @@ const ShotStage = dynamic(() => import("./analysis/shot-stage"), {
   loading: () => <div className={styles.stageLoading} role="status">Loading 3D replay…</div>,
 });
 
+// The live court's three.js is only fetched for matches with player skeletons, in the watch view.
+const LiveCourt = dynamic(() => import("./live-court/live-court"), { ssr: false });
+
 type IconName = "play" | "pause" | "volume" | "muted" | "previous" | "next" | "expand" | "collapse" | "list" | "close";
 const iconPaths: Record<IconName, string> = {
   play: "m8 5 11 7-11 7V5Z",
@@ -81,7 +84,10 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
   const [scoreFirst, scoreSecond] = match.players.map((player) => player.id);
   const view = useView(hasAnalysis);
   const analyzing = view === "analyze" && !isFullscreen;
-  const { analysis, error: analysisError } = useAnalysis(match.matchId, view === "analyze");
+  // The live court: watch view, matches with skeletons, not in fullscreen (the panel floats over the video there).
+  const liveCourt = view === "watch" && !isFullscreen && match.poses !== undefined;
+  // Its hit tags need the shot data, fetched after the page has loaded.
+  const { analysis, error: analysisError } = useAnalysis(match.matchId, view === "analyze" || (liveCourt && hasAnalysis));
   // The shot open in the 3D replay comes from the URL; it shows only once the analysis has it.
   const openRef = useOpenShot();
   const open = analyzing ? resolveShot(analysis, openRef) : null;
@@ -460,6 +466,7 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
               expanded={expanded} liveShot={activeShot} openShot={open?.ref ?? null} onToggleRally={toggleRally} onOpenShot={openShot}
               onMatchSummary={showMatchSummary} matchSummaryActive={deck === "match" && !open} />
           ) : <>
+          {liveCourt && <LiveCourt match={match} rallyIndex={selectedIndex >= 0 ? selectedIndex : previousTarget} time={sourceTime} playing={isPlaying} shots={shots} />}
           <div className={styles.panelHeader}>
             <div className={styles.panelTitle}>
               <h2 id={`${panelId}-heading`}>Rallies <span className={styles.rallyCount}>{rallies.length}</span></h2>

@@ -36,8 +36,8 @@ Published matches are committed under `content/matches/<matchId>/` and deployed
 with the app. To read a different set while developing, set
 `MINTONIX_LOCAL_MATCHES_DIR` to an absolute directory in `.env.local`; it
 replaces the published set.
-The server reads `<directory>/<matchId>/match.json` and, when present,
-`analysis.json` (see `contracts/README.md`). No video
+The server reads `<directory>/<matchId>/metadata.json`, and the live court
+fetches `<rallyId>.json` per rally when present (see `contracts/README.md`). No video
 is read or served: `/watch/<matchId>` embeds the match's YouTube source with
 the YouTube IFrame Player API and drives it for rally selection, scrubbing,
 fullscreen, and gap skipping. YouTube's embed policy does not allow drawing over
@@ -66,8 +66,8 @@ year, the BWF event code (`ms`, `ws`, `md`, `wd`, `xd`) and the round (`r32`,
 `sf2` in BFMD's listing order), e.g. `malaysia-open-2025-ms-f`. Library order is
 alphabetical by id, and the first match is the homepage demo.
 
-To publish a match, commit its `match.json` (and `analysis.json`) under
-`content/matches/<matchId>/`. The tests validate every published match.
+To publish a match, export it with the Engine's `util/export_match.py` and commit
+its `metadata.json` (and rally files) under `content/matches/<matchId>/`. The tests validate every published match.
 
 The published sample, `/watch/denmark-open-2025-ms-sf`, plays the BWF TV upload of the VICTOR Denmark Open 2025 semifinal, Shi Yu Qi vs Viktor Axelsen (YouTube `9WVwZSzixh0`), with reviewed rallies and shot data.
 `/watch/malaysia-open-2025-ms-f` plays the PETRONAS Malaysia Open 2025 final, Shi Yu Qi vs Anders Antonsen (YouTube `eKPtHLGFxLE`), with engine-detected rallies (`review: automatic`) whose hits come from the BFMD dataset.

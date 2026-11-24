@@ -1,0 +1,43 @@
+.court { flex: none; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px 12px; border-bottom: 1px solid var(--border); }
+
+.stage { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: var(--radius-md); background: var(--bg-sunken); }
+.stage[hidden] { display: none; }
+.canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.canvas:active { cursor: grabbing; }
+.canvas:focus-visible { outline: none; box-shadow: var(--ring-live); }
+
+/* A hit's tag sits just above the hitter's head and fades out on its own. */
+.tag {
+  position: absolute; z-index: 1; transform: translate(-50%, calc(-100% - 8px)); pointer-events: none; white-space: nowrap;
+  padding: 2px 6px; border-radius: var(--radius-xs); background: var(--text-secondary); color: var(--bg-base);
+  font: 600 10px/1.4 var(--font-mono); letter-spacing: .02em; animation: tag 1.2s ease-out forwards;
+}
+.tag[data-tone="a"] { background: var(--player-a); }
+.tag[data-tone="b"] { background: var(--player-b); }
+@keyframes tag {
+  0% { opacity: 0; transform: translate(-50%, calc(-100% - 4px)); }
+  12%, 70% { opacity: 1; transform: translate(-50%, calc(-100% - 8px)); }
+  100% { opacity: 0; transform: translate(-50%, calc(-100% - 8px)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tag { animation: none; }
+}
+
+.reset {
+  position: absolute; right: 6px; bottom: 6px; z-index: 1; padding: 3px 8px; border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill); background: var(--frost-bg-scrolled); color: var(--text-secondary); font-size: var(--text-xs);
+}
+.reset:hover { color: var(--text-strong); }
+.reset:focus-visible { outline: none; box-shadow: var(--ring-live); }
+
+.status { position: absolute; left: 8px; bottom: 6px; color: var(--text-muted); font-size: var(--text-xs); }
+
+.distances { display: flex; justify-content: space-between; gap: 8px; margin: 0; font: 500 var(--text-xs)/1.4 var(--font-mono); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.distances > span { display: inline-flex; align-items: center; gap: 6px; }
+.distances > span:last-child { flex-direction: row-reverse; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--player-a); }
+[data-tone="b"] > .dot { background: var(--player-b); }
+
+.caption { margin: 0; color: var(--text-muted); font-size: 11px; line-height: 1.4; }
+
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

@@ -19,3 +19,6 @@ npm-debug.log*
 *.pt
 *.onnx
 .vercel
+
+# Brainstorm mockups
+.superpowers/

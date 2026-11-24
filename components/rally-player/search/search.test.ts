@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseAnalysis, parseMatch } from "../contract.ts";
-import { matchFixture, typedAnalysisFixture } from "../test-fixtures.ts";
+import { matchFixture, typedAnalysisFixture, metadataFixture } from "../test-fixtures.ts";
 import { emptyIntent, parseLocally } from "./intent.ts";
 import { buildSearchIndex, rankSearch } from "./rank.ts";
 import { handleSearchRequest, interpretQuery } from "./service.ts";
@@ -222,8 +222,7 @@ async function withFixtureMatch(run: () => Promise<void>) {
   const previous = { dir: process.env.MINTONIX_LOCAL_MATCHES_DIR, key: process.env.OPENROUTER_API_KEY };
   const directory = await mkdtemp(join(tmpdir(), "mintonix-search-"));
   await mkdir(join(directory, MATCH));
-  await writeFile(join(directory, MATCH, "match.json"), JSON.stringify(matchFixture()));
-  await writeFile(join(directory, MATCH, "analysis.json"), JSON.stringify(typedAnalysisFixture()));
+  await writeFile(join(directory, MATCH, "metadata.json"), JSON.stringify(metadataFixture(matchFixture(), typedAnalysisFixture())));
   process.env.MINTONIX_LOCAL_MATCHES_DIR = directory;
   delete process.env.OPENROUTER_API_KEY;
   try { await run(); } finally {

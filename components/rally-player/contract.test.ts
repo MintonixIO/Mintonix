@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
-import { parseAnalysis, parseMatch } from "./contract.ts";
+import { parseAnalysis, parseMatch, parseMetadata, parseRallyMotion } from "./contract.ts";
 import { contractFiles } from "./contract-files.ts";
-import { analysisFixture, matchFixture, typedAnalysisFixture } from "./test-fixtures.ts";
+import { analysisFixture, matchFixture, metadataFixture, rallyMotionFixture, typedAnalysisFixture } from "./test-fixtures.ts";
 
 test("a valid match parses, with optional scores, servers and winners", () => {
   const match = parseMatch(matchFixture());
@@ -16,7 +16,6 @@ test("a valid match parses, with optional scores, servers and winners", () => {
 
 test("invalid matches are rejected", () => {
   const mutations: ((input: Record<string, any>) => void)[] = [
-    (m) => { m.version = 2; },
     (m) => { m.unexpected = true; },
     (m) => { m.rallies[0].unexpected = true; },
     (m) => { m.players = [m.players[0]]; },
@@ -40,6 +39,9 @@ test("invalid matches are rejected", () => {
     (m) => { m.source.videoId = "https://youtu.be/AAAAAAAAAAA"; },
     (m) => { m.source.durationSeconds = Number.NaN; },
     (m) => { m.source.url = "x"; },
+    (m) => { m.source.fps = 0; },
+    (m) => { m.rallies[2].id = "metadata"; },                       // would collide with metadata.json
+    (m) => { m.poses = { model: "MotionBERT", players: { c: { heightMetres: 1.6, heightSource: "default" } } }; },
   ];
   for (const mutate of mutations) {
     const input = matchFixture();
@@ -87,6 +89,59 @@ test("shot types are optional, racket-only and need their model named", () => {
     const input = typedAnalysisFixture();
     mutate(input);
     assert.throws(() => parseAnalysis(input, match), /Invalid analysis/, String(mutate));
+  }
+});
+
+test("metadata splits into the match and its shot data", () => {
+  const typed = typedAnalysisFixture();
+  const { match, analysis } = parseMetadata(metadataFixture(matchFixture(), typed));
+  assert.deepEqual(match, parseMatch(matchFixture()));
+  assert.deepEqual(analysis, parseAnalysis(typed, match));
+  const bare = parseMetadata(metadataFixture(matchFixture(), null));
+  assert.equal(bare.analysis, null);
+  assert.equal(bare.match.rallies.length, 3);
+});
+
+test("invalid metadata is rejected", () => {
+  const mutations: ((input: Record<string, any>) => void)[] = [
+    (m) => { m.version = 2; },
+    (m) => { delete m.rallies[0].summary; },                         // shots without their summary
+    (m) => { delete m.analysis; },                                   // rally shots without the match analysis
+    (m) => { m.rallies[0].shots[0].hitter = "c"; },                  // the analysis rules still apply
+    (m) => { m.rallies[1].segments[0] = [47, 89]; },                 // and the match rules
+    (m) => { m.analysis.rallies = {}; },
+  ];
+  for (const mutate of mutations) {
+    const input = metadataFixture();
+    mutate(input);
+    assert.throws(() => parseMetadata(input), /Invalid (metadata|match|analysis)/, String(mutate));
+  }
+});
+
+test("rally files must match their rally, players and frame rate", () => {
+  const match = parseMatch(matchFixture());
+  assert.equal(parseRallyMotion(rallyMotionFixture(), match).poses.b.length, 2);
+  const mutations: ((input: Record<string, any>) => void)[] = [
+    (r) => { r.version = 2; },
+    (r) => { r.matchId = "other"; },
+    (r) => { r.rallyId = "r9"; },
+    (r) => { r.fps = 25; },
+    (r) => { r.poses.c = r.poses.a; },
+    (r) => { r.distance.c = 1; },
+    (r) => { r.distance.a = -1; },
+    (r) => { r.poses.a[0].root.pop(); },                             // sizes must match the frame count
+    (r) => { r.poses.a[0].joints.push(0); },
+    (r) => { r.poses.a[0].root[0] = 1.5; },                          // integer centimetres
+    (r) => { r.poses.a[0].frames = 1; },
+    (r) => { r.poses.b.reverse(); },                                 // chronological
+    (r) => { r.poses.b[1].startFrame = 1032; },                      // overlaps the previous run
+    (r) => { r.poses.b[1].startFrame = 1200; },                      // starts in the camera cut (40–42 s)
+    (r) => { r.poses.a[0].startFrame = 900; },                       // before the rally
+  ];
+  for (const mutate of mutations) {
+    const input = rallyMotionFixture();
+    mutate(input);
+    assert.throws(() => parseRallyMotion(input, match), /Invalid rally motion/, String(mutate));
   }
 });
 

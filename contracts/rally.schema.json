@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "number",
+      "const": 1
+    },
+    "matchId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "rallyId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "fps": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "poses": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+      },
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/PoseRun"
+        }
+      },
+      "description": "Each player's skeleton runs: watchable, tracked frames only; a new run starts after a gap and nothing joins runs. Engine estimate, not checked by hand"
+    },
+    "distance": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+      },
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0
+      },
+      "description": "Metres each player covered horizontally along their runs (ankle midpoint smoothed over 0.3 s); gaps are not counted"
+    }
+  },
+  "required": [
+    "version",
+    "matchId",
+    "rallyId",
+    "fps",
+    "poses",
+    "distance"
+  ],
+  "additionalProperties": false,
+  "title": "Mintonix rally motion v1",
+  "$defs": {
+    "PoseRun": {
+      "type": "object",
+      "properties": {
+        "startFrame": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Source-video frame of the run's first sample; frame f is at f / fps seconds"
+        },
+        "frames": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 9007199254740991,
+          "description": "Consecutive frames in the run"
+        },
+        "root": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "description": "Hip position in court centimetres (x, y, z per frame, flat), as frame-to-frame differences; the first frame as is"
+        },
+        "joints": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "description": "The other 16 H36M joints relative to the hip (16 × x, y, z per frame, flat), as frame-to-frame differences"
+        }
+      },
+      "required": [
+        "startFrame",
+        "frames",
+        "root",
+        "joints"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
