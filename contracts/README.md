@@ -1,20 +1,21 @@
 # Match data contracts
 
-A match is a folder `<matchId>/` with two files:
+A match is a folder `<matchId>/`:
 
 | file | schema | required |
 |---|---|---|
-| `match.json` | [`match.schema.json`](match.schema.json) (v3) | yes |
-| `analysis.json` | [`match-analysis.schema.json`](match-analysis.schema.json) (v1) | no |
+| `metadata.json` | [`metadata.schema.json`](metadata.schema.json) (v1) | yes |
+| `<rallyId>.json` | [`rally.schema.json`](rally.schema.json) (v1) | no, one per rally |
 
 Both schemas are **generated** from `components/rally-player/contract.ts`
 (zod). Edit that file, then run `pnpm contracts`. A
 test fails when the files here are out of date. The Mintonix Engine writes
-both files with `util/export_match.py`.
+both with `util/export_match.py`.
 
-## match.json
+## metadata.json: the match
 
-`source` names the published video that every timestamp refers to.
+`source` names the published video that every timestamp refers to, and the
+`fps` of the video the Engine processed (rally files have one skeleton per frame).
 Mintonix embeds that video and never re-hosts broadcast media. The only
 provider is `youtube`: `videoId` is the 11-character YouTube ID, and
 `durationSeconds` is the full length of that upload. Timestamps from trimmed
@@ -39,35 +40,66 @@ Each rally is one point of play:
   player id. Missing scores never mean missing rallies.
 - `server`, `winner` (optional): player ids, when known.
 
-Checked beyond the schema (`parseMatch`): player ids differ; rally ids are
+Checked beyond the schema (`parseMetadata`, through `parseMatch`): player ids differ; rally ids are
 unique; all segments across the match are chronological, non-overlapping,
 non-empty and end within `durationSeconds`; game numbers never move backward;
-`scoreBefore` has exactly one score per player; `server`/`winner` name a player.
+`scoreBefore` has exactly one score per player; `server`/`winner` name a player;
+no rally is called `metadata`.
 
-## analysis.json
+## metadata.json: shot data
 
 Shot data from the engine's 3D shuttle reconstruction. Always automatic.
+Present when the match has an `analysis` object.
 
-- `rallies`: `{ <rallyId>: { shots: [...] } }`. A shot runs from one contact
+- Each rally with shots carries `shots` and `summary` (records). A shot runs from one contact
   to the next: hitter (player id, or null for a net-cord continuation),
   start and end seconds, contact types, launch and arrival speed (m/s),
   contact and end points, apex, net clearance, launch and descent angles,
   `hitterEnd`, `placement` (end point seen with the hitter at the camera end),
   `quality` (`ok`, `guessed`, `unreliable`) with `issues`, and `path`
   (`[seconds, x, y, z]`, empty when the 3D fit failed).
-- `players`: per-player summaries over `ok` shots, each distribution with its
-  sample size `n`.
-- `quality`: shot counts by quality.
+- `analysis.players`: per-player summaries over `ok` shots, each distribution
+  with its sample size `n`; `analysis.quality`: shot counts by quality;
+  `analysis.games`; with stroke types, `analysis.shotTypes` and `analysis.patterns`.
+- `poses` (optional): the model behind the rally files' skeletons and each
+  player's height (`supplied` or the Engine's `default` prior).
 
 Court coordinates are metres: x across the court (0–6.10), y from the far
 baseline (0) to the baseline nearest the broadcast camera (13.40), net at
 y = 6.70 with its top at 1.524 m, z up.
 
-Checked beyond the schema (`parseAnalysis`): same `matchId` as the match;
-rally and player ids exist in the match; shots are chronological and inside
-their rally's span.
+Checked beyond the schema (`parseAnalysis`): rally and player ids exist in the
+match; shots are chronological and inside their rally's span; a rally's
+`shots` and `summary` come together, and only with `analysis`.
 
-## Changes from v2
+## <rallyId>.json: player motion
+
+Both players' skeletons for every watchable frame of one rally, from the
+Engine's 3D pose lifting of the broadcast. Always automatic, never checked by hand.
+
+- `poses`: `{ <playerId>: [run, ...] }`. A run covers consecutive frames from
+  `startFrame` (frame f is at f / `fps` seconds); a gap (close-up, camera cut,
+  lost track) starts a new run, and nothing joins runs. Each frame is the 17
+  H36M joints in court centimetres: `root` is the hip (x, y, z per frame) and
+  `joints` the other 16 relative to the hip, both flat and stored as
+  frame-to-frame differences (the first frame as is); a running sum restores
+  them exactly.
+- `distance`: `{ <playerId>: metres }` covered horizontally along the runs
+  (ankle midpoint smoothed over 0.3 s); gaps are not counted.
+
+Checked beyond the schema (`parseRallyMotion`): same `matchId`, a rally of the
+match, the match's `fps`; player ids exist; runs are chronological,
+non-overlapping and inside the rally's segments, with `frames × 3` root and
+`frames × 48` joint values.
+
+## History
+
+Before metadata v1, a match was `match.json` (v3) plus an optional
+`analysis.json` (v2, with each shot's data keyed by rally); metadata v1 merges
+them, each rally carrying its own shots, and adds `source.fps` and `poses`.
+Older folders without `metadata.json` are ignored.
+
+Match v3 changes from v2:
 
 v2 had one entry per watchable piece (`startSeconds`/`endSeconds`), so a rally
 with a camera cut appeared as several rallies, players were plain strings and

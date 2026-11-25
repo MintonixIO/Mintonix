@@ -57,7 +57,7 @@ serve-and-return patterns are planned and labelled as planned.
 
 ## App data boundary
 
-- Read matches on the server from `content/matches/<matchId>/{match.json, analysis.json}` (or from `MINTONIX_LOCAL_MATCHES_DIR` when set); do not send filesystem paths or server credentials to the client.
+- Read matches on the server from `content/matches/<matchId>/metadata.json` (rally files `<rallyId>.json` are prerendered by their route at build) (or from `MINTONIX_LOCAL_MATCHES_DIR` when set); do not send filesystem paths or server credentials to the client.
 - Accept only files that satisfy the contracts and the cross-field rules documented in `contracts/README.md`.
 - Keep match IDs and rally IDs stable so navigation remains consistent when boundaries are corrected.
 - Keep media, unpublished match files, model weights, and credentials outside Git. Published matches are committed under `content/matches`.

@@ -19,8 +19,8 @@ and an optional `instant` flag. Search-as-you-type sends `instant: true`, which 
 local keyword parser, so half-typed queries never spend a provider request; submitting the
 field (the keyboard's search key, or an example) sends the full query to the provider. The provider translates a
 query into a validated intent schema. It sees only the query, schema and player
-names/IDs, not the match catalog. The server scores real records from `match.json`
-and optional `analysis.json`, then returns at most eight compact previews.
+names/IDs, not the match catalog. The server scores real records from `metadata.json`
+(the match and its optional shot data), then returns at most eight compact previews.
 
 The default is `google/gemini-2.5-flash-lite`, overridable with
 `OPENROUTER_SEARCH_MODEL`. It is an LLM used as a small intent classifier, not a

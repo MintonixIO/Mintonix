@@ -1,6 +1,6 @@
 import {
   AmbientLight, BufferGeometry, Color, CylinderGeometry, DirectionalLight, DoubleSide, Float32BufferAttribute,
-  Line, LineBasicMaterial, LineSegments, Mesh, MeshBasicMaterial, MeshStandardMaterial, PerspectiveCamera,
+  Group, Line, LineBasicMaterial, LineSegments, Mesh, MeshBasicMaterial, MeshStandardMaterial, PerspectiveCamera,
   PlaneGeometry, Scene, SphereGeometry, Vector3, WebGLRenderer, type Material,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -56,6 +56,38 @@ function netCrossing(shot: Shot): Vec3 | null {
   return null;
 }
 
+/** Court surface, lines, net and posts, in scene coordinates (shared with the live court). */
+export function createCourt(colours: Pick<SceneColours, "court" | "lines" | "net">): { object: Group; dispose(): void } {
+  const disposables: { dispose(): void }[] = [];
+  const keep = <T extends { dispose(): void }>(item: T) => { disposables.push(item); return item; };
+  const group = new Group();
+  const surface = new Mesh(keep(new PlaneGeometry(COURT.width, COURT.length)), keep(new MeshStandardMaterial({ color: colours.court })));
+  surface.rotation.x = -Math.PI / 2;
+  group.add(surface);
+  const linesGeometry = keep(new BufferGeometry().setFromPoints(courtLines().map((p) => new Vector3(...p))));
+  group.add(new LineSegments(linesGeometry, keep(new LineBasicMaterial({ color: colours.lines }))));
+
+  // Net: translucent mesh between its bottom and top edges, with two posts.
+  const netHeight = COURT.netTop - COURT.netBottom;
+  const net = new Mesh(keep(new PlaneGeometry(COURT.width, netHeight)),
+    keep(new MeshBasicMaterial({ color: colours.net, transparent: true, opacity: 0.35, side: DoubleSide })));
+  net.position.set(0, COURT.netBottom + netHeight / 2, 0);
+  group.add(net);
+  const netTape = new LineSegments(
+    keep(new BufferGeometry().setFromPoints([new Vector3(-COURT.width / 2, COURT.netTop, 0), new Vector3(COURT.width / 2, COURT.netTop, 0)])),
+    keep(new LineBasicMaterial({ color: colours.lines })),
+  );
+  group.add(netTape);
+  const postGeometry = keep(new CylinderGeometry(0.02, 0.02, COURT.postTop, 12));
+  const postMaterial = keep(new MeshStandardMaterial({ color: colours.lines }));
+  for (const x of [-COURT.width / 2, COURT.width / 2]) {
+    const post = new Mesh(postGeometry, postMaterial);
+    post.position.set(x, COURT.postTop / 2, 0);
+    group.add(post);
+  }
+  return { object: group, dispose: () => { for (const item of disposables) item.dispose(); } };
+}
+
 export function createShotScene(canvas: HTMLCanvasElement, colours: SceneColours): ShotScene {
   if (!(canvas.getContext("webgl2") ?? canvas.getContext("webgl"))) throw new WebGLUnavailableError();
   let renderer: WebGLRenderer;
@@ -77,31 +109,8 @@ export function createShotScene(canvas: HTMLCanvasElement, colours: SceneColours
   sun.position.set(4, 12, 6);
   scene.add(sun);
 
-  // Court
-  const surface = new Mesh(keep(new PlaneGeometry(COURT.width, COURT.length)), material(new MeshStandardMaterial({ color: colours.court })));
-  surface.rotation.x = -Math.PI / 2;
-  scene.add(surface);
-  const linesGeometry = keep(new BufferGeometry().setFromPoints(courtLines().map((p) => new Vector3(...p))));
-  scene.add(new LineSegments(linesGeometry, material(new LineBasicMaterial({ color: colours.lines }))));
-
-  // Net: translucent mesh between its bottom and top edges, with two posts.
-  const netHeight = COURT.netTop - COURT.netBottom;
-  const net = new Mesh(keep(new PlaneGeometry(COURT.width, netHeight)),
-    material(new MeshBasicMaterial({ color: colours.net, transparent: true, opacity: 0.35, side: DoubleSide })));
-  net.position.set(0, COURT.netBottom + netHeight / 2, 0);
-  scene.add(net);
-  const netTape = new LineSegments(
-    keep(new BufferGeometry().setFromPoints([new Vector3(-COURT.width / 2, COURT.netTop, 0), new Vector3(COURT.width / 2, COURT.netTop, 0)])),
-    material(new LineBasicMaterial({ color: colours.lines })),
-  );
-  scene.add(netTape);
-  const postGeometry = keep(new CylinderGeometry(0.02, 0.02, COURT.postTop, 12));
-  const postMaterial = material(new MeshStandardMaterial({ color: colours.lines }));
-  for (const x of [-COURT.width / 2, COURT.width / 2]) {
-    const post = new Mesh(postGeometry, postMaterial);
-    post.position.set(x, COURT.postTop / 2, 0);
-    scene.add(post);
-  }
+  const court = keep(createCourt(colours));
+  scene.add(court.object);
 
   // Flight: trail line, live shuttle and markers. Rebuilt per shot.
   const markerGeometry = keep(new SphereGeometry(0.06, 16, 12));

@@ -2,44 +2,33 @@
 /* Above the video: the view switch, then search. Suggestions open in flow and push the video down. */
 .toolbar { display: flex; align-items: flex-start; gap: 10px; padding: 10px; border-bottom: 1px solid var(--border); background: var(--bg-base); }
 .toolbar > :last-child { flex: 1; }
-.workspace { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 320px; overflow: hidden; }
-.stage { position: relative; width: 100%; aspect-ratio: 16 / 9; max-height: calc(100svh - 180px); min-height: 200px; overflow: hidden; background: #000; }
+/* The stage: video, and beside it the court (or analyze rail), then the control bar across both.
+   An open rally list takes the side column too, so nothing ever covers the video. */
+.workspace { --chrome: 268px; position: relative; display: grid; grid-template-columns: minmax(0, 1fr); overflow: hidden; }
+.workspace[data-layout="split"] { grid-template-columns: minmax(0, 62fr) minmax(0, 38fr); }
+.workspace[data-layout="rail"] { grid-template-columns: minmax(0, 1fr) 48px; }
+.stageColumn { grid-area: 1 / 1; }
+.side, .drawer { grid-area: 1 / 2; contain: size; min-width: 0; overflow: hidden; border-left: 1px solid var(--border); background: var(--bg-base); }
+.drawer { z-index: 2; display: flex; flex-direction: column; }
+/* Collapsed beside the video: a slim rail to bring back the court or the rally list. */
+.rail { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0; }
+.drawer[hidden] { display: none; }
+.controls { grid-column: 1 / -1; grid-row: 2; min-width: 0; }
+.stage { position: relative; width: 100%; aspect-ratio: 16 / 9; max-height: calc(100svh - var(--chrome)); min-height: 200px; overflow: hidden; background: #000; }
 .embed { position: absolute; inset: 0; }
 .embed iframe { display: block; width: 100%; height: 100%; border: 0; }
 .mediaError { position: absolute; z-index: 3; left: 16px; right: 16px; top: 16px; margin: 0; padding: 12px 16px; border: 1px solid var(--danger-500); border-radius: var(--radius-md); background: var(--surface-1); color: var(--danger-400); font-size: var(--text-sm); }
-
-/* A small, persistent dock leaves the video and its native transport in charge. */
-.rallyDock { position: absolute; z-index: 2; right: 16px; bottom: 64px; display: flex; align-items: center; gap: 2px; max-width: calc(100% - 16px); padding: 4px; border: 1px solid var(--frost-border-strong); border-radius: var(--radius-lg); background: var(--frost-bg-scrolled); backdrop-filter: blur(var(--frost-blur)); box-shadow: var(--shadow-md); }
 .iconButton { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; padding: 0; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--text-primary); transition: background var(--dur-fast), color var(--dur-fast); }
 .iconButton:not(:disabled):hover { background: var(--surface-3); color: var(--white); }
-.iconButton:disabled { color: var(--text-faint); cursor: not-allowed; }
-.iconButton:focus-visible, .ralliesButton:focus-visible { outline-offset: -2px; }
-.ralliesButton { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 40px; padding: 0 10px; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--text-primary); font-size: var(--text-sm); white-space: nowrap; transition: background var(--dur-fast); }
-.ralliesButton:hover, .ralliesButton[aria-expanded="true"] { background: var(--surface-3); }
-.viewer:not([data-fullscreen]) .rallyDock { display: none; }
-.rallyPosition { color: var(--text-strong); font: var(--text-xs) var(--font-mono); font-variant-numeric: tabular-nums; }
-.rallyPosition > span { color: var(--text-secondary); }
-.dockDivider { height: 20px; width: 1px; margin-inline: 3px; background: var(--border-strong); }
+.iconButton:focus-visible { outline-offset: -2px; }
 
-.deckArea { grid-column: 1 / -1; min-width: 0; }
+.deckArea { grid-column: 1 / -1; grid-row: 3; min-width: 0; }
 
-/* A full sidebar in the page becomes an on-demand overlay in fullscreen. */
-.rallyPanel { grid-area: 1 / 2; contain: size; min-width: 0; display: flex; flex-direction: column; overflow: hidden; border-left: 1px solid var(--border); background: var(--bg-base); }
-.rallyPanel[hidden] { display: none; }
 .panelHeader { flex-shrink: 0; padding: 12px 16px 0; border-bottom: 1px solid var(--border); }
 .panelTitle { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .panelTitle h2 { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--text-strong); font-family: var(--font-display); font-size: var(--text-md); font-weight: var(--fw-medium); letter-spacing: var(--tracking-tight); }
 .panelTitle .iconButton { width: 32px; height: 32px; margin-right: -4px; }
-.panelActions { display: flex; align-items: center; gap: 4px; }
-.panelActions .iconButton { margin-right: 0; }
 .rallyCount { padding: 2px 7px; border-radius: var(--radius-pill); background: var(--surface-3); color: var(--text-secondary); font: var(--text-2xs) var(--font-mono); }
-.gapToggle { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 44px; margin-top: 6px; color: var(--text-secondary); font-size: var(--text-xs); cursor: pointer; }
-.gapToggle input { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-.switch { position: relative; flex-shrink: 0; width: 30px; height: 18px; border-radius: var(--radius-pill); background: var(--surface-3); transition: background var(--dur-base); }
-.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--text-secondary); transition: transform var(--dur-base) var(--ease-out), background var(--dur-base); }
-.gapToggle input:checked + .switch { background: var(--brand); }
-.gapToggle input:checked + .switch::after { transform: translateX(12px); background: var(--white); }
-.gapToggle input:focus-visible + .switch { outline: 2px solid var(--brand); outline-offset: 3px; }
 .columnLabels { display: grid; grid-template-columns: minmax(0, 1fr) 44px 36px; align-items: center; gap: 8px; margin-top: 10px; padding-bottom: 10px; color: var(--text-secondary); font-size: var(--text-2xs); }
 .columnLabels > span:nth-child(n+2) { text-align: right; }
 .listScroll { position: relative; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 6px 10px; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
@@ -68,38 +57,52 @@
 .viewer[data-playing] .rallyRow[data-selected] { border-color: var(--live-ring); background: var(--live-soft); }
 .gapRow { display: flex; align-items: center; gap: 10px; padding: 5px 9px; color: var(--text-muted); font-size: var(--text-2xs); line-height: 1.4; }
 .gapRow::before, .gapRow::after { content: ""; flex: 1; border-top: 1px dashed var(--border-strong); }
-.previewNotice { margin: 0; padding: 10px 14px; color: var(--text-muted); font-size: var(--text-2xs); line-height: var(--leading-normal); }
+/* One line of caveats under everything; the full wording opens in place. */
+.caveats { padding: 8px 14px 10px; border-top: 1px solid var(--border); background: var(--bg-base); color: var(--text-muted); font-size: var(--text-2xs); line-height: var(--leading-normal); }
+.caveats summary { display: flex; justify-content: space-between; gap: 12px; cursor: pointer; list-style: none; }
+.caveats summary::-webkit-details-marker { display: none; }
+.caveatsMore { flex-shrink: 0; color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px; }
+.caveats summary:hover .caveatsMore { color: var(--text-strong); }
+.caveats > p { margin: 6px 0 0; }
 
+/* Phones: video, controls, then what was picked (analyze), the court or rail, and the list. */
 @media (max-width: 800px) {
-  .workspace { grid-template-columns: 1fr; }
-  .rallyPanel { grid-area: auto; order: 2; contain: none; max-height: 460px; border-left: 0; border-top: 1px solid var(--border); }
-  .deckArea { order: 3; }
-  .deckArea[data-picked] { order: 1; }
+  .workspace, .workspace[data-layout] { grid-template-columns: minmax(0, 1fr); }
+  .stageColumn, .side, .drawer, .controls, .deckArea { grid-area: auto; }
+  .stageColumn { order: 0; }
+  .controls { order: 1; }
+  .deckArea[data-picked] { order: 2; }
+  .drawer { order: 3; contain: none; max-height: 460px; border-left: 0; border-top: 1px solid var(--border); }
+  .side { order: 4; contain: none; border-left: 0; border-top: 1px solid var(--border); }
+  aside.side { max-height: 460px; }
+  .rail { flex-direction: row; justify-content: flex-end; padding: 2px 8px; }
+  .deckArea { order: 5; }
 }
 @media (max-width: 640px) {
   .toolbar { flex-direction: column; align-items: stretch; gap: 8px; padding: 8px; }
   .stage { max-height: none; }
-  .rallyDock { right: 8px; bottom: 60px; }
-  .ralliesButton { gap: 6px; padding-inline: 6px; font-size: var(--text-xs); }
-  .ralliesButton > svg { display: none; }
-  .dockDivider { margin-inline: 1px; }
-  .previewNotice { padding-inline: 10px; }
+  .caveats { padding-inline: 10px; }
 }
-.viewer[data-fullscreen] { display: flex; width: 100%; height: 100%; border: 0; border-radius: 0; background: #000; }
-.viewer[data-fullscreen] .workspace { flex: 1; display: block; width: 100%; height: 100%; }
-.viewer[data-fullscreen] .stage { flex: 1; width: 100%; height: 100%; max-height: none; min-height: 0; aspect-ratio: auto; }
-.viewer[data-fullscreen] .previewNotice { display: none; }
+
+/* Fullscreen: the same split filling the screen, the video as wide as the height allows (at most 70%). */
+.viewer[data-fullscreen] { display: flex; flex-direction: column; width: 100%; height: 100%; border: 0; border-radius: 0; background: #000; }
+.viewer[data-fullscreen] .workspace { flex: 1; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; }
+.viewer[data-fullscreen] .workspace[data-layout="split"] { grid-template-columns: minmax(0, min(70%, calc((100dvh - 57px) * 16 / 9))) minmax(0, 1fr); }
+.viewer[data-fullscreen] .stageColumn { height: 100%; justify-content: center; background: #000; }
+.viewer[data-fullscreen] .stage { max-height: 100%; min-height: 0; }
+.viewer[data-fullscreen] .caveats { padding: 4px 14px 6px; }
+.viewer[data-fullscreen] .caveats[open] > p { display: none; }
 .viewer[data-fullscreen] .toolbar { display: none; }
 /* No Fullscreen API for elements (iPhone): fill the window, and lie sideways on an upright phone. */
 .viewer[data-immersive] { position: fixed; inset: 0; z-index: 1000; }
 @media (orientation: portrait) and (max-width: 640px) {
   .viewer[data-immersive] { inset: 0 auto auto 0; width: 100dvh; height: 100dvw; transform-origin: top left; transform: translateX(100dvw) rotate(90deg); }
 }
-.viewer[data-fullscreen] .rallyPanel { contain: none; position: absolute; inset: auto 16px 124px auto; z-index: 4; width: 320px; max-width: calc(100% - 32px); max-height: min(520px, calc(100% - 144px)); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--frost-bg-scrolled); backdrop-filter: blur(var(--frost-blur)); box-shadow: var(--shadow-xl); }
-@media (max-height: 440px) and (min-width: 641px) {
-  .viewer[data-fullscreen] .rallyPanel { bottom: 72px; max-height: calc(100% - 84px); }
-  .rallyDock { bottom: 12px; }
-}
+/* Fullscreen keeps the side-by-side layout even on a small (sideways) screen. */
+.viewer[data-fullscreen] .workspace[data-layout="rail"] { grid-template-columns: minmax(0, 1fr) 48px; }
+.viewer[data-fullscreen] .stageColumn { grid-area: 1 / 1; }
+.viewer[data-fullscreen] .side, .viewer[data-fullscreen] .drawer { grid-area: 1 / 2; contain: size; max-height: none; border-top: 0; border-left: 1px solid var(--border); }
+.viewer[data-fullscreen] .controls { grid-area: 2 / 1 / 3 / -1; }
 @media (prefers-reduced-motion: reduce) { .equalizer i { animation: none; } }
 
 /* Analyze view: an open shot's 3D replay takes the embed's place. The YouTube player stays
@@ -107,4 +110,3 @@
 .stageColumn { position: relative; min-width: 0; display: flex; flex-direction: column; }
 .stageColumn[data-replay] > .stage { position: absolute; inset: 0; z-index: 0; visibility: hidden; aspect-ratio: auto; max-height: none; min-height: 0; }
 .stageLoading { display: grid; place-items: center; width: 100%; aspect-ratio: 16 / 9; max-height: calc(100svh - 180px); min-height: 200px; background: var(--bg-sunken); color: var(--text-secondary); font-size: var(--text-sm); }
-.viewer[data-fullscreen] .stageColumn { height: 100%; }

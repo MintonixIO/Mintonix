@@ -1,0 +1,1138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "number",
+      "const": 1
+    },
+    "matchId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "players": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/Player"
+        },
+        {
+          "$ref": "#/$defs/Player"
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "const": "youtube"
+        },
+        "videoId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{11}$"
+        },
+        "durationSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "fps": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Frame rate of the video the Engine processed; rally files have one skeleton per frame"
+        }
+      },
+      "required": [
+        "provider",
+        "videoId",
+        "durationSeconds",
+        "fps"
+      ],
+      "additionalProperties": false,
+      "description": "The published video every timestamp refers to. Playback embeds it; media is never re-hosted."
+    },
+    "review": {
+      "type": "string",
+      "enum": [
+        "automatic",
+        "reviewed"
+      ],
+      "description": "automatic: produced by the engine and not checked by hand; reviewed: rally boundaries and scores checked by hand"
+    },
+    "rallies": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "description": "Stable rally id within the match"
+          },
+          "game": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "segments": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "number",
+                  "minimum": 0
+                }
+              ],
+              "items": false,
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "description": "Watchable [start, end) intervals in source-video seconds; camera cuts and replays inside a rally are left out"
+          },
+          "scoreBefore": {
+            "description": "Each player's score before the rally, keyed by player id",
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            },
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "server": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "winner": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "summary": {
+            "description": "Present with shots",
+            "$ref": "#/$defs/RallySummary"
+          },
+          "shots": {
+            "description": "The rally's shots, in order; present when the match has analysis and the rally has shots",
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Shot"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "game",
+          "segments"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "analysis": {
+      "description": "Match-level shot analysis; present when the match has shot data",
+      "type": "object",
+      "properties": {
+        "quality": {
+          "type": "object",
+          "properties": {
+            "shots": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "ok": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "guessed": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "unreliable": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "shots",
+            "ok",
+            "guessed",
+            "unreliable"
+          ],
+          "additionalProperties": false
+        },
+        "games": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/GameSummary"
+          },
+          "description": "One per game, in order"
+        },
+        "players": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "shots": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "okShots": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "speed": {
+                "$ref": "#/$defs/Distribution"
+              },
+              "apex": {
+                "$ref": "#/$defs/Distribution"
+              },
+              "contactHeight": {
+                "$ref": "#/$defs/Distribution"
+              },
+              "netClearance": {
+                "$ref": "#/$defs/Distribution"
+              },
+              "placements": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "prefixItems": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "racket",
+                            "net",
+                            "ground"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 4,
+                  "maxItems": 4
+                }
+              },
+              "pointsWon": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "pointsWithKnownWinner": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "serves": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "pointsWonOnServe": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "shotTypes": {
+                "description": "Per stroke type: counts over all typed shots, metric distributions over ok shots, rally endings",
+                "type": "object",
+                "properties": {
+                  "typed": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "unclear": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "byType": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "enum": [
+                        "net_shot",
+                        "return_net",
+                        "smash",
+                        "lift",
+                        "clear",
+                        "drive",
+                        "drop",
+                        "push",
+                        "rush",
+                        "cross_net",
+                        "short_serve",
+                        "long_serve"
+                      ]
+                    },
+                    "additionalProperties": {
+                      "$ref": "#/$defs/ShotTypeSummary"
+                    }
+                  }
+                },
+                "required": [
+                  "typed",
+                  "unclear",
+                  "byType"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "shots",
+              "okShots",
+              "speed",
+              "apex",
+              "contactHeight",
+              "netClearance",
+              "placements",
+              "pointsWon",
+              "pointsWithKnownWinner",
+              "serves",
+              "pointsWonOnServe"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Per-player summaries over ok shots, keyed by player id"
+        },
+        "shotTypes": {
+          "description": "The model behind the shots' shotType; present whenever any shot has one",
+          "type": "object",
+          "properties": {
+            "model": {
+              "type": "string",
+              "minLength": 1
+            },
+            "training": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source": {
+              "type": "string",
+              "format": "uri"
+            },
+            "order": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "net_shot",
+                  "return_net",
+                  "smash",
+                  "lift",
+                  "clear",
+                  "drive",
+                  "drop",
+                  "push",
+                  "rush",
+                  "cross_net",
+                  "short_serve",
+                  "long_serve"
+                ]
+              },
+              "description": "Stroke types by total use in the match, most first"
+            }
+          },
+          "required": [
+            "model",
+            "training",
+            "source",
+            "order"
+          ],
+          "additionalProperties": false
+        },
+        "patterns": {
+          "description": "Direct exchanges between typed shots in this match",
+          "type": "object",
+          "properties": {
+            "responses": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+              },
+              "additionalProperties": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "enum": [
+                    "net_shot",
+                    "return_net",
+                    "smash",
+                    "lift",
+                    "clear",
+                    "drive",
+                    "drop",
+                    "push",
+                    "rush",
+                    "cross_net",
+                    "short_serve",
+                    "long_serve"
+                  ]
+                },
+                "additionalProperties": {
+                  "$ref": "#/$defs/ReplyTally"
+                }
+              },
+              "description": "responses[player][type]: what the player played against the opponent's shot of that type"
+            },
+            "followUps": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+              },
+              "additionalProperties": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "enum": [
+                    "net_shot",
+                    "return_net",
+                    "smash",
+                    "lift",
+                    "clear",
+                    "drive",
+                    "drop",
+                    "push",
+                    "rush",
+                    "cross_net",
+                    "short_serve",
+                    "long_serve"
+                  ]
+                },
+                "additionalProperties": {
+                  "$ref": "#/$defs/ReplyTally"
+                }
+              },
+              "description": "followUps[player][type]: what the opponent played after the player's shot of that type"
+            }
+          },
+          "required": [
+            "responses",
+            "followUps"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "quality",
+        "games",
+        "players"
+      ],
+      "additionalProperties": false
+    },
+    "poses": {
+      "description": "Present when the match has rally files with player skeletons: a model's estimate from one broadcast camera, not checked by hand",
+      "$ref": "#/$defs/PosesInfo"
+    }
+  },
+  "required": [
+    "version",
+    "matchId",
+    "title",
+    "players",
+    "source",
+    "review",
+    "rallies"
+  ],
+  "additionalProperties": false,
+  "title": "Mintonix match metadata v1",
+  "$defs": {
+    "Player": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+          "description": "Stable player id used by scores, servers, winners and shots"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "RallySummary": {
+      "type": "object",
+      "properties": {
+        "shots": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "unreliable": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "byPlayer": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "fastest": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Index of the fastest shot that isn't unreliable"
+        },
+        "highest": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "shots",
+        "unreliable",
+        "byPlayer",
+        "fastest",
+        "highest"
+      ],
+      "additionalProperties": false
+    },
+    "Shot": {
+      "type": "object",
+      "properties": {
+        "hitter": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Player id; null for a net-cord continuation"
+        },
+        "startSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "endSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "startContact": {
+          "type": "string",
+          "enum": [
+            "racket",
+            "net"
+          ]
+        },
+        "endContact": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "racket",
+                "net",
+                "ground"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "speed": {
+          "description": "Launch speed, m/s",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "arrivalSpeed": {
+          "description": "Speed at the next contact, m/s",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "contact": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "Contact point, court metres: x across (0–6.10), y from the far baseline (0) to the camera baseline (13.40), z up"
+        },
+        "end": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "apex": {
+          "description": "Highest point, m",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "netClearance": {
+          "description": "Height above the 1.524 m net top where the path crosses the net, m",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "launchAngle": {
+          "description": "Degrees above horizontal; negative is downward",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "descentAngle": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "hitterEnd": {
+          "type": "string",
+          "enum": [
+            "near",
+            "far"
+          ],
+          "description": "near: the end nearest the broadcast camera"
+        },
+        "placement": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "End point seen with the hitter at the camera end"
+        },
+        "quality": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "guessed",
+            "unreliable"
+          ]
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 4,
+            "maxItems": 4
+          },
+          "description": "[seconds, x, y, z] samples; empty when the 3D fit failed"
+        },
+        "shotType": {
+          "description": "Stroke type inferred by a model from the pose and shuttle tracks, not checked by hand; racket shots only",
+          "$ref": "#/$defs/ShotType"
+        }
+      },
+      "required": [
+        "hitter",
+        "startSeconds",
+        "endSeconds",
+        "startContact",
+        "endContact",
+        "speed",
+        "arrivalSpeed",
+        "contact",
+        "end",
+        "apex",
+        "netClearance",
+        "launchAngle",
+        "descentAngle",
+        "hitterEnd",
+        "placement",
+        "quality",
+        "issues",
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "ShotType": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "net_shot",
+                "return_net",
+                "smash",
+                "lift",
+                "clear",
+                "drive",
+                "drop",
+                "push",
+                "rush",
+                "cross_net",
+                "short_serve",
+                "long_serve"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null: the model found no stroke type"
+        },
+        "probability": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Model probability of name (or of no type when name is null)"
+        },
+        "runnerUp": {
+          "type": "string",
+          "enum": [
+            "net_shot",
+            "return_net",
+            "smash",
+            "lift",
+            "clear",
+            "drive",
+            "drop",
+            "push",
+            "rush",
+            "cross_net",
+            "short_serve",
+            "long_serve"
+          ]
+        },
+        "runnerUpProbability": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "correction": {
+          "description": "Set when the shot's measured 3D flight contradicted the model and name was changed; probability is still the model's for name",
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "enum": [
+                "net_shot",
+                "return_net",
+                "smash",
+                "lift",
+                "clear",
+                "drive",
+                "drop",
+                "push",
+                "rush",
+                "cross_net",
+                "short_serve",
+                "long_serve"
+              ],
+              "description": "The model's own pick"
+            },
+            "fromProbability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "reason": {
+              "type": "string",
+              "enum": [
+                "high_deep_flight",
+                "underarm_contact",
+                "flat_flight"
+              ],
+              "description": "high_deep_flight: a push that rose above 3 m and went over 5 m past the net (lift); underarm_contact: a clear hit below 1.8 m (lift); flat_flight: a clear that peaked below 2.5 m (drive)"
+            }
+          },
+          "required": [
+            "from",
+            "fromProbability",
+            "reason"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "name",
+        "probability",
+        "runnerUp",
+        "runnerUpProbability"
+      ],
+      "additionalProperties": false
+    },
+    "GameSummary": {
+      "type": "object",
+      "properties": {
+        "game": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "final": {
+          "anyOf": [
+            {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+              },
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Final score, when the last rally's score and winner are known"
+        },
+        "winner": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rallies": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "longest": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Rally id with the most shots"
+        },
+        "averageShots": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "game",
+        "final",
+        "winner",
+        "rallies",
+        "longest",
+        "averageShots"
+      ],
+      "additionalProperties": false
+    },
+    "Distribution": {
+      "type": "object",
+      "properties": {
+        "n": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "median": {
+          "type": "number"
+        },
+        "p10": {
+          "type": "number"
+        },
+        "p90": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "n"
+      ],
+      "additionalProperties": false
+    },
+    "ShotTypeSummary": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "okShots": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "speed": {
+          "$ref": "#/$defs/Distribution"
+        },
+        "apex": {
+          "$ref": "#/$defs/Distribution"
+        },
+        "contactHeight": {
+          "$ref": "#/$defs/Distribution"
+        },
+        "netClearance": {
+          "$ref": "#/$defs/Distribution"
+        },
+        "endedRally": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Times this type was the rally's last shot"
+        },
+        "endedRallyWon": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "endedRallyKnownWinner": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "count",
+        "okShots",
+        "speed",
+        "apex",
+        "contactHeight",
+        "netClearance",
+        "endedRally",
+        "endedRallyWon",
+        "endedRallyKnownWinner"
+      ],
+      "additionalProperties": false
+    },
+    "ReplyTally": {
+      "type": "object",
+      "properties": {
+        "n": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "replies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "net_shot",
+                  "return_net",
+                  "smash",
+                  "lift",
+                  "clear",
+                  "drive",
+                  "drop",
+                  "push",
+                  "rush",
+                  "cross_net",
+                  "short_serve",
+                  "long_serve"
+                ]
+              },
+              "count": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "type",
+              "count"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Most frequent first"
+        }
+      },
+      "required": [
+        "n",
+        "replies"
+      ],
+      "additionalProperties": false
+    },
+    "PosesInfo": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The model that lifted the broadcast's 2D poses to 3D"
+        },
+        "players": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "heightMetres": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Height the skeleton was scaled to"
+              },
+              "heightSource": {
+                "type": "string",
+                "enum": [
+                  "supplied",
+                  "default"
+                ],
+                "description": "supplied: the player's height was given to the Engine; default: the Engine's default prior"
+              }
+            },
+            "required": [
+              "heightMetres",
+              "heightSource"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "model",
+        "players"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

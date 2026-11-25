@@ -1,10 +1,14 @@
 import { z } from "zod";
 
 /**
- * The match data the app reads, defined once. `contracts/*.schema.json` is
- * generated from these schemas (`pnpm contracts`); a test keeps them in sync.
- * Cross-field rules JSON Schema cannot express are checked in `parseMatch`
- * and `parseAnalysis`.
+ * The match data the app reads, defined once. A published match is a folder:
+ * `metadata.json` (the match, each rally with its shots, the match analysis) and,
+ * when the Engine reconstructed the players, one `<rallyId>.json` per rally (both
+ * players' skeletons and running distance). `contracts/*.schema.json` is generated
+ * from `metadataSchema` and `rallyMotionSchema` (`pnpm contracts`); a test keeps them
+ * in sync. In memory, metadata splits into a `Match` and an optional `MatchAnalysis`.
+ * Cross-field rules JSON Schema cannot express are checked in `parseMetadata`
+ * (through `parseMatch` and `parseAnalysis`) and `parseRallyMotion`.
  */
 
 const id = z.string().regex(/^[a-z0-9][a-z0-9_-]{0,63}$/);
@@ -29,8 +33,20 @@ export const rallySchema = z.object({
   winner: id.optional(),
 }).strict();
 
+const heightSource = z.enum(["supplied", "default"])
+  .describe("supplied: the player's height was given to the Engine; default: the Engine's default prior");
+
+export const posesInfoSchema = z.object({
+  model: z.string().trim().min(1).describe("The model that lifted the broadcast's 2D poses to 3D"),
+  players: z.record(id, z.object({
+    heightMetres: z.number().positive().describe("Height the skeleton was scaled to"),
+    heightSource,
+  }).strict()),
+}).strict().meta({ id: "PosesInfo" })
+  .describe("Present when the match has rally files with player skeletons: a model's estimate from one broadcast camera, not checked by hand");
+
+/** The match without its shot data: what the watch page needs. */
 export const matchSchema = z.object({
-  version: z.literal(3),
   matchId: id,
   title: z.string().trim().min(1),
   players: z.tuple([playerSchema, playerSchema]),
@@ -38,11 +54,13 @@ export const matchSchema = z.object({
     provider: z.literal("youtube"),
     videoId: z.string().regex(/^[A-Za-z0-9_-]{11}$/),
     durationSeconds: z.number().positive(),
+    fps: z.number().positive().describe("Frame rate of the video the Engine processed; rally files have one skeleton per frame"),
   }).strict().describe("The published video every timestamp refers to. Playback embeds it; media is never re-hosted."),
   review: z.enum(["automatic", "reviewed"])
     .describe("automatic: produced by the engine and not checked by hand; reviewed: rally boundaries and scores checked by hand"),
   rallies: z.array(rallySchema).min(1),
-}).strict().meta({ title: "Mintonix match v3" });
+  poses: posesInfoSchema.optional(),
+}).strict();
 
 const distribution = z.object({
   n: z.int().nonnegative(),
@@ -151,8 +169,8 @@ const gameSchema = z.object({
   averageShots: z.number().nonnegative().nullable(),
 }).strict().meta({ id: "GameSummary" });
 
+/** A match's shot data, assembled from metadata.json. */
 export const analysisSchema = z.object({
-  version: z.literal(2),
   matchId: id,
   quality: z.object({
     shots: z.int().nonnegative(),
@@ -176,7 +194,39 @@ export const analysisSchema = z.object({
     followUps: z.record(id, z.partialRecord(shotTypeName, replyTally))
       .describe("followUps[player][type]: what the opponent played after the player's shot of that type"),
   }).strict().optional().describe("Direct exchanges between typed shots in this match"),
-}).strict().meta({ title: "Mintonix match analysis v2" });
+}).strict();
+
+export const metadataSchema = z.object({
+  version: z.literal(1),
+  ...matchSchema.omit({ rallies: true, poses: true }).shape,
+  rallies: z.array(rallySchema.extend({
+    summary: rallySummarySchema.optional().describe("Present with shots"),
+    shots: z.array(shotSchema).optional().describe("The rally's shots, in order; present when the match has analysis and the rally has shots"),
+  }).strict()).min(1),
+  analysis: analysisSchema.omit({ matchId: true, rallies: true }).optional()
+    .describe("Match-level shot analysis; present when the match has shot data"),
+  poses: posesInfoSchema.optional(),
+}).strict().meta({ title: "Mintonix match metadata v1" });
+
+const centimetres = z.int();
+
+export const poseRunSchema = z.object({
+  startFrame: z.int().nonnegative().describe("Source-video frame of the run's first sample; frame f is at f / fps seconds"),
+  frames: z.int().min(2).describe("Consecutive frames in the run"),
+  root: z.array(centimetres).describe("Hip position in court centimetres (x, y, z per frame, flat), as frame-to-frame differences; the first frame as is"),
+  joints: z.array(centimetres).describe("The other 16 H36M joints relative to the hip (16 × x, y, z per frame, flat), as frame-to-frame differences"),
+}).strict().meta({ id: "PoseRun" });
+
+export const rallyMotionSchema = z.object({
+  version: z.literal(1),
+  matchId: id,
+  rallyId: id,
+  fps: z.number().positive(),
+  poses: z.record(id, z.array(poseRunSchema))
+    .describe("Each player's skeleton runs: watchable, tracked frames only; a new run starts after a gap and nothing joins runs. Engine estimate, not checked by hand"),
+  distance: z.record(id, z.number().nonnegative())
+    .describe("Metres each player covered horizontally along their runs (ankle midpoint smoothed over 0.3 s); gaps are not counted"),
+}).strict().meta({ title: "Mintonix rally motion v1" });
 
 export type Player = z.infer<typeof playerSchema>;
 export type Rally = z.infer<typeof rallySchema>;
@@ -188,6 +238,10 @@ export type ShotTypeSummary = z.infer<typeof shotTypeSummary>;
 export type ReplyTally = z.infer<typeof replyTally>;
 export type RallyRecords = z.infer<typeof rallySummarySchema>;
 export type GameSummary = z.infer<typeof gameSchema>;
+export type PosesInfo = z.infer<typeof posesInfoSchema>;
+export type PoseRun = z.infer<typeof poseRunSchema>;
+export type RallyMotion = z.infer<typeof rallyMotionSchema>;
+export type Metadata = z.infer<typeof metadataSchema>;
 
 function fail(message: string): never {
   throw new Error(message);
@@ -229,6 +283,10 @@ export function parseMatch(input: unknown): Match {
       const value = rally[role];
       if (value !== undefined && !playerIds.includes(value)) fail(`Invalid match: unknown ${role} ${value} (${rally.id})`);
     }
+  }
+  if (rallyIds.has("metadata")) fail("Invalid match: a rally id may not be metadata");
+  for (const player of Object.keys(match.poses?.players ?? {})) {
+    if (!playerIds.includes(player)) fail(`Invalid match: unknown player ${player} in poses`);
   }
   return match;
 }
@@ -272,4 +330,57 @@ export function parseAnalysis(input: unknown, match: Match): MatchAnalysis {
     for (const player of Object.keys(side)) if (!playerIds.includes(player)) fail(`Invalid analysis: unknown player ${player} in patterns`);
   }
   return analysis;
+}
+
+/** Validate a metadata.json file and split it into the match and its shot data. */
+export function parseMetadata(input: unknown): { match: Match; analysis: MatchAnalysis | null } {
+  const parsed = metadataSchema.safeParse(input);
+  if (!parsed.success) fail(`Invalid metadata: ${firstIssue(parsed.error)}`);
+  const { rallies: rows, analysis: shotData, ...file } = parsed.data;
+  const rest = Object.fromEntries(Object.entries(file).filter(([key]) => key !== "version"));
+  const rallies: Rally[] = [];
+  const shotsByRally: MatchAnalysis["rallies"] = {};
+  for (const { summary, shots, ...rally } of rows) {
+    rallies.push(rally);
+    if ((summary === undefined) !== (shots === undefined)) fail(`Invalid metadata: a rally's shots and summary come together (${rally.id})`);
+    if (shots && summary) {
+      if (!shotData) fail(`Invalid metadata: rally shots need the match analysis (${rally.id})`);
+      shotsByRally[rally.id] = { shots, summary };
+    }
+  }
+  const match = parseMatch({ ...rest, rallies });
+  const analysis = shotData ? parseAnalysis({ matchId: match.matchId, ...shotData, rallies: shotsByRally }, match) : null;
+  return { match, analysis };
+}
+
+/** Validate a rally file against its match. */
+export function parseRallyMotion(input: unknown, match: Match): RallyMotion {
+  const parsed = rallyMotionSchema.safeParse(input);
+  if (!parsed.success) fail(`Invalid rally motion: ${firstIssue(parsed.error)}`);
+  const motion = parsed.data;
+  if (motion.matchId !== match.matchId) fail("Invalid rally motion: match id differs from its match");
+  const rally = match.rallies.find((candidate) => candidate.id === motion.rallyId) ?? fail(`Invalid rally motion: unknown rally ${motion.rallyId}`);
+  if (motion.fps !== match.source.fps) fail("Invalid rally motion: fps differs from the match source");
+  const playerIds = match.players.map((player) => player.id);
+  for (const player of [...Object.keys(motion.poses), ...Object.keys(motion.distance)]) {
+    if (!playerIds.includes(player)) fail(`Invalid rally motion: unknown player ${player}`);
+  }
+  // A frame's time is its start; half a frame of slack absorbs rounding of the segment bounds.
+  const slack = 0.5 / motion.fps;
+  const inSegments = (time: number) => rally.segments.some(([start, end]) => time >= start - slack && time < end + slack);
+  for (const [player, runs] of Object.entries(motion.poses)) {
+    let previousEnd = -1;
+    for (const run of runs) {
+      if (run.root.length !== run.frames * 3 || run.joints.length !== run.frames * 48) {
+        fail(`Invalid rally motion: run sizes don't match their frames (${player})`);
+      }
+      const last = run.startFrame + run.frames - 1;
+      if (run.startFrame <= previousEnd) fail(`Invalid rally motion: runs must be chronological and not overlap (${player})`);
+      if (!inSegments(run.startFrame / motion.fps) || !inSegments(last / motion.fps)) {
+        fail(`Invalid rally motion: runs must lie inside the rally's segments (${player})`);
+      }
+      previousEnd = last;
+    }
+  }
+  return motion;
 }
