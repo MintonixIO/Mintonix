@@ -94,3 +94,39 @@
 - [ ] **Step 2:** Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`; expect all to pass.
 - [ ] **Step 3:** Take headless Chrome screenshots (swiftshader WebGL) of `/watch/all-england-open-2025-ms-f` at 1440×900, 1280×720 and 390×844, of `?view=analyze`, and of a match without rally files if one exists. Check that the stage plus the bar fit at 1280×720 and that nothing overlaps the iframe. For the drawer and minimized states, set `localStorage` / click through the Chrome DevTools protocol (headless `--remote-debugging-port`) rather than changing code.
 - [ ] **Step 4:** Commit `feat: compacts the watch header so the stage fits a laptop screen`.
+
+---
+
+# Part 2 (spec Revision 2)
+
+### Task 5: Match statistics model
+
+**Files:** Create `components/rally-player/match-stats.ts`, test `match-stats.test.ts`.
+
+**Produces:**
+- `scoreFlow(match: Match, analysis?: MatchAnalysis): { game: number; points: { index: number | null; lead: number }[]; final: string | null }[]` — per game, one point per rally with `scoreBefore` (`index` = rally index, `lead` = first player − second), then a closing point (`index: null`) from the game's final score (analysis `games[].final`, else last `scoreBefore` + `winner`) when known; `final` "21–17" in player order.
+- `headToHead(match: Match, analysis?: MatchAnalysis): { label: string; tag?: "est" | "model"; values: [number, number]; detail?: [string, string]; unit?: string }[]` — rows: "Points won", "Won on own serve" (detail "16/37"), "Long rallies won" (15+ shots, needs analysis), "Fastest shot" (tag est, km/h, rounded), "Smashes" (tag model); rows with no data omitted.
+
+- [ ] Tests with `matchFixture()` (+ `analysisFixture()` via `parseMetadata`) for: flow points and final, a rally without a score skipped, points won counts, serve detail, analysis rows absent without analysis. RED, implement, GREEN, commit.
+
+### Task 6: Statistics band and caveat line
+
+**Files:** Create `match-stats-view.tsx`, `match-stats.module.css`; modify `rally-player.tsx` (replace the three notices).
+
+- [ ] Score flow SVG per game (lead area tinted `--player-a` above / `--player-b` below, zero axis, final score label, click → `onSelectRally`), head-to-head bars, caveat line with `<details>`. Fullscreen and Analyze: caveat line only. Lint, typecheck, test, commit.
+
+### Task 7: One side switch
+
+**Files:** Modify `control-bar.tsx`/`.module.css`, `rally-player.tsx`, `live-court.tsx`.
+
+**Interfaces:** `ControlBar` drops `court`, `listOpen`, `onCourt`, `onList`; gains `side: { options: ("court" | "rallies")[]; shown: "court" | "rallies" | null; onShow(option): void } | null` (`shown: null` = collapsed). Player state: `sideChoice: "court" | "rallies"`, `sideCollapsed: boolean` (persisted as `mintonix.sideCollapsed`, replacing `mintonix.courtMinimized`).
+
+- [ ] Segmented control with `role="radiogroup"`-free plain buttons using `aria-pressed`; clicking the shown option collapses; clicking the other switches; from collapsed, opens. Drawer `hidden` unless rallies shown; court minimized iff collapsed. Lint, typecheck, test, browser check, commit.
+
+### Task 8: Racket
+
+**Files:** Modify `live-court/motion.ts` (+ test), `live-court/court-scene.ts`, `live-court/live-court.tsx`.
+
+**Produces:** `racketHand(runs: readonly DecodedRun[] | undefined, fps: number, contacts: readonly number[]): "left" | "right" | null`; `racketPose(pose: Float32Array, hand: "left" | "right", time: number, contact: { time: number; point: Vec3 } | null): { grip: Vec3; tip: Vec3 }` (tip 0.68 m from grip). Scene: `setFrame` takes `rackets: Record<string, { grip: Vec3; tip: Vec3 } | null>`.
+
+- [ ] Tests: the faster wrist at contacts wins; travel fallback; forearm direction away from contacts; aims at the contact point within 0.15 s; length 0.68. RED, implement, GREEN; draw shaft (cylinder) + oval head (torus scaled); commit.
