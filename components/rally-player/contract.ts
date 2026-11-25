@@ -19,6 +19,8 @@ const point3 = z.tuple([metres, metres, metres]);
 export const playerSchema = z.object({
   id: id.describe("Stable player id used by scores, servers, winners and shots"),
   name: z.string().trim().min(1),
+  hand: z.enum(["left", "right"]).optional()
+    .describe("The hand that holds the racket, labelled by hand in the Engine; absent when unlabelled"),
 }).strict().meta({ id: "Player" });
 
 export const rallySchema = z.object({

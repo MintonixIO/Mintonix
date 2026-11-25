@@ -21,7 +21,8 @@ provider is `youtube`: `videoId` is the 11-character YouTube ID, and
 `durationSeconds` is the full length of that upload. Timestamps from trimmed
 or concatenated clips must be mapped to the full upload first.
 
-`players` has two entries with a stable `id` and a display `name`. Scores,
+`players` has two entries with a stable `id`, a display `name` and, when the
+Engine had it labelled, the racket `hand` (`left` or `right`). Scores,
 servers, winners and shots refer to players by `id`, never by position.
 
 `review` is `automatic` (engine output, not checked by hand) or `reviewed`

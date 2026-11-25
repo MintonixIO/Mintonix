@@ -37,7 +37,8 @@ function wristTravel(run: DecodedRun, joint: number, from: number, to: number) {
 }
 
 /**
- * Which hand holds the racket in this rally: the wrist that moves more around the player's own
+ * A guess at which hand holds the racket in this rally, for players without a labelled hand
+ * (it is wrong in about one rally in six): the wrist that moves more around the player's own
  * contacts (times in source seconds), or over the whole rally when no contact falls in a run.
  */
 export function racketHand(runs: readonly DecodedRun[] | undefined, fps: number, contacts: readonly number[]): Hand | null {

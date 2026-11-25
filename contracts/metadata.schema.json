@@ -492,6 +492,14 @@
         "name": {
           "type": "string",
           "minLength": 1
+        },
+        "hand": {
+          "description": "The hand that holds the racket, labelled by hand in the Engine; absent when unlabelled",
+          "type": "string",
+          "enum": [
+            "left",
+            "right"
+          ]
         }
       },
       "required": [

@@ -9,7 +9,7 @@ import type { Vec3 } from "../analysis/replay";
 import { rallyStart } from "../timeline";
 import { createCourtScene, type CourtScene, type Racket } from "./court-scene";
 import { racketHand, racketPose, REACH_SECONDS, type Hand } from "./racket";
-import { decodeMotion, frameAt, poseAt, tagAt, tagText, type Skeletons } from "./motion";
+import { decodeMotion, poseAt, tagAt, tagText, type Skeletons } from "./motion";
 import { Icon } from "../icons";
 import styles from "./live-court.module.css";
 
@@ -60,24 +60,46 @@ function useSkeletons(match: Match, rallyIndex: number) {
   return { skeletons: state.rallyId === rallyId ? state.skeletons : null, loading: Boolean(rallyId) && state.rallyId !== rallyId };
 }
 
-/** The playhead between the player's 100 ms polls, so skeletons move at the video's frame rate. */
+/** Never chase more than this far past the last poll (a stalled player). */
+const MAX_AHEAD_S = 0.25;
+/** A poll further than this from the local clock is a seek or a stall: jump to it. */
+const SNAP_S = 0.3;
+/** Seconds over which the local clock eases into each poll, so it never steps backwards. */
+const CATCH_UP_S = 0.5;
+
+/**
+ * The playhead between the player's 100 ms polls: a local clock running at playback speed,
+ * eased towards each poll instead of reset to it, so skeletons move smoothly and never jump
+ * back when a poll lands a few milliseconds behind the clock.
+ */
 function useSmoothTime(time: number, playing: boolean) {
   const [smooth, setSmooth] = useState(time);
   const reported = useRef({ time, at: 0 });
+  const clock = useRef({ time, at: 0 });
   useEffect(() => {
-    reported.current = { time, at: performance.now() };
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- a new poll resets the clock
-    setSmooth(time);
-  }, [time]);
+    const now = performance.now();
+    reported.current = { time, at: now };
+    if (!playing || Math.abs(time - clock.current.time) > SNAP_S) {
+      clock.current = { time, at: now };
+      setSmooth(time);
+    }
+  }, [time, playing]);
   useEffect(() => {
     if (!playing) return;
     let frame = 0;
     const tick = (now: number) => {
-      const { time: base, at } = reported.current;
-      // Never run more than a quarter second past the last poll (a stalled player).
-      setSmooth(base + Math.min(0.25, (now - at) / 1000));
+      const last = clock.current;
+      const elapsed = Math.max(0, (now - last.at) / 1000);
+      const target = reported.current.time + (now - reported.current.at) / 1000;
+      let next = last.time + elapsed;
+      // Ease towards the polled playhead, never backwards.
+      next += (target - next) * Math.min(1, elapsed / CATCH_UP_S);
+      next = Math.max(last.time, Math.min(next, reported.current.time + MAX_AHEAD_S));
+      clock.current = { time: next, at: now };
+      setSmooth(next);
       frame = requestAnimationFrame(tick);
     };
+    clock.current = { ...clock.current, at: performance.now() };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [playing]);
@@ -108,7 +130,8 @@ export default function LiveCourt({ match, rallyIndex, time, playing, shots, min
   const rally = match.rallies[rallyIndex];
   const started = rally ? smoothTime >= rallyStart(rally) : false;
   const shownTime = rally ? Math.min(smoothTime, rallyEndTime(match, rallyIndex) - 1e-3) : smoothTime;
-  const frame = skeletons ? frameAt(shownTime, skeletons.fps) : -1;
+  // Fractional: poseAt blends the frames either side of the playhead.
+  const frame = skeletons ? shownTime * skeletons.fps : -1;
   const tagIndex = started ? tagAt(shots, shownTime) : null;
   const tagShot = tagIndex === null ? null : shots[tagIndex];
   const tag = tagShot ? tagText(tagShot) : null;
@@ -146,12 +169,16 @@ export default function LiveCourt({ match, rallyIndex, time, playing, shots, min
     };
   }, [first.id, second.id]);
 
-  // Each player's racket hand for this rally, from how their wrists move at their own hits.
+  // Each player's racket hand: the labelled one, else guessed for this rally from how their wrists move at their own hits.
   const hands = useMemo(() => {
     const result: Record<string, Hand | null> = {};
     for (const player of match.players) {
-      const contacts = shots.filter((shot) => shot.hitter === player.id && shot.startContact === "racket").map((shot) => shot.startSeconds);
-      result[player.id] = skeletons ? racketHand(skeletons.players[player.id], skeletons.fps, contacts) : null;
+      if (!skeletons) result[player.id] = null;
+      else if (player.hand) result[player.id] = player.hand;
+      else {
+        const contacts = shots.filter((shot) => shot.hitter === player.id && shot.startContact === "racket").map((shot) => shot.startSeconds);
+        result[player.id] = racketHand(skeletons.players[player.id], skeletons.fps, contacts);
+      }
     }
     return result;
   }, [match, skeletons, shots]);
