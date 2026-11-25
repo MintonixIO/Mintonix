@@ -201,3 +201,51 @@ size. Analyze view: rail, deck, shot replay (which still replaces the video colu
 - Exact column proportion, the strip's minimum segment width and colours (within design tokens).
 - Drawer width and animation; tooltip implementation.
 - Whether the header's compact line wraps or truncates at in-between widths.
+
+---
+
+## Revision 2 (user, 2026-11-24): match statistics, one side switch, the racket
+
+### Match statistics replace the notices
+
+Under the viewer in the Watch view, the three notice lines (court estimate, missing points,
+automatic detection) give way to a statistics band:
+
+- **Score flow**, one small chart per game: the lead (player A above the axis, player B below,
+  each side tinted in its player colour) before each detected rally, ending on the game's
+  final score. Built from `scoreBefore` (so missed points show as jumps, not invented steps);
+  rallies without a score are skipped. A pointer click on a rally's slot plays it; the chart is
+  `role="img"` with a text summary (the strip is the keyboard path to rallies).
+- **Head to head**, two-sided bars in the player colours, each with its counts so the sample
+  is visible: points won (of detected rallies with a known winner), won on own serve
+  (won / served), long rallies won (15+ shots, analysis only), fastest shot (est., km/h,
+  analysis only), smashes (model, analysis only). A row whose inputs are missing is left out.
+- **One caveat line** under the band: "Detected automatically from the broadcast and not
+  checked by hand · N points not captured", with a "Details" disclosure holding the full
+  wording of the old notices plus the court, racket and stroke-type caveats. `AGENTS.md`
+  requires these labels; they are condensed, not removed.
+- The band is hidden in fullscreen (the caveat line stays, one line, under the bar) and in
+  Analyze (its deck already has the match overview; the caveat line stays).
+- Pure functions in `components/rally-player/match-stats.ts` with tests; the view in
+  `match-stats-view.tsx`.
+
+### One switch for the side column
+
+The Court toggle and the Rallies button become one segmented control, **[ Court | Rallies ]**,
+choosing what the side column shows: they can't both be on. The **›** button (on the court
+and on the rally list) collapses the column to the rail; choosing either option from the rail
+reopens the column on it; the rail's **‹** reopens on the last choice. The collapsed state is
+remembered per viewer (as minimize was). Without a court, the control is a single Rallies
+toggle (rallies shown, or the video full width). In Analyze the control is hidden.
+
+### The racket on the live court
+
+Each skeleton gets a racket, drawn, not tracked: the engine exports no hand orientation.
+
+- Racket hand: per rally, the wrist (H36M 13 left, 16 right) that moves faster around the
+  player's own racket contacts (±0.1 s of each shot's `startSeconds` where they are the
+  hitter); with no contacts, the wrist that travels further over the rally.
+- Pose: grip at the wrist, pointing along the forearm (elbow → wrist); within 0.15 s of the
+  player's contact it turns towards the shot's `contact` point, so racket meets shuttle.
+  Length 0.68 m (shaft 0.4 m + an oval head 0.29 × 0.23 m), in the player's colour.
+- Hidden with the skeleton during gaps; the caveat says the racket is drawn from the arm.
