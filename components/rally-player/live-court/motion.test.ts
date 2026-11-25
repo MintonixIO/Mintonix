@@ -25,6 +25,15 @@ test("a player has no pose outside their runs", () => {
   assert.equal(poseAt(undefined, 1025), null);                 // a player without a track
 });
 
+test("a fractional frame blends the frames around it, inside a run only", () => {
+  const { players } = skeletons();
+  const a = poseAt(players.a, 1025)!, b = poseAt(players.a, 1026)!;
+  const half = poseAt(players.a, 1025.5)!;
+  half.forEach((value, i) => assert.ok(Math.abs(value - (a[i] + b[i]) / 2) < 1e-5, `joint value ${i}`));
+  assert.deepEqual(poseAt(players.a, 1030.5), poseAt(players.a, 1030)); // last frame of the run holds
+  assert.equal(poseAt(players.a, 1019.5), null);                          // just before the run starts
+});
+
 test("frames are picked by the playhead at the file's frame rate", () => {
   assert.equal(frameAt(34, 30), 1020);
   assert.equal(frameAt(34.0333, 30), 1020);

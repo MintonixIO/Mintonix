@@ -62,12 +62,24 @@ export function decodeMotion(motion: RallyMotion): Skeletons {
 /** The source-video frame shown at `time` seconds. */
 export const frameAt = (time: number, fps: number) => Math.floor(time * fps + 1e-6);
 
-/** A player's 17 joints at `frame` (51 values, metres), or null in a gap: never frozen or joined across. */
+/**
+ * A player's 17 joints at `frame` (51 values, metres), or null in a gap: never frozen or joined across.
+ * A fractional frame (playhead × fps) blends the two frames around it when both are in the same run,
+ * so the skeleton moves smoothly on screens faster than the video; at a run's last frame it holds.
+ */
 export function poseAt(runs: readonly DecodedRun[] | undefined, frame: number): Float32Array | null {
-  const run = runs?.find((candidate) => frame >= candidate.startFrame && frame < candidate.startFrame + candidate.frames);
+  const base = Math.floor(frame + 1e-6);
+  const run = runs?.find((candidate) => base >= candidate.startFrame && base < candidate.startFrame + candidate.frames);
   if (!run) return null;
-  const offset = (frame - run.startFrame) * VALUES_PER_FRAME;
-  return run.joints.subarray(offset, offset + VALUES_PER_FRAME);
+  const offset = (base - run.startFrame) * VALUES_PER_FRAME;
+  const t = frame - base;
+  if (t <= 1e-6 || base + 1 >= run.startFrame + run.frames) return run.joints.subarray(offset, offset + VALUES_PER_FRAME);
+  const pose = new Float32Array(VALUES_PER_FRAME);
+  for (let i = 0; i < VALUES_PER_FRAME; i++) {
+    const a = run.joints[offset + i];
+    pose[i] = a + (run.joints[offset + VALUES_PER_FRAME + i] - a) * t;
+  }
+  return pose;
 }
 
 /**
