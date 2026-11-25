@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Match, RallyMotion, Shot } from "../contract";
 import { playerTools } from "../analysis/players";
 import { activeShotIndex, shuttleAt } from "../analysis/shots";
 import { WebGLUnavailableError } from "../analysis/shot-scene";
 import type { Vec3 } from "../analysis/replay";
 import { rallyStart } from "../timeline";
-import { createCourtScene, type CourtScene } from "./court-scene";
+import { createCourtScene, type CourtScene, type Racket } from "./court-scene";
+import { racketHand, racketPose, REACH_SECONDS, type Hand } from "./racket";
 import { decodeMotion, frameAt, poseAt, tagAt, tagText, type Skeletons } from "./motion";
 import { Icon } from "../icons";
 import styles from "./live-court.module.css";
@@ -145,6 +146,16 @@ export default function LiveCourt({ match, rallyIndex, time, playing, shots, min
     };
   }, [first.id, second.id]);
 
+  // Each player's racket hand for this rally, from how their wrists move at their own hits.
+  const hands = useMemo(() => {
+    const result: Record<string, Hand | null> = {};
+    for (const player of match.players) {
+      const contacts = shots.filter((shot) => shot.hitter === player.id && shot.startContact === "racket").map((shot) => shot.startSeconds);
+      result[player.id] = skeletons ? racketHand(skeletons.players[player.id], skeletons.fps, contacts) : null;
+    }
+    return result;
+  }, [match, skeletons, shots]);
+
   // Draw the frame: skeletons at the playhead, and the shuttle along the shot in flight.
   useEffect(() => {
     const scene = sceneRef.current;
@@ -160,12 +171,21 @@ export default function LiveCourt({ match, rallyIndex, time, playing, shots, min
       : [];
     const tone = shot ? players.tone(shot.hitter) : "none";
     const colour = token(tone === "a" ? "--player-a" : tone === "b" ? "--player-b" : "--brand");
-    scene.setFrame(poses, position ? { position, trail, colour } : null);
+    // Rackets are drawn from the arm; around a player's own hit they reach for the contact point.
+    const rackets: Record<string, Racket | null> = Object.fromEntries(match.players.map((player) => {
+      const pose = poses[player.id];
+      const hand = hands[player.id];
+      if (!pose || !hand) return [player.id, null];
+      const hit = shots.find((candidate) => candidate.hitter === player.id && candidate.startContact === "racket"
+        && Math.abs(candidate.startSeconds - shownTime) <= REACH_SECONDS);
+      return [player.id, racketPose(pose, hand, shownTime, hit ? { time: hit.startSeconds, point: hit.contact } : null)];
+    }));
+    scene.setFrame(poses, position ? { position, trail, colour } : null, rackets);
     scene.render();
     setTagPosition(tagShot?.hitter ? scene.headOnCanvas(tagShot.hitter) : null);
     // players is rebuilt each render from match; match covers it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [match, skeletons, frame, started, shots, shownTime, tagShot, minimized]);
+  }, [match, skeletons, frame, started, shots, shownTime, tagShot, minimized, hands]);
 
   const tagTone = tagShot ? players.tone(tagShot.hitter) : "none";
 

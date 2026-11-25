@@ -1,7 +1,7 @@
 import {
   AmbientLight, BufferGeometry, Color, CylinderGeometry, DirectionalLight, Float32BufferAttribute, Group, Line,
   LineBasicMaterial, Mesh, MeshBasicMaterial, MeshStandardMaterial, PerspectiveCamera, Quaternion, Scene,
-  Spherical, SphereGeometry, Vector3, WebGLRenderer,
+  Spherical, SphereGeometry, TorusGeometry, Vector3, WebGLRenderer,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { createCourt, WebGLUnavailableError, type SceneColours } from "../analysis/shot-scene";
@@ -19,11 +19,13 @@ import { BASE_FOV, fieldOfView } from "./camera";
 export type CourtColours = Pick<SceneColours, "court" | "lines" | "net" | "background" | "brand">;
 
 export type Flight = { position: Vec3 | null; trail: Vec3[]; colour: string };
+/** A drawn racket, grip to tip, in court metres. */
+export type Racket = { grip: Vec3; tip: Vec3 };
 
 export interface CourtScene {
   setPlayers(colours: Record<string, string>): void;
-  /** Joints per player (51 values, court metres) or null to hide that player. */
-  setFrame(poses: Record<string, Float32Array | null>, flight: Flight | null): void;
+  /** Joints per player (51 values, court metres) or null to hide that player, and each player's drawn racket. */
+  setFrame(poses: Record<string, Float32Array | null>, flight: Flight | null, rackets?: Record<string, Racket | null>): void;
   /** Where a player's head is on the canvas, in CSS pixels, or null when hidden. */
   headOnCanvas(player: string): { x: number; y: number } | null;
   orbit(azimuth: number, polar: number): void;
@@ -41,6 +43,10 @@ const CORNER_POSITION: Vec3 = [-7.4, 2.3, 10.8];
 const CORNER_TARGET: Vec3 = [0.4, 0.4, 0.6];
 const BONE_RADIUS = 0.035;
 const MAX_TRAIL = 256;
+// Racket: a thin shaft from the grip, then an oval head (0.23 × 0.29 m) up to the tip.
+const SHAFT_LENGTH = 0.39;
+const HEAD_HALF_WIDTH = 0.115;
+const HEAD_HALF_LENGTH = 0.145;
 
 export function createCourtScene(canvas: HTMLCanvasElement, colours: CourtColours): CourtScene {
   if (!(canvas.getContext("webgl2") ?? canvas.getContext("webgl"))) throw new WebGLUnavailableError();
@@ -66,7 +72,11 @@ export function createCourtScene(canvas: HTMLCanvasElement, colours: CourtColour
   // Skeletons: one cylinder per bone and a sphere for the head, moved every frame.
   const boneGeometry = keep(new CylinderGeometry(BONE_RADIUS, BONE_RADIUS, 1, 8));
   const headGeometry = keep(new SphereGeometry(0.11, 16, 12));
-  const skeletons = new Map<string, { group: Group; bones: Mesh[]; head: Mesh }>();
+  const shaftGeometry = keep(new CylinderGeometry(0.011, 0.011, 1, 6));
+  const racketHeadGeometry = keep(new TorusGeometry(HEAD_HALF_WIDTH, 0.009, 6, 32));
+  const skeletons = new Map<string, { group: Group; bones: Mesh[]; head: Mesh; shaft: Mesh; racketHead: Mesh }>();
+  const grip = new Vector3();
+  const tip = new Vector3();
   const up = new Vector3(0, 1, 0);
   const from = new Vector3();
   const to = new Vector3();
@@ -130,13 +140,16 @@ export function createCourtScene(canvas: HTMLCanvasElement, colours: CourtColour
         const group = new Group();
         const bones = BONES.map(() => new Mesh(boneGeometry, material));
         const head = new Mesh(headGeometry, material);
-        group.add(...bones, head);
+        const shaft = new Mesh(shaftGeometry, material);
+        const racketHead = new Mesh(racketHeadGeometry, material);
+        racketHead.scale.set(1, HEAD_HALF_LENGTH / HEAD_HALF_WIDTH, 1);
+        group.add(...bones, head, shaft, racketHead);
         group.visible = false;
         scene.add(group);
-        skeletons.set(player, { group, bones, head });
+        skeletons.set(player, { group, bones, head, shaft, racketHead });
       }
     },
-    setFrame(poses, flight) {
+    setFrame(poses, flight, rackets = {}) {
       for (const [player, skeleton] of skeletons) {
         const values = poses[player];
         skeleton.group.visible = Boolean(values);
@@ -152,6 +165,19 @@ export function createCourtScene(canvas: HTMLCanvasElement, colours: CourtColour
           bone.quaternion.copy(length > 1e-6 ? rotation.setFromUnitVectors(up, direction.divideScalar(length)) : rotation.identity());
         });
         joint(values, HEAD, skeleton.head.position);
+        const racket = rackets[player];
+        skeleton.shaft.visible = skeleton.racketHead.visible = Boolean(racket);
+        if (racket) {
+          grip.set(...toScene(racket.grip));
+          tip.set(...toScene(racket.tip));
+          direction.subVectors(tip, grip).normalize();
+          rotation.setFromUnitVectors(up, direction);
+          skeleton.shaft.position.copy(grip).addScaledVector(direction, SHAFT_LENGTH / 2);
+          skeleton.shaft.scale.set(1, SHAFT_LENGTH, 1);
+          skeleton.shaft.quaternion.copy(rotation);
+          skeleton.racketHead.position.copy(grip).addScaledVector(direction, SHAFT_LENGTH + HEAD_HALF_LENGTH);
+          skeleton.racketHead.quaternion.copy(rotation);
+        }
       }
       shuttle.visible = Boolean(flight?.position);
       if (flight?.position) shuttle.position.set(...toScene(flight.position));
