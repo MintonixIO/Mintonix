@@ -5,38 +5,41 @@
 .backLink { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; color: var(--text-secondary); font-size: var(--text-sm); transition: color var(--dur-fast); }
 .backLink:hover { color: var(--text-strong); }
 .loading { display: grid; place-items: center; min-height: 400px; margin-top: 28px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-1); color: var(--text-secondary); font-size: var(--text-sm); }
-/* Scoreboard at the left edge, match facts at the right, so the header spans the viewer below it. */
-.heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 0 32px; margin: 14px 0 14px; }
-.event { grid-column: 1 / -1; }
+/* One line above the viewer: event, both players with their games, then match facts, so the stage fits a laptop screen. */
+.heading { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 28px; margin: 12px 0; }
 .srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.event { margin: 0 0 8px; color: var(--text-secondary); font-size: var(--text-xs); line-height: var(--leading-normal); }
+.event { margin: 0; color: var(--text-secondary); font-size: var(--text-xs); line-height: var(--leading-normal); }
 
 /* Scoreboard: the winner's row is lit and marked green; the loser's recedes. Games won carry the player's colour. */
-.scoreboard { justify-self: start; border-collapse: collapse; }
+.scoreboard { border-collapse: collapse; }
+.scoreboard tbody { display: flex; flex-wrap: wrap; gap: 4px 28px; }
+.scoreboard tr { display: flex; align-items: center; }
 .scoreboard tr[data-tone="a"] { --tone: var(--player-a); --tone-soft: var(--player-a-soft); }
 .scoreboard tr[data-tone="b"] { --tone: var(--player-b); --tone-soft: var(--player-b-soft); }
-.scoreboard tr + tr { border-top: 1px solid var(--border-subtle); }
-.scoreboard th { padding: 7px 48px 7px 0; color: var(--text-strong); font-family: var(--font-display); font-size: clamp(18px, 2vw, 24px); font-weight: var(--fw-medium); letter-spacing: var(--tracking-tight); line-height: var(--leading-snug); text-align: left; }
+.scoreboard th { padding: 0 10px 0 0; color: var(--text-strong); font-family: var(--font-display); font-size: var(--text-md); font-weight: var(--fw-medium); letter-spacing: var(--tracking-tight); line-height: var(--leading-snug); text-align: left; }
 .scoreboard th::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 10px; border-radius: 50%; background: var(--tone); vertical-align: .14em; }
 .scoreboard tr[data-result="lost"] .playerName { color: var(--text-secondary); }
 .won { display: inline-flex; align-items: center; gap: 4px; margin-left: 10px; padding: 2px 8px 2px 6px; border-radius: var(--radius-pill); background: var(--success-bg); color: var(--success-400); font: var(--fw-medium) var(--text-2xs)/1.5 var(--font-sans); letter-spacing: 0; vertical-align: .2em; white-space: nowrap; }
-.scoreboard td { width: 46px; padding: 4px 0 4px 6px; color: var(--text-muted); font: var(--text-md) var(--font-mono); font-variant-numeric: tabular-nums; text-align: center; }
+.scoreboard td { width: 30px; padding: 4px 0; color: var(--text-muted); font: var(--text-sm) var(--font-mono); font-variant-numeric: tabular-nums; text-align: center; }
 .scoreboard td[data-won] { color: var(--text-strong); font-weight: var(--fw-semibold); }
-.scoreboard td[data-won]::after { content: ""; display: block; height: 2px; margin: 2px 9px 0; border-radius: 1px; background: var(--tone); }
+.scoreboard td[data-won]::after { content: ""; display: block; height: 2px; margin: 2px 7px 0; border-radius: 1px; background: var(--tone); }
 .scoreboard td:not([data-won])::after { content: ""; display: block; height: 2px; margin-top: 2px; }
 
-.matchSummary { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; margin: 0; color: var(--text-secondary); font-size: var(--text-xs); text-align: right; }
+.matchSummary { display: flex; align-items: center; gap: 16px; margin: 0 0 0 auto; color: var(--text-secondary); font-size: var(--text-xs); }
 .sourceLink { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 13px; border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-secondary); transition: background var(--dur-fast), color var(--dur-fast); }
 .sourceLink:hover { background: var(--surface-2); color: var(--text-strong); }
 @media (max-width: 640px) {
   .page { padding-top: 8px; }
   .navigation { padding-bottom: 6px; }
-  .heading { grid-template-columns: minmax(0, 1fr); margin: 12px 0 10px; }
-  .scoreboard { justify-self: stretch; width: 100%; }
-  .scoreboard th { padding-right: 12px; }
-  .matchSummary { flex-direction: row; align-items: center; justify-content: space-between; margin-top: 8px; text-align: left; }
+  /* Phones: the event, a row per player, then the facts. */
+  .heading { flex-direction: column; align-items: stretch; gap: 6px; margin: 12px 0 10px; }
+  .scoreboard { width: 100%; }
+  .scoreboard tbody { flex-direction: column; gap: 0; }
+  .scoreboard tr { justify-content: flex-end; }
+  .scoreboard tr + tr { border-top: 1px solid var(--border-subtle); }
+  .scoreboard th { flex: 1; padding: 6px 12px 6px 0; }
+  .matchSummary { justify-content: space-between; margin: 0; }
   .sourceLink { min-height: 32px; padding: 0; border: 0; }
-  .scoreboard th { font-size: 18px; }
-  .scoreboard td { width: 40px; }
+  .scoreboard td { width: 40px; font-size: var(--text-md); }
   .loading { min-height: 260px; }
 }

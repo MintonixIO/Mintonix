@@ -144,8 +144,9 @@ Buttons are disabled until the player is ready, as today. Keyboard shortcuts are
 
 The viewer goes fullscreen as now (and keeps the window-filling fallback). Inside, the stage
 fills the screen above the control bar. The video takes the width it needs at full height
-(16:9, but never more than 70% of the width), and the court takes the rest, so there is
-no letterbox on 16:10 screens. The court column is shown (lifting "hidden in
+(16:9, but never more than 70% of the width), and the court takes the rest. On screens
+wider than about 2.5:1 the video fills the height; on ordinary screens the 70% cap leaves
+black above and below it, so the court keeps a usable width. The court column is shown (lifting "hidden in
 fullscreen" from the live-court design: it was hidden only because the panel floated over
 the video). The floating `.rallyDock` and the floating panel are removed. The drawer opens
 from the bar the same way it does on the page. The toolbar and notices stay hidden in
