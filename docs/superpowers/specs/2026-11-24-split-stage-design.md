@@ -1,6 +1,6 @@
 # Split stage: watch the match beside the live court
 
-Date: 2026-11-24 · Status: proposed · Builds on `feat/live-court` (2026-11-24-player-tracks-design.md)
+Date: 2026-11-24 · Status: approved (user), with the minimize option · Builds on `feat/live-court` (2026-11-24-player-tracks-design.md)
 
 ## Intent
 
@@ -89,6 +89,31 @@ keep a two-line version.
   court, as today's sidebar does. The deck stays below. Analyze gets the same control bar. Its
   layout is otherwise unchanged, and whether the court joins Analyze is a later decision.
 
+### Minimizing the court (user)
+
+The court can be minimized so the video gets the stage to itself.
+
+- Two controls: a **›** button in the court's top-right corner, and a **Court** toggle
+  (`aria-pressed`) in the control bar, just before Rallies. Both toggle the same state.
+- Minimized, the side column collapses to a 48 px rail: a **‹** button that restores the
+  court, a vertical "3D court" label, and both players' running distances. The video column
+  takes the remaining width, still 16:9 and still capped by the viewport height (centred,
+  with black at the sides when the cap applies).
+- The canvas is unmounted while minimized (no WebGL work). The rally file for the current
+  rally keeps loading so the distances stay live and restoring is instant. The camera view
+  the viewer chose is kept across minimize/restore.
+- The choice persists per viewer in `localStorage` (guarded with try/catch; minimized is
+  never the default).
+- Opening Rallies while minimized brings the side column back at full width for the drawer,
+  so the drawer still never covers the video. Closing it returns to the rail.
+- The Court toggle and the rail show only when the match has skeletons. In Analyze the rail
+  column holds the Analyze rail and can't be minimized.
+- Phones: the toggle hides or shows the court under the bar.
+
+Overlaying the court on the embed was considered and ruled out: `AGENTS.md` forbids drawing
+over the player, the broadcast camera's per-frame pose isn't exported (so it couldn't line up),
+and the 100 ms playhead polling would drift.
+
 ### Control bar
 
 One row under the whole stage, outside the video. Left to right:
@@ -106,18 +131,21 @@ One row under the whole stage, outside the video. Left to right:
    Home/End jump to the first/last.
 5. Skip gaps switch.
 6. Mute.
-7. Rallies: opens the full rally list (today's list, unchanged rows) as a drawer anchored to
+7. Court toggle (see Minimizing the court).
+8. Rallies: opens the full rally list (today's list, unchanged rows) as a drawer anchored to
    the bar's right end, over the court column and **never over the video**. Esc or the close
    button closes it and returns focus. In Analyze the rail already lists rallies, so this button
    is hidden there.
-8. Fullscreen.
+9. Fullscreen.
 
 Buttons are disabled until the player is ready, as today. Keyboard shortcuts are out of scope.
 
 ### Fullscreen
 
 The viewer goes fullscreen as now (and keeps the window-filling fallback). Inside, the stage
-fills the screen above the control bar, and the court column is shown (lifting "hidden in
+fills the screen above the control bar. The video takes the width it needs at full height
+(16:9, but never more than 70% of the width), and the court takes the rest, so there is
+no letterbox on 16:10 screens. The court column is shown (lifting "hidden in
 fullscreen" from the live-court design: it was hidden only because the panel floated over
 the video). The floating `.rallyDock` and the floating panel are removed. The drawer opens
 from the bar the same way it does on the page. The toolbar and notices stay hidden in
@@ -164,6 +192,8 @@ size. Analyze view: rail, deck, shot replay (which still replaces the video colu
 - Analyze keeps its rail in the right column and gains the same control bar; the court stays Watch-only.
 - Fullscreen shows the court; the floating dock and panel are removed.
 - Phones: video → bar → court.
+- Fullscreen: the video sizes to the full height (≤70% wide), and the court takes the rest.
+- Minimized state remembered per viewer in localStorage.
 
 ## Left to the builder
 
