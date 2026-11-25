@@ -220,6 +220,7 @@ Decided by the user: it sits at the **top of the Watch sidebar, above the rally 
   "Reset view" button appears once it has moved and returns to the corner. Arrow keys
   orbit when the court has focus (reuse the replay's key handling where it fits).
   Dragging never pauses or seeks the video.
+- *(Superseded by 2026-11-24-split-stage-design.md: the court now sits beside the video, shows in fullscreen, and can be minimized.)*
 - **Where it shows:** Watch view only, only for matches with rally files; matches
   without them look as they do today. On phones it lands directly under the video
   (the sidebar already stacks there). Hidden in fullscreen (the sidebar floats over the
