@@ -8,7 +8,7 @@ import { WebGLUnavailableError } from "../analysis/shot-scene";
 import type { Vec3 } from "../analysis/replay";
 import { rallyStart } from "../timeline";
 import { createCourtScene, type CourtScene } from "./court-scene";
-import { decodeMotion, distanceSoFar, frameAt, poseAt, tagAt, tagText, type Skeletons } from "./motion";
+import { decodeMotion, frameAt, poseAt, tagAt, tagText, type Skeletons } from "./motion";
 import { Icon } from "../icons";
 import styles from "./live-court.module.css";
 
@@ -20,9 +20,10 @@ type Props = {
   playing: boolean;
   /** The rally's shots, once the shot data has loaded. */
   shots: readonly Shot[];
-  /** Minimized to a slim rail of distances; the scene stays (hidden, not drawn) so the view is kept. */
+  /** Hidden while the side column shows something else or is collapsed; the scene stays (not drawn) so the view is kept. */
   minimized?: boolean;
-  onToggleMinimized?: () => void;
+  /** Collapse the side column. */
+  onCollapse?: () => void;
 };
 
 // Decoded rally files, shared by every live court on the page (a rally decodes once).
@@ -90,7 +91,7 @@ function rallyEndTime(match: Match, index: number) {
   return match.rallies[index].segments.at(-1)![1];
 }
 
-export default function LiveCourt({ match, rallyIndex, time, playing, shots, minimized = false, onToggleMinimized }: Props) {
+export default function LiveCourt({ match, rallyIndex, time, playing, shots, minimized = false, onCollapse }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<CourtScene | null>(null);
   const [failed, setFailed] = useState(false);
@@ -99,7 +100,6 @@ export default function LiveCourt({ match, rallyIndex, time, playing, shots, min
   const players = playerTools(match);
   const [first, second] = match.players;
   const { skeletons, loading } = useSkeletons(match, rallyIndex);
-  // Minimized, only the distances show: the 100 ms polls are smooth enough for them.
   const smoothTime = useSmoothTime(time, playing && !minimized);
 
   // Between rallies the court holds the last frame of the rally that just ended; before the
@@ -167,20 +167,10 @@ export default function LiveCourt({ match, rallyIndex, time, playing, shots, min
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [match, skeletons, frame, started, shots, shownTime, tagShot, minimized]);
 
-  const distances = match.players.map((player) => {
-    const metres = skeletons && started ? distanceSoFar(skeletons, player.id, frame) : null;
-    return { player, metres };
-  });
   const tagTone = tagShot ? players.tone(tagShot.hitter) : "none";
 
-  const distanceText = distances.map(({ player, metres }, index) => (
-    <span key={player.id} data-tone={index === 0 ? "a" : "b"}>
-      <span className={styles.dot} aria-hidden="true" />{players.shortName(player.id)} {metres === null ? "–" : `${metres.toFixed(1)} m`}
-    </span>
-  ));
-
   return (
-    <section className={styles.court} aria-label="Live court" data-minimized={minimized || undefined}>
+    <section className={styles.court} aria-label="Live court" hidden={minimized}>
       <div className={styles.stage} hidden={failed || minimized}>
         <canvas ref={canvasRef} className={styles.canvas} tabIndex={0} aria-label="3D court, drag to rotate"
           onKeyDown={(event) => {
@@ -198,18 +188,11 @@ export default function LiveCourt({ match, rallyIndex, time, playing, shots, min
         {moved && (
           <button type="button" className={styles.reset} onClick={() => { sceneRef.current?.resetView(); setMoved(false); }}>Reset view</button>
         )}
-        {onToggleMinimized && (
-          <button type="button" className={styles.minimize} aria-label="Minimize the 3D court" title="Minimize the 3D court" onClick={onToggleMinimized}><Icon name="chevronRight" size={16} /></button>
+        {onCollapse && (
+          <button type="button" className={styles.minimize} aria-label="Hide the side panel" title="Hide the side panel" onClick={onCollapse}><Icon name="chevronRight" size={16} /></button>
         )}
         {loading && <span className={styles.status} role="status">Loading players…</span>}
       </div>
-      {minimized ? (
-        <div className={styles.rail}>
-          {onToggleMinimized && <button type="button" className={styles.restore} aria-label="Show the 3D court" title="Show the 3D court" onClick={onToggleMinimized}><Icon name="chevronLeft" size={16} /></button>}
-          <span className={styles.railLabel}>3D court</span>
-          <p className={styles.railDistances}>{distanceText}</p>
-        </div>
-      ) : <p className={styles.distances}>{distanceText}</p>}
       <p className={styles.srOnly} aria-live="polite">{tag && !minimized ? `${players.name(tagShot!.hitter)}: ${tag}` : ""}</p>
     </section>
   );

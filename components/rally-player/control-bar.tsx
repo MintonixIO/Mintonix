@@ -6,6 +6,8 @@ import { Icon } from "./icons";
 import { rallyProgress, rallyScore, rallyStrip, rallyTip } from "./rally-strip";
 import styles from "./control-bar.module.css";
 
+export type SideOption = "court" | "rallies";
+
 type Props = {
   match: Match;
   missingBefore: readonly number[];
@@ -19,10 +21,11 @@ type Props = {
   canPrevious: boolean;
   canNext: boolean;
   isFullscreen: boolean;
-  /** The live court's state, or null when the match has no court to show. */
-  court: "shown" | "minimized" | null;
-  /** Whether the rally list is open, or null when this view has no rally list button. */
-  listOpen: boolean | null;
+  /**
+   * What the side column can show and what it shows (null: collapsed), or null when this view
+   * has no side switch (analyze). Showing one option hides the other; picking the shown one collapses.
+   */
+  side: { options: readonly SideOption[]; shown: SideOption | null; onShow: (option: SideOption) => void } | null;
   listId: string;
   listButtonRef: Ref<HTMLButtonElement>;
   onPlay: () => void;
@@ -31,15 +34,13 @@ type Props = {
   onSelectRally: (index: number) => void;
   onMute: () => void;
   onSkipGaps: (on: boolean) => void;
-  onCourt: () => void;
-  onList: () => void;
   onFullscreen: () => void;
 };
 
 /** Everything that drives playback, in one row under the video and court; nothing sits on the video. */
 export function ControlBar({
-  match, missingBefore, selectedIndex, time, ready, playing, muted, skipGaps, canPrevious, canNext, isFullscreen, court, listOpen,
-  listId, listButtonRef, onPlay, onPrevious, onNext, onSelectRally, onMute, onSkipGaps, onCourt, onList, onFullscreen,
+  match, missingBefore, selectedIndex, time, ready, playing, muted, skipGaps, canPrevious, canNext, isFullscreen, side,
+  listId, listButtonRef, onPlay, onPrevious, onNext, onSelectRally, onMute, onSkipGaps, onFullscreen,
 }: Props) {
   const rallies = match.rallies;
   const games = useMemo(() => rallyStrip(rallies, missingBefore), [rallies, missingBefore]);
@@ -114,11 +115,17 @@ export function ControlBar({
       <div className={styles.options}>
         <label className={styles.gapToggle} title="Automatically skip the time between detected rallies"><span>Skip gaps</span><input type="checkbox" role="switch" checked={skipGaps} onChange={(event) => onSkipGaps(event.target.checked)} /><span className={styles.switch} aria-hidden="true" /></label>
         <button type="button" className={styles.iconButton} disabled={!ready} aria-label={muted ? "Unmute audio" : "Mute audio"} onClick={onMute}><Icon name={muted ? "muted" : "volume"} /></button>
-        {court && <button type="button" className={styles.pill} aria-pressed={court === "shown"} title={court === "shown" ? "Minimize the 3D court" : "Show the 3D court"} onClick={onCourt}><Icon name="court" size={16} /><span>Court</span></button>}
-        {listOpen !== null && (
-          <button ref={listButtonRef} type="button" className={styles.pill} aria-expanded={listOpen} aria-controls={listId} aria-haspopup="dialog" onClick={onList}>
-            <Icon name="list" size={16} /><span>Rallies</span>
-          </button>
+        {side && (
+          <div className={styles.segmented} role="group" aria-label="Beside the video">
+            {side.options.map((option) => (
+              <button key={option} ref={option === "rallies" ? listButtonRef : undefined} type="button" aria-pressed={side.shown === option}
+                aria-controls={option === "rallies" ? listId : undefined}
+                title={side.shown === option ? `Hide the ${option === "court" ? "3D court" : "rally list"}` : `Show the ${option === "court" ? "3D court" : "rally list"}`}
+                onClick={() => side.onShow(option)}>
+                <Icon name={option === "court" ? "court" : "list"} size={16} /><span>{option === "court" ? "Court" : "Rallies"}</span>
+              </button>
+            ))}
+          </div>
         )}
         <button type="button" className={styles.iconButton} aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"} title={isFullscreen ? "Exit fullscreen" : "Fullscreen"} onClick={onFullscreen}><Icon name={isFullscreen ? "collapse" : "expand"} /></button>
       </div>

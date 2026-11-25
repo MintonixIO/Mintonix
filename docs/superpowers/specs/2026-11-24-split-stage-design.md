@@ -249,3 +249,9 @@ Each skeleton gets a racket, drawn, not tracked: the engine exports no hand orie
   player's contact it turns towards the shot's `contact` point, so racket meets shuttle.
   Length 0.68 m (shaft 0.4 m + an oval head 0.29 × 0.23 m), in the player's colour.
 - Hidden with the skeleton during gaps; the caveat says the racket is drawn from the arm.
+
+### Distances removed from the court (user)
+
+The live court no longer shows running distances, neither under the court nor on the rail.
+The collapsed rail holds two buttons (court, rally list) instead. The rally files still carry
+`distance`; nothing reads it now.
