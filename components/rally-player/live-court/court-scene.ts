@@ -7,6 +7,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { createCourt, WebGLUnavailableError, type SceneColours } from "../analysis/shot-scene";
 import { toScene, type Vec3 } from "../analysis/replay";
 import { BONES, HEAD } from "./motion";
+import { BASE_FOV, fieldOfView } from "./camera";
 
 /**
  * The live court: court, net, both players' skeletons and the shuttle, seen from a low
@@ -89,7 +90,7 @@ export function createCourtScene(canvas: HTMLCanvasElement, colours: CourtColour
   trail.frustumCulled = false;
   scene.add(trail);
 
-  const camera = new PerspectiveCamera(38, 1, 0.1, 100);
+  const camera = new PerspectiveCamera(BASE_FOV, 1, 0.1, 100);
   const controls = new OrbitControls(camera, canvas);
   controls.maxPolarAngle = Math.PI / 2 - 0.05;
   controls.minDistance = 4;
@@ -189,6 +190,7 @@ export function createCourtScene(canvas: HTMLCanvasElement, colours: CourtColour
       if (width === 0 || height === 0) return;
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
+      camera.fov = fieldOfView(camera.aspect);
       camera.updateProjectionMatrix();
       renderer.render(scene, camera);
     },

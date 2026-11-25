@@ -13,6 +13,8 @@ import { setOpenShot, useOpenShot, useView } from "./view";
 import { ViewSwitch } from "./view-switch";
 import { SearchPanel } from "./search/search-panel";
 import type { SearchResult } from "./search/rank";
+import { ControlBar } from "./control-bar";
+import { Icon } from "./icons";
 import styles from "./rally-player.module.css";
 
 // three.js is only fetched when a shot is first opened.
@@ -21,29 +23,12 @@ const ShotStage = dynamic(() => import("./analysis/shot-stage"), {
   loading: () => <div className={styles.stageLoading} role="status">Loading 3D replay…</div>,
 });
 
-// The live court's three.js is only fetched for matches with player skeletons, in the watch view.
+// The live court's three.js is only fetched for matches with player skeletons, outside the analyze view.
 const LiveCourt = dynamic(() => import("./live-court/live-court"), { ssr: false });
-
-type IconName = "play" | "pause" | "volume" | "muted" | "previous" | "next" | "expand" | "collapse" | "list" | "close";
-const iconPaths: Record<IconName, string> = {
-  play: "m8 5 11 7-11 7V5Z",
-  pause: "M8 5v14M16 5v14",
-  volume: "m11 5-6 4H2v6h3l6 4V5Zm4 3a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14",
-  muted: "m11 5-6 4H2v6h3l6 4V5Zm5 4 6 6m-6 0 6-6",
-  previous: "M5 5v14M19 5 8 12l11 7V5Z",
-  next: "M19 5v14M5 5l11 7-11 7V5Z",
-  expand: "M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5",
-  collapse: "M3 8h5V3m8 0v5h5M8 21v-5H3m18 0h-5v5",
-  list: "M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01",
-  close: "m6 6 12 12M6 18 18 6",
-};
-
-function Icon({ name }: { name: IconName }) {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={iconPaths[name]} /></svg>;
-}
 
 const SYNC_INTERVAL_MS = 100;
 const DURATION_TOLERANCE_SECONDS = 2;
+const COURT_MINIMIZED_KEY = "mintonix.courtMinimized";
 
 export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasAnalysis?: boolean }) {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -55,7 +40,10 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
   const shotOpenRef = useRef(false);
   const viewerRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  // The analyze rail beside the video (its shot rows take focus back when a replay closes).
   const panelRef = useRef<HTMLElement>(null);
+  // The rally list drawer, and the control bar button that opens it.
+  const drawerRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
   const listRef = useRef<HTMLDivElement>(null);
@@ -69,13 +57,14 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
   const [ready, setReady] = useState(false);
   const [skipGaps, setSkipGaps] = useState(true);
   const [panelOpen, setPanelOpen] = useState(false);
+  // Each viewer's choice, restored after mount; the court is never minimized by default.
+  const [courtMinimized, setCourtMinimized] = useState(false);
   const [nativeFullscreen, setNativeFullscreen] = useState(false);
   // Where the Fullscreen API can't take an element (iPhone Safari), the viewer fills the window instead.
   const [immersive, setImmersive] = useState(false);
   const isFullscreen = nativeFullscreen || immersive;
   const [mediaError, setMediaError] = useState("");
   const selectedIndex = rallyIndexAt(rallies, sourceTime);
-  const selected = rallies[selectedIndex];
   const nextIndex = rallies.findIndex((rally) => rallyStart(rally) > sourceTime);
   const previousTarget = selectedIndex >= 0 ? selectedIndex - 1 : (nextIndex === -1 ? rallies.length : nextIndex) - 1;
   const nextTarget = selectedIndex >= 0 ? selectedIndex + 1 : nextIndex;
@@ -84,8 +73,13 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
   const [scoreFirst, scoreSecond] = match.players.map((player) => player.id);
   const view = useView(hasAnalysis);
   const analyzing = view === "analyze" && !isFullscreen;
-  // The live court: watch view, matches with skeletons, not in fullscreen (the panel floats over the video there).
-  const liveCourt = view === "watch" && !isFullscreen && match.poses !== undefined;
+  // The live court: beside the video for matches with skeletons, in fullscreen too, except in the analyze view.
+  const liveCourt = !analyzing && match.poses !== undefined;
+  // The rally list drawer belongs to the watch layout; analyze lists rallies in its rail.
+  const listOpen = panelOpen && !analyzing;
+  // Beside the video: the analyze rail, the court, the court minimized to a rail, or nothing.
+  // An open rally list always takes a full column, so it never covers the video.
+  const layout = analyzing || listOpen || (liveCourt && !courtMinimized) ? "split" : liveCourt ? "rail" : "single";
   // Its hit tags need the shot data, fetched after the page has loaded.
   const { analysis, error: analysisError } = useAnalysis(match.matchId, view === "analyze" || (liveCourt && hasAnalysis));
   // The shot open in the 3D replay comes from the URL; it shows only once the analysis has it.
@@ -132,7 +126,23 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
     if (top < list.scrollTop || top + row.offsetHeight > list.scrollTop + list.clientHeight) {
       list.scrollTo({ top: top - list.clientHeight / 3, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
     }
-  }, [selectedIndex, panelOpen, isFullscreen]);
+  }, [selectedIndex, listOpen]);
+
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- browser storage is only readable after hydration
+      if (window.localStorage.getItem(COURT_MINIMIZED_KEY) === "1") setCourtMinimized(true);
+    } catch { /* storage unavailable: keep the court shown */ }
+  }, []);
+
+  function toggleCourt() {
+    const next = !courtMinimized;
+    setCourtMinimized(next);
+    try {
+      if (next) window.localStorage.setItem(COURT_MINIMIZED_KEY, "1");
+      else window.localStorage.removeItem(COURT_MINIMIZED_KEY);
+    } catch { /* storage unavailable: the choice lasts for this visit */ }
+  }
 
   useEffect(() => {
     const syncFullscreen = () => {
@@ -150,18 +160,19 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
     const previous = root.style.overflow;
     root.style.overflow = "hidden";
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && !panelOpen) setImmersive(false);
+      if (event.key === "Escape" && !listOpen) setImmersive(false);
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       root.style.overflow = previous;
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [immersive, panelOpen]);
+  }, [immersive, listOpen]);
 
+  // An opened rally list takes focus, and Escape closes it back to the button that opened it.
   useEffect(() => {
-    if (!isFullscreen || !panelOpen) return;
-    panelRef.current?.querySelector<HTMLButtonElement>("[data-close]")?.focus();
+    if (!listOpen) return;
+    drawerRef.current?.querySelector<HTMLButtonElement>("[data-close]")?.focus({ preventScroll: true });
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
       setPanelOpen(false);
@@ -169,7 +180,7 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isFullscreen, panelOpen]);
+  }, [listOpen]);
 
   // The match plays from its published YouTube upload; nothing is re-hosted.
   useEffect(() => {
@@ -429,6 +440,8 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
     return groups;
   }, []);
 
+  const courtRally = selectedIndex >= 0 ? selectedIndex : previousTarget;
+
   return (
     <section ref={viewerRef} id="viewer" className={styles.viewer} aria-label="Match viewer" data-playing={isPlaying || undefined}
       data-fullscreen={isFullscreen || undefined} data-immersive={immersive || undefined}>
@@ -436,78 +449,83 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
         {hasAnalysis && <ViewSwitch />}
         <SearchPanel matchId={match.matchId} onSelect={openSearchResult} />
       </div>
-      <div className={styles.workspace}>
+      {/* The video and, beside it, the court or the analyze rail; then the control bar. Nothing is drawn over the video. */}
+      <div className={styles.workspace} data-layout={layout}>
         <div ref={stageRef} className={styles.stageColumn} data-replay={open || pendingShot ? true : undefined}>
-        <div className={styles.stage}>
-          <div ref={mountRef} className={styles.embed} title={match.title} />
-          {mediaError && <p className={styles.mediaError} role="alert">{mediaError}</p>}
-
-          <div className={styles.rallyDock} role="group" aria-label="Rally navigation">
-            <button type="button" className={styles.iconButton} disabled={!ready} aria-label={isPlaying ? "Pause" : "Play"} onClick={togglePlayback}><Icon name={isPlaying ? "pause" : "play"} /></button>
-            <button type="button" className={styles.iconButton} aria-label="Previous rally" title="Previous rally" disabled={!ready || !rallies[previousTarget]} onClick={() => selectRally(previousTarget)}><Icon name="previous" /></button>
-            <button ref={triggerRef} type="button" className={styles.ralliesButton} aria-expanded={panelOpen} aria-controls={panelId} aria-haspopup="dialog" onClick={() => setPanelOpen(!panelOpen)}>
-              <Icon name="list" /><span>Rallies</span><span className={styles.rallyPosition}>{selected ? selectedIndex + 1 : "–"}<span> / {rallies.length}</span></span>
-            </button>
-            <button type="button" className={styles.iconButton} aria-label="Next rally" title="Next rally" disabled={!ready || !rallies[nextTarget]} onClick={() => selectRally(nextTarget)}><Icon name="next" /></button>
-            <span className={styles.dockDivider} aria-hidden="true" />
-            <button type="button" className={styles.iconButton} aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"} title={isFullscreen ? "Exit fullscreen" : "Fullscreen with rally controls"} onClick={() => { void toggleFullscreen(); }}><Icon name={isFullscreen ? "collapse" : "expand"} /></button>
+          <div className={styles.stage}>
+            <div ref={mountRef} className={styles.embed} title={match.title} />
+            {mediaError && <p className={styles.mediaError} role="alert">{mediaError}</p>}
           </div>
+          {open && (
+            <ShotStage match={match} shot={open.shot} index={open.ref.index} count={shots.length}
+              onStep={openFocusShot} onClose={closeShot} />
+          )}
+          {pendingShot && <div className={styles.stageLoading} role="status">Loading 3D replay…</div>}
+        </div>
 
-        </div>
-        {open && (
-          <ShotStage match={match} shot={open.shot} index={open.ref.index} count={shots.length}
-            onStep={openFocusShot} onClose={closeShot} />
-        )}
-        {pendingShot && <div className={styles.stageLoading} role="status">Loading 3D replay…</div>}
-        </div>
-        <aside ref={panelRef} id={panelId} className={styles.rallyPanel} hidden={isFullscreen && !panelOpen} role={isFullscreen ? "dialog" : undefined} aria-labelledby={analyzing ? undefined : `${panelId}-heading`} aria-label={analyzing ? "Analysis" : undefined}>
-          {analyzing ? (
+        {analyzing ? (
+          <aside ref={panelRef} className={styles.side} aria-label="Analysis">
             <MatchRail match={match} analysis={analysis} analysisError={analysisError} current={focusIndex} playing={isPlaying} ready={ready}
               expanded={expanded} liveShot={activeShot} openShot={open?.ref ?? null} onToggleRally={toggleRally} onOpenShot={openShot}
               onMatchSummary={showMatchSummary} matchSummaryActive={deck === "match" && !open} />
-          ) : <>
-          {liveCourt && <LiveCourt match={match} rallyIndex={selectedIndex >= 0 ? selectedIndex : previousTarget} time={sourceTime} playing={isPlaying} shots={shots} />}
-          <div className={styles.panelHeader}>
-            <div className={styles.panelTitle}>
-              <h2 id={`${panelId}-heading`}>Rallies <span className={styles.rallyCount}>{rallies.length}</span></h2>
-              <div className={styles.panelActions}>
-                {!isFullscreen && <button type="button" className={styles.iconButton} disabled={!ready} aria-label={isPlaying ? "Pause" : "Play"} onClick={togglePlayback}><Icon name={isPlaying ? "pause" : "play"} /></button>}
-                <button type="button" className={styles.iconButton} disabled={!ready} aria-label={muted ? "Unmute audio" : "Mute audio"} onClick={toggleMute}><Icon name={muted ? "muted" : "volume"} /></button>
-                {isFullscreen ? <button data-close type="button" className={styles.iconButton} aria-label="Close rally controls" onClick={closePanel}><Icon name="close" /></button> : <button type="button" className={styles.iconButton} aria-label="Enter fullscreen" title="Fullscreen with rally controls" onClick={() => { void toggleFullscreen(); }}><Icon name="expand" /></button>}
+          </aside>
+        ) : liveCourt && (
+          <div className={styles.side} data-minimized={courtMinimized || undefined}>
+            <LiveCourt match={match} rallyIndex={courtRally} time={sourceTime} playing={isPlaying} shots={shots}
+              minimized={courtMinimized} onToggleMinimized={toggleCourt} />
+          </div>
+        )}
+
+        {!analyzing && (
+          <aside ref={drawerRef} id={panelId} className={styles.drawer} hidden={!listOpen} role="dialog" aria-labelledby={`${panelId}-heading`}>
+            <div className={styles.panelHeader}>
+              <div className={styles.panelTitle}>
+                <h2 id={`${panelId}-heading`}>Rallies <span className={styles.rallyCount}>{rallies.length}</span></h2>
+                <button data-close type="button" className={styles.iconButton} aria-label="Close rallies" onClick={closePanel}><Icon name="close" /></button>
               </div>
+              <div className={styles.columnLabels} aria-hidden="true"><span>Score before</span><span>Start</span><span>Length</span></div>
             </div>
-            <label className={styles.gapToggle} title="Automatically skip the time between detected rallies"><span>Skip gaps</span><input type="checkbox" role="switch" checked={skipGaps} onChange={(event) => setSkipGaps(event.target.checked)} /><span className={styles.switch} aria-hidden="true" /></label>
-            <div className={styles.columnLabels} aria-hidden="true"><span>Score before</span><span>Start</span><span>Length</span></div>
-          </div>
-          <div ref={listRef} className={styles.listScroll}>
-            {games.map(({ game, indices }) => (
-              <section key={game} aria-labelledby={`${panelId}-game-${game}`}>
-                <h3 id={`${panelId}-game-${game}`} className={styles.gameHeading}><span>Game {game}</span><span>{indices.length} {indices.length === 1 ? "rally" : "rallies"}</span></h3>
-                <ol className={styles.rallyList}>
-                  {indices.map((index) => {
-                    const rally = rallies[index];
-                    const isSelected = selectedIndex === index;
-                    const score = rally.scoreBefore && [rally.scoreBefore[scoreFirst], rally.scoreBefore[scoreSecond]];
-                    return (
-                      <Fragment key={rally.id}>
-                      {missingBefore[index] > 0 && <li className={styles.gapRow}>{missingPointsLabel(missingBefore[index], match.review)}</li>}
-                      <li>
-                        <button type="button" disabled={!ready} data-selected={isSelected || undefined} className={styles.rallyRow} aria-current={isSelected ? "true" : undefined} aria-label={`Game ${rally.game}, ${score ? `score ${score.join(" to ")}` : "score unknown"}, ${formatTime(rallyStart(rally))} in original video`} onClick={() => playRally(index)}>
-                          <span className={styles.rallyScore}>{score ? <><span>{score[0]}</span><span className={styles.scoreDash}>–</span><span>{score[1]}</span></> : <span className={styles.scoreDash}>No score</span>}{isSelected && isPlaying && <span className={styles.equalizer} aria-hidden="true"><i /><i /><i /></span>}</span>
-                          <span className={styles.rallyStart}>{formatTime(rallyStart(rally))}</span>
-                          <span className={styles.rallyDuration}>{Math.round(rallySeconds(rally))}s</span>
-                        </button>
-                      </li>
-                      </Fragment>
-                    );
-                  })}
-                </ol>
-              </section>
-            ))}
-          </div>
-          </>}
-        </aside>
-        {/* On a phone, what was picked (a rally or a shot) reads directly under the video, ahead of the list. */}
+            <div ref={listRef} className={styles.listScroll}>
+              {games.map(({ game, indices }) => (
+                <section key={game} aria-labelledby={`${panelId}-game-${game}`}>
+                  <h3 id={`${panelId}-game-${game}`} className={styles.gameHeading}><span>Game {game}</span><span>{indices.length} {indices.length === 1 ? "rally" : "rallies"}</span></h3>
+                  <ol className={styles.rallyList}>
+                    {indices.map((index) => {
+                      const rally = rallies[index];
+                      const isSelected = selectedIndex === index;
+                      const score = rally.scoreBefore && [rally.scoreBefore[scoreFirst], rally.scoreBefore[scoreSecond]];
+                      return (
+                        <Fragment key={rally.id}>
+                        {missingBefore[index] > 0 && <li className={styles.gapRow}>{missingPointsLabel(missingBefore[index], match.review)}</li>}
+                        <li>
+                          <button type="button" disabled={!ready} data-selected={isSelected || undefined} className={styles.rallyRow} aria-current={isSelected ? "true" : undefined} aria-label={`Game ${rally.game}, ${score ? `score ${score.join(" to ")}` : "score unknown"}, ${formatTime(rallyStart(rally))} in original video`} onClick={() => playRally(index)}>
+                            <span className={styles.rallyScore}>{score ? <><span>{score[0]}</span><span className={styles.scoreDash}>–</span><span>{score[1]}</span></> : <span className={styles.scoreDash}>No score</span>}{isSelected && isPlaying && <span className={styles.equalizer} aria-hidden="true"><i /><i /><i /></span>}</span>
+                            <span className={styles.rallyStart}>{formatTime(rallyStart(rally))}</span>
+                            <span className={styles.rallyDuration}>{Math.round(rallySeconds(rally))}s</span>
+                          </button>
+                        </li>
+                        </Fragment>
+                      );
+                    })}
+                  </ol>
+                </section>
+              ))}
+            </div>
+          </aside>
+        )}
+
+        <div className={styles.controls}>
+          <ControlBar match={match} missingBefore={missingBefore} selectedIndex={selectedIndex} time={sourceTime}
+            ready={ready} playing={isPlaying} muted={muted} skipGaps={skipGaps}
+            canPrevious={Boolean(rallies[previousTarget])} canNext={Boolean(rallies[nextTarget])} isFullscreen={isFullscreen}
+            court={liveCourt ? (courtMinimized ? "minimized" : "shown") : null} listOpen={analyzing ? null : listOpen}
+            listId={panelId} listButtonRef={triggerRef}
+            onPlay={togglePlayback} onPrevious={() => selectRally(previousTarget)} onNext={() => selectRally(nextTarget)}
+            onSelectRally={selectRally} onMute={toggleMute} onSkipGaps={setSkipGaps} onCourt={toggleCourt}
+            onList={() => { if (listOpen) closePanel(); else setPanelOpen(true); }} onFullscreen={() => { void toggleFullscreen(); }} />
+        </div>
+
+        {/* On a phone, what was picked (a rally or a shot) reads directly under the controls, ahead of the rail. */}
         {analyzing && (
           <div className={styles.deckArea} data-picked={open || deck === "rally" ? true : undefined}>
             <AnalysisDeck deck={deck} openShot={open ? { shot: open.shot, index: open.ref.index } : null} match={match} analysis={analysis}
@@ -516,9 +534,10 @@ export function RallyPlayer({ match, hasAnalysis = false }: { match: Match; hasA
           </div>
         )}
       </div>
+      {liveCourt && <p className={`${styles.previewNotice} ${styles.courtNotice}`}>3D estimate from the broadcast, not checked by hand. Distance run this rally; stroke types are a model’s inference.</p>}
       {missingTotal > 0 && (
         <p className={styles.previewNotice}>
-          {missingTotal} of {rallies.length + missingTotal} points {missingPointsReason(match.review)}. Gaps are marked in the list.
+          {missingTotal} of {rallies.length + missingTotal} points {missingPointsReason(match.review)}. Gaps are marked in the rally list.
         </p>
       )}
       {match.review === "automatic" && <p className={styles.previewNotice}>Rally boundaries and scores were detected automatically and haven’t been reviewed by hand.</p>}

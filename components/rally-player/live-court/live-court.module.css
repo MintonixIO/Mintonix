@@ -1,6 +1,11 @@
-.court { flex: none; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px 12px; border-bottom: 1px solid var(--border); }
+.court { box-sizing: border-box; height: 100%; display: flex; flex-direction: column; gap: 8px; padding: 12px; }
 
-.stage { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: var(--radius-md); background: var(--bg-sunken); }
+/* Beside the video the court fills its column; stacked on a phone it keeps its own shape. */
+.stage { position: relative; flex: 1; min-height: 0; overflow: hidden; border-radius: var(--radius-md); background: var(--bg-sunken); }
+@media (max-width: 800px) {
+  .court { height: auto; }
+  .stage { flex: none; aspect-ratio: 16 / 10; }
+}
 .stage[hidden] { display: none; }
 .canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
 .canvas:active { cursor: grabbing; }
@@ -38,6 +43,22 @@
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--player-a); }
 [data-tone="b"] > .dot { background: var(--player-b); }
 
-.caption { margin: 0; color: var(--text-muted); font-size: 11px; line-height: 1.4; }
+/* Minimized: a slim rail beside the video with the distances; a thin row on a phone. */
+.minimize { position: absolute; right: 6px; top: 6px; z-index: 1; display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--frost-bg-scrolled); color: var(--text-secondary); }
+.minimize:hover, .restore:hover { color: var(--text-strong); background: var(--surface-3); }
+.minimize:focus-visible, .restore:focus-visible { outline: none; box-shadow: var(--ring-live); }
+.court[data-minimized] { padding: 4px 0; align-items: center; }
+.rail { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.restore { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--text-secondary); }
+.railLabel, .railDistances { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; }
+.railLabel { color: var(--text-muted); font-size: var(--text-2xs); font-weight: var(--fw-medium); letter-spacing: .08em; text-transform: uppercase; }
+.railDistances { display: flex; gap: 12px; margin: 0; color: var(--text-secondary); font: 500 var(--text-2xs)/1.4 var(--font-mono); font-variant-numeric: tabular-nums; }
+.railDistances > span { display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 800px) {
+  .court[data-minimized] { padding: 0 12px; align-items: stretch; }
+  .rail { flex-direction: row; gap: 12px; }
+  .railLabel, .railDistances { writing-mode: horizontal-tb; transform: none; }
+  .railDistances { flex: 1; justify-content: flex-end; }
+}
 
 .srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

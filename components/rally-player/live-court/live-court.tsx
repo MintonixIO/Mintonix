@@ -9,6 +9,7 @@ import type { Vec3 } from "../analysis/replay";
 import { rallyStart } from "../timeline";
 import { createCourtScene, type CourtScene } from "./court-scene";
 import { decodeMotion, distanceSoFar, frameAt, poseAt, tagAt, tagText, type Skeletons } from "./motion";
+import { Icon } from "../icons";
 import styles from "./live-court.module.css";
 
 type Props = {
@@ -19,6 +20,9 @@ type Props = {
   playing: boolean;
   /** The rally's shots, once the shot data has loaded. */
   shots: readonly Shot[];
+  /** Minimized to a slim rail of distances; the scene stays (hidden, not drawn) so the view is kept. */
+  minimized?: boolean;
+  onToggleMinimized?: () => void;
 };
 
 // Decoded rally files, shared by every live court on the page (a rally decodes once).
@@ -86,7 +90,7 @@ function rallyEndTime(match: Match, index: number) {
   return match.rallies[index].segments.at(-1)![1];
 }
 
-export default function LiveCourt({ match, rallyIndex, time, playing, shots }: Props) {
+export default function LiveCourt({ match, rallyIndex, time, playing, shots, minimized = false, onToggleMinimized }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<CourtScene | null>(null);
   const [failed, setFailed] = useState(false);
@@ -95,7 +99,8 @@ export default function LiveCourt({ match, rallyIndex, time, playing, shots }: P
   const players = playerTools(match);
   const [first, second] = match.players;
   const { skeletons, loading } = useSkeletons(match, rallyIndex);
-  const smoothTime = useSmoothTime(time, playing);
+  // Minimized, only the distances show: the 100 ms polls are smooth enough for them.
+  const smoothTime = useSmoothTime(time, playing && !minimized);
 
   // Between rallies the court holds the last frame of the rally that just ended; before the
   // first rally it stays empty.
@@ -143,7 +148,7 @@ export default function LiveCourt({ match, rallyIndex, time, playing, shots }: P
   // Draw the frame: skeletons at the playhead, and the shuttle along the shot in flight.
   useEffect(() => {
     const scene = sceneRef.current;
-    if (!scene) return;
+    if (!scene || minimized) return;
     const poses = Object.fromEntries(match.players.map((player) =>
       [player.id, skeletons && started ? poseAt(skeletons.players[player.id], frame) : null]));
     const active = started ? activeShotIndex(shots, shownTime) : -1;
@@ -160,7 +165,7 @@ export default function LiveCourt({ match, rallyIndex, time, playing, shots }: P
     setTagPosition(tagShot?.hitter ? scene.headOnCanvas(tagShot.hitter) : null);
     // players is rebuilt each render from match; match covers it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [match, skeletons, frame, started, shots, shownTime, tagShot]);
+  }, [match, skeletons, frame, started, shots, shownTime, tagShot, minimized]);
 
   const distances = match.players.map((player) => {
     const metres = skeletons && started ? distanceSoFar(skeletons, player.id, frame) : null;
@@ -168,9 +173,15 @@ export default function LiveCourt({ match, rallyIndex, time, playing, shots }: P
   });
   const tagTone = tagShot ? players.tone(tagShot.hitter) : "none";
 
+  const distanceText = distances.map(({ player, metres }, index) => (
+    <span key={player.id} data-tone={index === 0 ? "a" : "b"}>
+      <span className={styles.dot} aria-hidden="true" />{players.shortName(player.id)} {metres === null ? "–" : `${metres.toFixed(1)} m`}
+    </span>
+  ));
+
   return (
-    <section className={styles.court} aria-label="Live court">
-      <div className={styles.stage} hidden={failed}>
+    <section className={styles.court} aria-label="Live court" data-minimized={minimized || undefined}>
+      <div className={styles.stage} hidden={failed || minimized}>
         <canvas ref={canvasRef} className={styles.canvas} tabIndex={0} aria-label="3D court, drag to rotate"
           onKeyDown={(event) => {
             const step = 0.12;
@@ -187,17 +198,19 @@ export default function LiveCourt({ match, rallyIndex, time, playing, shots }: P
         {moved && (
           <button type="button" className={styles.reset} onClick={() => { sceneRef.current?.resetView(); setMoved(false); }}>Reset view</button>
         )}
+        {onToggleMinimized && (
+          <button type="button" className={styles.minimize} aria-label="Minimize the 3D court" title="Minimize the 3D court" onClick={onToggleMinimized}><Icon name="chevronRight" size={16} /></button>
+        )}
         {loading && <span className={styles.status} role="status">Loading players…</span>}
       </div>
-      <p className={styles.distances}>
-        {distances.map(({ player, metres }, index) => (
-          <span key={player.id} data-tone={index === 0 ? "a" : "b"}>
-            <span className={styles.dot} aria-hidden="true" />{players.shortName(player.id)} {metres === null ? "–" : `${metres.toFixed(1)} m`}
-          </span>
-        ))}
-      </p>
-      <p className={styles.srOnly} aria-live="polite">{tag ? `${players.name(tagShot!.hitter)}: ${tag}` : ""}</p>
-      <p className={styles.caption}>3D estimate from the broadcast, not checked by hand. Distance run this rally; stroke types are a model’s inference.</p>
+      {minimized ? (
+        <div className={styles.rail}>
+          {onToggleMinimized && <button type="button" className={styles.restore} aria-label="Show the 3D court" title="Show the 3D court" onClick={onToggleMinimized}><Icon name="chevronLeft" size={16} /></button>}
+          <span className={styles.railLabel}>3D court</span>
+          <p className={styles.railDistances}>{distanceText}</p>
+        </div>
+      ) : <p className={styles.distances}>{distanceText}</p>}
+      <p className={styles.srOnly} aria-live="polite">{tag && !minimized ? `${players.name(tagShot!.hitter)}: ${tag}` : ""}</p>
     </section>
   );
 }
