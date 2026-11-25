@@ -217,7 +217,7 @@ automatic detection) give way to a statistics band:
   rallies without a score are skipped. A pointer click on a rally's slot plays it; the chart is
   `role="img"` with a text summary (the strip is the keyboard path to rallies).
 - **Head to head**, two-sided bars in the player colours, each with its counts so the sample
-  is visible: points won (of detected rallies with a known winner), won on own serve
+  is visible: rallies won (detected rallies with a known winner; named so it is not read as the score), won on own serve
   (won / served), long rallies won (15+ shots, analysis only), fastest shot (est., km/h,
   analysis only), smashes (model, analysis only). A row whose inputs are missing is left out.
 - **One caveat line** under the band: "Detected automatically from the broadcast and not
